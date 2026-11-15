@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
-## Unreleased
+## 0.3.1
 
 * `parse` with more than one worker gives each process a chunk of cases at a
   time (`options._CHUNK_SIZE`, 1,000 by default) instead of one task for each
