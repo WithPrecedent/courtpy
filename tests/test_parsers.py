@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 import courtpy
-from courtpy import cases, parsers
+from courtpy import cases, options, parsers
 
 
 def test_parse_court_listener(court_listener_folder: pathlib.Path) -> None:
@@ -63,6 +63,24 @@ def test_unreadable_case_is_skipped(
 def test_parse_with_workers(court_listener_folder: pathlib.Path) -> None:
     table = courtpy.parse(court_listener_folder, workers = 2)
     assert list(table.index) == ['1', '2', '3']
+
+
+def test_chunked_workers_match_one_process(
+    court_listener_folder: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture) -> None:
+    # With chunks of two cases, the four cases (one unreadable) are two
+    # tasks for the pool, and the table is the same as with one process.
+    (court_listener_folder / 'ca1' / '9.json').write_text('not json', encoding = 'utf-8')
+    monkeypatch.setattr(options, '_CHUNK_SIZE', 2)
+    serial = courtpy.parse(court_listener_folder, workers = 1)
+    with caplog.at_level(logging.INFO, logger = 'courtpy.parsers'):
+        chunked = courtpy.parse(court_listener_folder, workers = 2)
+    pd.testing.assert_frame_equal(chunked, serial)
+    assert list(chunked.index) == ['1', '2', '3']
+    assert '2 of 4 cases parsed' in caplog.text
+    assert '4 of 4 cases parsed' in caplog.text
+    assert 'could not be parsed' in caplog.text
 
 
 def test_custom_rulebook(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:

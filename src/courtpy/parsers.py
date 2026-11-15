@@ -31,7 +31,13 @@ import concurrent.futures
 import dataclasses
 import logging
 import pathlib
-from collections.abc import Callable, Iterable, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    MutableMapping,
+    Sequence,
+)
 from typing import Any
 
 import pandas as pd
@@ -321,13 +327,18 @@ def _parse_all(
     workers: int) -> list[Any]:
     """Parses each saved case, in one process or several.
 
+    The cases are split into chunks of `options._CHUNK_SIZE`, and progress is
+    logged after each chunk. With one worker (or one chunk), the chunks are
+    parsed in this process. Otherwise, each chunk is a task for a pool of
+    `workers` processes, since a task for each case overwhelms the pool when
+    there are hundreds of thousands of them.
+
     An error while reading or parsing one case does not stop the others: the
-    error takes the place of the case's result. With one worker (or one
-    case), the cases are parsed in this process, and progress is logged every
-    1,000 cases. Otherwise, they are parsed in a pool of `workers` processes.
+    error takes the place of the case's result.
 
     Args:
-        parser: the parser to use. It is copied to each process.
+        parser: the parser to use. It is copied to each process with each
+            chunk.
         paths: the paths of the saved cases.
         source: the name of their source, such as "court_listener".
         workers: number of processes to parse with.
@@ -337,22 +348,75 @@ def _parse_all(
             `Parser.parse_file`) or the error that parsing it raised.
 
     """
-    if workers <= 1 or len(paths) < 2:
-        results: list[Any] = []
-        for number, path in enumerate(paths, start = 1):
-            try:
-                results.append(parser.parse_file(path, source))
-            except Exception as error:  # noqa: BLE001
-                results.append(error)
-            if number % 1000 == 0:
-                logger.info('%d of %d cases parsed', number, len(paths))
-        return results
+    size = max(options._CHUNK_SIZE, 1)
+    chunks = [paths[start:start + size] for start in range(0, len(paths), size)]
+    results: list[Any] = []
+    for outcomes in _parse_chunks(parser, chunks, source, workers):
+        results.extend(outcomes)
+        logger.info('%d of %d cases parsed', len(results), len(paths))
+    return results
+
+
+def _parse_chunk(
+    parser: Parser,
+    paths: Sequence[pathlib.Path],
+    source: str) -> list[Any]:
+    """Parses a chunk of saved cases, one at a time.
+
+    An error while reading or parsing one case does not stop the others: the
+    error takes the place of the case's result.
+
+    Args:
+        parser: the parser to use.
+        paths: the paths of the saved cases.
+        source: the name of their source, such as "court_listener".
+
+    Returns:
+        For each path, in order, the case's id and row (see
+            `Parser.parse_file`) or the error that parsing it raised.
+
+    """
+    outcomes: list[Any] = []
+    for path in paths:
+        try:
+            outcomes.append(parser.parse_file(path, source))
+        except Exception as error:  # noqa: BLE001
+            outcomes.append(error)
+    return outcomes
+
+
+def _parse_chunks(
+    parser: Parser,
+    chunks: Sequence[Sequence[pathlib.Path]],
+    source: str,
+    workers: int) -> Iterator[list[Any]]:
+    """Parses chunks of saved cases, in one process or several.
+
+    If a process fails on a chunk as a whole (for instance, because it
+    stopped), that error takes the place of each of the chunk's results.
+
+    Args:
+        parser: the parser to use. It is copied to each process with each
+            chunk.
+        chunks: the paths of the saved cases, in chunks.
+        source: the name of their source, such as "court_listener".
+        workers: number of processes to parse with.
+
+    Yields:
+        list[Any]: the outcomes of each chunk (see `_parse_chunk`), in
+            order.
+
+    """
+    if workers <= 1 or len(chunks) <= 1:
+        for chunk in chunks:
+            yield _parse_chunk(parser, chunk, source)
+        return
     with concurrent.futures.ProcessPoolExecutor(max_workers = workers) as pool:
-        futures = [pool.submit(parser.parse_file, p, source) for p in paths]
-        outcomes: list[Any] = []
-        for future in futures:
+        futures = [
+            pool.submit(_parse_chunk, parser, chunk, source)
+            for chunk in chunks]
+        for chunk, future in zip(chunks, futures, strict = True):
             try:
-                outcomes.append(future.result())
+                yield future.result()
             except Exception as error:  # noqa: BLE001
-                outcomes.append(error)
-        return outcomes
+                yield [error] * len(chunk)

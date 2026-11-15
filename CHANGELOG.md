@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## Unreleased
+
+* `parse` with more than one worker gives each process a chunk of cases at a
+  time (`options._CHUNK_SIZE`, 1,000 by default) instead of one task for each
+  case. With about 900,000 cases on Windows, the pool of processes stopped
+  handing out work while its manager thread used a whole CPU. Progress is now
+  logged after each chunk ("%d of %d cases parsed") with one worker or
+  several. The results and the table are unchanged
+
 ## 0.3.0
 
 Updated to [amos](https://github.com/WithPrecedent/amos) 0.4.0, whose

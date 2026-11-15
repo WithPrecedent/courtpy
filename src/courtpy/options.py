@@ -9,6 +9,8 @@ Contents:
     _API_URL: base address of the CourtListener REST API (version 4).
     _BULK_PREFIX: folder of the CourtListener bulk data in its bucket.
     _BULK_URL: address of the public bucket with CourtListener's bulk data.
+    _CHUNK_SIZE: number of saved cases given to a process at a time when
+        parsing with several processes.
     _COURT_GROUPS: names for groups of CourtListener court ids.
     _DATA_FOLDER: the data folder when courtpy runs from its repository.
     _DEFAULT_CODERS: techniques that code variables after cases are parsed.
@@ -71,6 +73,10 @@ _API_URL: str = 'https://www.courtlistener.com/api/rest/v4/'
 _BULK_PREFIX: str = 'bulk-data/'
 _BULK_URL: str = (
     'https://com-courtlistener-storage.s3-us-west-2.amazonaws.com/')
+# Each process is given this many cases at a time. One task per case
+# overwhelmed the pool with about 900,000 cases, and chunks also let progress
+# be logged.
+_CHUNK_SIZE: int = 1000
 # Names that can be used in place of a list of CourtListener court ids.
 _COURT_GROUPS: dict[str, tuple[str, ...]] = {
     'federal_appellate': (
