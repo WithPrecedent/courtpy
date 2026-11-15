@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
   handing out work while its manager thread used a whole CPU. Progress is now
   logged after each chunk ("%d of %d cases parsed") with one worker or
   several. The results and the table are unchanged
+* The package's version in `pyproject.toml` is 0.3.1. The first commit of
+  0.3.1 changed only `__version__`, so the package built from it was 0.3.0
 
 ## 0.3.0
 
