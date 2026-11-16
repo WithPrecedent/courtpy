@@ -19,7 +19,7 @@ In a project, a loader (such as `load_court_listener`) does every step before
 | `courtpy.bulk` | `BulkData`, which extracts cases from CourtListener's bulk data. |
 | `courtpy.courtlistener` | `CourtListener`, a client for the REST API, and `read_case`, which reads a saved CourtListener case. |
 | `courtpy.lexis` | `split` and `read_case` for Lexis-Nexis text files. |
-| `courtpy.rules` | `Rule` and `Rulebook`, which apply the CSV files of rules. |
+| `courtpy.rules` | courtpy's rulebooks (such as `ParseFederal`), which are `amos` rulebooks (`amos.parsers.ParseAll`) of the CSV files of rules. |
 | `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table. |
 | `courtpy.coders` | The coders, which are `amos` techniques (including `tidy_cases`, which gives columns with missing values the right types), and `code`, which applies them. |
 | `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `merge_biographies`, `code_panels`, `reshape_by_votes`, `reshape_by_panel`, `reshape_by_judge`, `load_roster`, and `download_biographies` techniques. |
@@ -131,7 +131,7 @@ class CodeLongOpinion(amos.Munger):
 
 The federal rules find the names of each case's judges as the opinion writes
 them (`panel_judges`, `authors`, `concurring`, and `dissenting`), such as
-"LYNCH". `courtpy.judges` matches those names to people, with a roster that
+"LYNCH; HOWARD; THOMPSON". `courtpy.judges` matches those names to people, with a roster that
 [fjc-biographies](https://github.com/WithPrecedent/fjc_biographies) makes from
 the Federal Judicial Center's
 [Biographical Directory of Article III Federal Judges](https://www.fjc.gov/history/judges/biographical-directory-article-iii-federal-judges-export):
@@ -639,7 +639,7 @@ courtpy.options._COURT_GROUPS["new_england"] = ("ca1", "mad", "nhd", "med", "rid
 | `KeyError: the label 'outcome_reversal' is not a column of the data` | The label is made by a coder that was not run. Check the "coders" setting. |
 | `FileNotFoundError: there is no roster of judges at ...` | `merge_biographies`, `code_panels`, and `reshape_by_votes` need a roster. Make and save one with `courtpy.judges.Roster.from_fjc().save()`, or name one with the "source" parameter of `merge_biographies` or the "roster" parameter of the others. |
 | `ValueError: ... rows of the other table have the same ['year'] as another of its rows` | The table of `add_politics` has more than one row for a year, and a case can match only one. Set its "duplicates" to "first" or "last", or remove the rows. |
-| `TypeError: 'add_politics' cannot match 'year', which is text in the data, with 'year', which is numbers in the other table` | The cases' years are not numbers (as they are in a table that was saved and loaded without `courtpy.load_cases`). Load the table with `load_cases`, or change the column with a munger such as `parse_numbers`. |
+| `TypeError: 'add_politics' cannot match 'year', which is text in the data, with 'year', which is numbers in the other table` | The cases' years are not numbers (as they are in a table that was saved and loaded without `courtpy.load_cases`). Load the table with `load_cases`, or change the column with a cleaner such as `clean_numbers`. |
 | `KeyError: 'merge_scdb' needs the column 'scdb_id' ... or 'citation'` | `merge_scdb` matches cases by the Supreme Court Database's ids, which CourtListener records for cases of the Supreme Court, or by their citations. Set its "on" or "citations" to the columns that have them. |
 | `ValueError: '...' changes the rows of the data, so it must come before the data is split` | `reshape_by_votes` is a shaper, which came after a splitter. Put it in the wrangler (or among a loader's coders). |
 | `ImportError: cannot import 'fairlearn.metrics...'` | A study has "groups" (such as `case_id`, for judges' votes), so the scorecard compares the model across them, which needs fairlearn. Name the scorecard's "metrics", or `pip install amos[fairness]`. |

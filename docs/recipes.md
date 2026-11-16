@@ -256,10 +256,10 @@ Write the rules in a CSV file (see [Writing Rules](rules.md)) and parse with
 the federal rules and yours:
 
 ```text
-target,variable,kind,pattern,value,ignorecase,dotall,note
-opinion,cites_chevron,flag,Chevron(?: U\.S\.A\.)?(?:,)? Inc\. v\. Natural Res,,TRUE,FALSE,Chevron deference
-opinion,cites_loper_bright,flag,Loper Bright,,TRUE,FALSE,
-opinion,chevron_mentions,count,\bChevron\b,,FALSE,FALSE,
+column,name,kind,pattern,value,flags,separator,note
+opinion,cites_chevron,flags,Chevron(?: U\.S\.A\.)?(?:,)? Inc\. v\. Natural Res,,ignorecase,,Chevron deference
+opinion,cites_loper_bright,flags,Loper Bright,,ignorecase,,
+opinion,chevron_mentions,counts,\bChevron\b,,,,
 ```
 
 ```python
@@ -271,31 +271,48 @@ parameters (such as the "load_court_listener_parameters" section). Check the
 file first with `courtpy rules deference.csv`.
 
 For a quick look without a file of rules, keep the opinions' text and search
-it with `amos`'s mungers, such as `flag_patterns` and `count_patterns`, after
-the loader. Their "patterns" are a mapping, so the settings must be in a toml,
-json, or yaml file (or a Python `dict`), not an ini file. `drop_text` then
-removes the text before the analysis:
+it with `amos`'s parsers, such as `parse_flags` and `parse_counts`, after the
+loader. `drop_text` then removes the text before the analysis:
 
 ```toml
 [wrangler]
-techniques = "load_court_listener, flag_patterns, count_patterns, drop_text"
+techniques = "load_court_listener, parse_flags, parse_counts, drop_text"
 
 [load_court_listener_parameters]
 keep_text = true
 
-[flag_patterns_parameters]
+[parse_flags_parameters]
 column = "opinion"
-ignorecase = true
+name = "cites_loper_bright"
+pattern = 'Loper Bright'
+flags = "ignorecase"
 
-[flag_patterns_parameters.patterns]
-cites_loper_bright = 'Loper Bright'
-
-[count_patterns_parameters]
+[parse_counts_parameters]
 column = "opinion"
-
-[count_patterns_parameters.patterns]
-chevron_mentions = '\bChevron\b'
+name = "chevron_mentions"
+pattern = '\bChevron\b'
 ```
+
+courtpy's rulebooks are techniques too (`parse_federal`, `parse_civil`,
+`parse_criminal`, and so on), which search a dataset's sections of text in
+the same way.
+
+## Turn names and citations into lists or columns
+
+The judges, citations, and docket numbers of a case are text, with "; "
+between them (such as "LYNCH; HOWARD; THOMPSON"). The `split_values` coder
+turns them into lists, or into a column for each (`panel_judges_1`,
+`panel_judges_2`, and so on):
+
+```python
+listed = courtpy.code(table, ["split_values"]).data
+wide = courtpy.code(
+    table, ["split_values"],
+    parameters = {"split_values": {"columns": "panel_judges", "into": "columns"}}).data
+```
+
+To make a row for each judge instead, use `amos`'s `lists_to_rows` with
+`separator = ";"`.
 
 ## Keep a set of recent cases up to date
 

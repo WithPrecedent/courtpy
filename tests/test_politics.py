@@ -246,7 +246,7 @@ def test_add_politics_missing_columns() -> None:
         politics.AddPolitics().apply(
             amos.Dataset(pd.DataFrame({'year': [2000]})), source = pd.DataFrame({'term': [2000]}))
     # Years that are text are not matched to years that are numbers.
-    with pytest.raises(TypeError, match = 'parse_numbers'):
+    with pytest.raises(TypeError, match = 'clean_numbers'):
         politics.AddPolitics().apply(amos.Dataset(pd.DataFrame({'year': ['2000']})))
 
 

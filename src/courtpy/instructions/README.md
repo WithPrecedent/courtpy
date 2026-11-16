@@ -26,37 +26,45 @@ above. A file named more than once is applied once.
 
 ## The columns
 
+The files use the layout of [amos](https://WithPrecedent.github.io/amos)'s
+`parse_all` rulebooks, which courtpy uses to apply them. (Files in courtpy's
+older layout, with `target`, `variable`, `ignorecase`, and `dotall` columns
+and the kinds `flag`, `count`, `label`, `labels`, `section`, `excerpts`, and
+`remove`, still work: `amos` reads them as the rules they stand for.)
+
 | Column | Meaning |
 | --- | --- |
-| `target` | The section of text to search, such as `opinion`, `party1`, or `disposition`. List several, separated by commas, to search each of them. |
-| `variable` | The name of the column that the rule makes. Rules with the same variable are combined. |
+| `column` | The section of text to search, such as `opinion`, `party1`, or `disposition`. List several, separated by commas, to search each of them. |
+| `name` | The name of the column that the rule makes. Rules with the same name are combined. A `split` rule names two or more. |
 | `kind` | What the rule does (see below). |
 | `pattern` | A [regular expression](https://docs.python.org/3/howto/regex.html) to search for. Plain words work too. |
-| `value` | For a `label` rule, the value to record. Otherwise leave it blank. |
-| `ignorecase` | `TRUE` to ignore the difference between capital and lower-case letters. |
-| `dotall` | `TRUE` for `.` in the pattern to also match line breaks. |
+| `value` | For a `category` or `categories` rule, the value to record. Otherwise leave it blank. |
+| `flags` | Any of `ignorecase` (to ignore the difference between capital and lower-case letters), `dotall` (for `.` in the pattern to also match line breaks), `multiline`, and `verbose`, separated by commas. Optional. |
+| `separator` | What goes between several values in one cell, for `categories`, `matches`, and `names` rules. Optional: a comma and a space if blank. courtpy's `names` and `matches` rules use "; ". |
 | `note` | Anything you want to say about the rule. courtpy ignores it. |
 
 ## The kinds of rules
 
 | Kind | Makes | Example |
 | --- | --- | --- |
-| `flag` | TRUE if the pattern appears, and otherwise FALSE. | `opinion,criminal_firearm,flag,[Pp]ossession of (a )?[Ff]irearm` |
-| `count` | The number of times the pattern appears. | `opinion,habeas_mentions,count,habeas` |
-| `matches` | A list of every match. | `opinion,citations_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+` |
-| `label` | The rule's `value` if the pattern appears. The first rule for a variable that matches is used. | `court,court_num,label,FIRST CIRCUIT,1` |
-| `labels` | The `value` of every rule for the variable whose pattern appears, once each, in the order of the rules and separated by commas. A value cannot have a comma. | `opinion,agencies,labels,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
-| `names` | A list of names, found by splitting the text wherever the pattern matches. The pattern should match what comes between names: titles, filler words, and punctuation. | `judges,panel_judges,names,\b(?:BEFORE\|CIRCUIT\|JUDGES?\|AND)\b\|[,;:]` |
-| `section` | A new section of text to search: the first match. | `header,counsel,section,\nCOUNSEL\:.*?(?=\n\n)` |
-| `excerpts` | A new section of text to search: every match, one per line. | `header,dates,excerpts,...` |
-| `split` | Two new sections, named in `variable`: the text before and after the first match. | `party,"party1, party2",split,\Wv\.\W` |
-| `remove` | Nothing: it deletes every match from the target for the rules below it. | `party1,,remove,\bET AL\b` |
+| `flags` | TRUE if the pattern appears, and otherwise FALSE. | `opinion,criminal_firearm,flags,[Pp]ossession of (a )?[Ff]irearm` |
+| `counts` | The number of times the pattern appears. | `opinion,habeas_mentions,counts,habeas` |
+| `matches` | Every match, separated by the `separator`. | `opinion,citations_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+,,,; ` |
+| `match` | The first match. A later rule can search it as a new section of text. | `header,counsel,match,\nCOUNSEL\:.*?(?=\n\n)` |
+| `category` | The rule's `value` if the pattern appears. The first rule for a name that matches is used. | `court,court_num,category,FIRST CIRCUIT,1` |
+| `categories` | The `value` of every rule for the name whose pattern appears, once each, in the order of the rules and separated by the `separator` (such as "Internal Revenue Service, United States Tax Court"). A value cannot have the separator. | `opinion,agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
+| `names` | The names in the text, found by splitting it wherever the pattern matches, and separated by the `separator`. The pattern should match what comes between names: titles, filler words, and punctuation. | `judges,panel_judges,names,\b(?:BEFORE\|CIRCUIT\|JUDGES?\|AND)\b\|[,;:],,,; ` |
+| `split` | New sections, named in `name`: the text before and after the first match. | `party,"party1, party2",split,\Wv\.\W` |
+| `replace` | The text with every match replaced by the `value` (a blank `value` removes the matches). Without a `name`, it changes the section for the rules below it. | `party1,,replace,\bET AL\b` |
+
+`amos` has more kinds (such as `fields`, which makes a column for each
+labeled part of a text); see its `amos.parsers` module.
 
 ## Things to know
 
 * **Rules run from top to bottom.** A rule can search a section made by a rule
   above it (for example, `party1` and `party2` exist only after the `split`
-  rule that makes them).
+  rule that makes them). Each rule searches every case at once.
 * **Text is put on one line first.** Before the `federal` rules run, every
   section except those whose names end in `_lines` has its line breaks and
   extra spaces replaced with single spaces, so that a phrase broken across two
@@ -65,19 +73,24 @@ above. A file named more than once is applied once.
 * **Names are cleaned.** A `names` rule makes the text upper-case and removes
   periods and apostrophes before splitting it, so write its pattern in
   capital letters.
+* **Several values are text.** The names, matches, and categories of a case
+  are one cell of text, with "; " (or, for `agencies`, ", ") between them,
+  such as "LYNCH; HOWARD; THOMPSON". The `split_values` technique turns them
+  into lists or into a column for each value, and `amos`'s `lists_to_rows`
+  into a row for each value.
 * **Rules that start with letters are fast.** Python finds a pattern that
   begins with letters by searching for them, which is many times faster
   than trying the pattern at every character. A pattern that begins with
-  `\b`, a group, or a class, or that ignores case (`ignorecase` TRUE), loses
+  `\b`, a group, or a class, or that ignores case (the `ignorecase` flag), loses
   that. So `agencies.csv` matches with case, writing a name in its
   capitalized form and in capitals (`Federal\s+Trade\s+Commission|FEDERAL\s+TRADE\s+COMMISSION`),
   and puts the check that an abbreviation is a whole word after its letters
   (`NLRB\b(?<!\wNLRB)` rather than `\bNLRB\b`).
-* **Missing sections are not errors.** If a case has no section for a rule's
-  target (such as `future` in a CourtListener case), a flag is FALSE, a count
-  is 0, a list is empty, and a label or section is blank.
-* **A `section` rule does not replace a section made by a rule above it.** So
-  two `section` rules for one variable are a first choice and a fallback: the
+* **Missing sections are not errors.** If a case has no section that a rule
+  searches (such as `future` in a CourtListener case), a flag is FALSE, a
+  count is 0, and the other kinds are blank.
+* **A `match` rule does not replace a section made by a rule above it.** So
+  two `match` rules for one name are a first choice and a fallback: the
   `federal` rules make `panel_text` from the opinion's "Before ..." line,
   and only otherwise from the header's judges.
 * **Three sets of variables record the disposition.** `disposition_...` come
@@ -88,7 +101,7 @@ above. A file named more than once is applied once.
   if"). The `code_outcome` coder uses the first of the three that a case has.
 * **Check your rules** with `courtpy rules my_rules.csv` in a terminal. It
   reports any row that is not a valid rule, by its row number, and lists the
-  variables the rules make.
+  columns the rules make.
 * **Save files as CSV in UTF-8** ("CSV UTF-8" in Excel), so that symbols such as
   `§` are kept.
 

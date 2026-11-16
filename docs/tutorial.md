@@ -9,8 +9,8 @@ on its own, and each saves its work.
 | Part | What it is | In code |
 | --- | --- | --- |
 | Case | One decision: its sections of text (such as the parties, the judges, and the opinions) and information that needs no parsing (such as the date filed). | `courtpy.Case` |
-| Rule | One row of a CSV file that finds something in a section of text. | `courtpy.Rule` |
-| Rulebook | The rules of one or more CSV files, applied in order. | `courtpy.Rulebook` |
+| Rule | One row of a CSV file that finds something in a section of text. | `amos.parsers.Rule` |
+| Rulebook | The rules of one or more CSV files, applied in order. | `amos.parsers.Rulebook` (and courtpy's own in `courtpy.rules`) |
 | Case table | A `pandas.DataFrame` with one row for each case. | `courtpy.parse` |
 | Coder | A technique that adds variables to the case table, such as whether a decision reversed the court below. | `courtpy.coders` |
 | Project | A study: the cases and an [amos](https://WithPrecedent.github.io/amos) analysis of them. | `courtpy.Project` |
@@ -91,9 +91,10 @@ courtpy.save_cases(coded, "cases.csv")
 coded = courtpy.load_cases("cases.csv")
 ```
 
-The CSV file can be opened in a spreadsheet. Lists (such as the judges) are
-written with "; " between the items, and `load_cases` turns them back into
-lists.
+The CSV file can be opened in a spreadsheet. Columns with several values in a
+case (such as the judges) are text, with "; " between the values. The
+`split_values` coder turns them into lists, which are written the same way,
+and `load_cases` turns them back into lists.
 
 ## 4. Analyze the table
 

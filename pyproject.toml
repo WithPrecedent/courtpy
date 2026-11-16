@@ -33,7 +33,7 @@ keywords = [
     "lexis",
     "text parsing"]
 dependencies = [
-    "amos>=0.8.1",
+    "amos>=0.9.0",
     "chrisjen>=0.3.0",
     "fjc-biographies>=0.1.0",
     "fjc-idb>=0.0.3",

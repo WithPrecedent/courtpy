@@ -14,8 +14,6 @@ __all__: list[str] = [
     'Parser',
     'Project',
     'ReferenceLoader',
-    'Rule',
-    'Rulebook',
     'code',
     'coders',
     "fjc_idb",
@@ -25,6 +23,7 @@ __all__: list[str] = [
     'loaders',
     'parse',
     'politics',
+    'rules',
     'save_cases',
     'scdb',
     "secrets"]
@@ -32,14 +31,23 @@ __all__: list[str] = [
 # A study is an `amos.Project`, which courtpy offers under the same name.
 from amos import Project
 
-# Importing `coders`, `fjc_idb`, `judges`, `loaders`, `politics`, and `scdb`
-# adds their techniques to the `amos` library, so they can be named in
+# Importing `coders`, `fjc_idb`, `judges`, `loaders`, `politics`, `rules`, and
+# `scdb` adds their techniques to the `amos` library, so they can be named in
 # settings as soon as courtpy is imported.
-from . import coders, fjc_idb, jcs, judges, loaders, politics, scdb, secrets
+from . import (
+    coders,
+    fjc_idb,
+    jcs,
+    judges,
+    loaders,
+    politics,
+    rules,
+    scdb,
+    secrets,
+)
 from .bulk import BulkData
 from .cases import Case, load_cases, save_cases
 from .coders import code
 from .courtlistener import CourtListener
 from .loaders import CaseLoader, ReferenceLoader
 from .parsers import Parser, parse
-from .rules import Rule, Rulebook

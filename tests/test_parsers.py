@@ -23,12 +23,12 @@ def test_parse_court_listener(court_listener_folder: pathlib.Path) -> None:
     assert doe['party1'] == 'UNITED STATES of America, Plaintiff-Appellee,'
     assert doe['party2_appellant'] and doe['party1_united_states']
     assert doe['disposition_reverse'] and doe['disposition_remand']
-    assert doe['panel_judges'] == ['LYNCH', 'HOWARD', 'THOMPSON']
+    assert doe['panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
     assert doe['panel_size'] == 3 and doe['author'] == 'LYNCH'
-    assert doe['citations_case'] == ['554 U.S. 570']
-    assert doe['citations_statute'][0].startswith('18 U.S.C. § 922')
+    assert doe['citations_case'] == '554 U.S. 570'
+    assert doe['citations_statute'].startswith('18 U.S.C. § 922')
     assert doe['cite_federal_reporter'] and doe['published']
-    assert table.loc['2', 'dissenting'] == ['THOMPSON']
+    assert table.loc['2', 'dissenting'] == 'THOMPSON'
     assert table.loc['2', 'civil_titlevii']
     assert pd.api.types.is_bool_dtype(table['published'].dtype)
     assert table['year'].dtype == 'int64'
@@ -118,6 +118,11 @@ def test_save_and_load(court_listener_folder: pathlib.Path, tmp_path: pathlib.Pa
     assert (tmp_path / 'out' / 'cases.lists.json').is_file()
     loaded = cases.load_cases(path)
     assert list(loaded.index) == ['1', '2', '3']
+    assert loaded.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
+    assert pd.isna(loaded.loc['3', 'dissenting'])
+    # Lists that `split_values` makes are lists again after loading.
+    listed = courtpy.code(table, 'split_values').data
+    loaded = cases.load_cases(cases.save_cases(listed, tmp_path / 'lists.csv'))
     assert loaded.loc['1', 'panel_judges'] == ['LYNCH', 'HOWARD', 'THOMPSON']
     assert loaded.loc['3', 'dissenting'] == []
     assert pd.api.types.is_bool_dtype(loaded['published'].dtype)
@@ -145,7 +150,7 @@ def test_parse_recent_court_listener(recent_folder: pathlib.Path) -> None:
     assert doe['caption'] == 'Appellee, versus JOHN DOE, Defendant-Appellant'
     assert doe['party2_appellant'] and doe['party1_appellee']
     assert not doe['party1_appellant'] and not doe['party2_appellee']
-    assert doe['panel_judges'] == ['LYNCH', 'HOWARD', 'R THOMPSON']
+    assert doe['panel_judges'] == 'LYNCH; HOWARD; R THOMPSON'
     assert doe['panel_size'] == 3
     assert doe['decision'] == 'AFFIRMED'
     assert doe['decision_affirm'] and not doe['decision_reverse']

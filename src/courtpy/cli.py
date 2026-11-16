@@ -43,7 +43,6 @@ from . import (
     lexis,
     options,
     parsers,
-    rules,
     secrets,
 )
 
@@ -237,13 +236,11 @@ def _rules(arguments: argparse.Namespace) -> int:
         0.
 
     """
-    rulebook = rules.Rulebook.load(*arguments.rulebooks)
+    rulebook = amos.parsers.Rulebook.create(*arguments.rulebooks)
     print(f'{len(rulebook)} rules are valid ({rulebook.name}).')
-    print(f'They search: {", ".join(rulebook.targets)}')
-    if rulebook.sections:
-        print(f'They make the sections: {", ".join(rulebook.sections)}')
-    print(f'They make {len(rulebook.variables)} variables:')
-    for name in rulebook.variables:
+    print(f'They search: {", ".join(rulebook.columns)}')
+    print(f'They make {len(rulebook.names)} columns:')
+    for name in rulebook.names:
         print(f'  {name}')
     return 0
 

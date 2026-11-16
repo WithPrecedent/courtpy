@@ -1,202 +1,50 @@
-"""Tests the rules module."""
+"""Tests the rules module: courtpy's rulebooks."""
 
 from __future__ import annotations
 
-import pathlib
-import re
+from typing import Any
 
+import amos
+import pandas as pd
 import pytest
 
-from courtpy import rules
+from courtpy import parsers, rules
 
 
-def make(**cells: str) -> rules.Rule:
-    row = {'ignorecase': 'TRUE', 'dotall': 'FALSE', 'value': '', **cells}
-    return rules.Rule.create(row)
+def apply(name: str, **sections: str) -> dict[str, Any]:
+    """Applies a rulebook to the sections of one case.
+
+    Args:
+        name: the name of the rulebook.
+        **sections: the sections of text, by name.
+
+    Returns:
+        The columns that the rules made, with `None` for missing values.
+
+    """
+    table = pd.DataFrame({k: [v] for k, v in sections.items()}, dtype = 'str')
+    _, made = parsers._apply(amos.parsers.Rulebook.create(name), table)
+    return {
+        k: None if pd.isna(v) else v for k, v in made.iloc[0].to_dict().items()}
 
 
-def apply(rulebook: list[rules.Rule], sections: dict[str, str]) -> dict:
-    return rules.Rulebook(rules = rulebook).apply(sections)
-
-
-def test_flag_count_and_matches() -> None:
-    book = [
-        make(target = 'opinion', variable = 'habeas', kind = 'flag', pattern = 'habeas'),
-        make(target = 'opinion', variable = 'jury', kind = 'flag', pattern = 'jury'),
-        make(target = 'opinion', variable = 'cites', kind = 'count', pattern = r'\d+ U\.S\. \d+'),
-        make(target = 'opinion', variable = 'refs', kind = 'matches', pattern = r'\d+ U\.S\. \d+'),
-        make(target = 'opinion', variable = 'refs', kind = 'matches', pattern = r'\d+ F\.3d \d+')]
-    found = apply(book, {'opinion': 'A HABEAS case. See 1 U.S. 2, 3 U.S. 4, and 5 F.3d 6.'})
-    assert found == {
-        'habeas': True, 'jury': False, 'cites': 2,
-        'refs': ['1 U.S. 2', '3 U.S. 4', '5 F.3d 6']}
-
-
-def test_missing_targets_give_empty_values() -> None:
-    book = [
-        make(target = 'notice', variable = 'unpublished', kind = 'flag', pattern = 'x'),
-        make(target = 'notice', variable = 'n', kind = 'count', pattern = 'x'),
-        make(target = 'notice', variable = 'm', kind = 'matches', pattern = 'x'),
-        make(target = 'notice', variable = 'l', kind = 'label', pattern = 'x', value = '1'),
-        make(target = 'notice', variable = 'ls', kind = 'labels', pattern = 'x', value = 'X'),
-        make(target = 'notice', variable = 's', kind = 'section', pattern = 'x'),
-        make(target = 'notice', variable = 'names', kind = 'names', pattern = ',')]
-    assert apply(book, {}) == {
-        'unpublished': False, 'n': 0, 'm': [], 'l': None, 'ls': None, 's': None, 'names': []}
-
-
-def test_labels_join_every_match_once() -> None:
-    book = [
-        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'Tax Court', value = 'Tax Court'),
-        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = r'\bIRS\b', value = 'IRS'),
-        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'Internal Revenue', value = 'IRS'),
-        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'NLRB', value = 'NLRB')]
-    # Each value is listed once, in the order of the rules, whichever target
-    # has it.
-    found = apply(book, {'history': 'Appeal from the Tax Court', 'opinion': 'The IRS (Internal Revenue Service)'})
-    assert found == {'agencies': 'Tax Court, IRS'}
-    assert apply(book, {'opinion': 'The district court'}) == {'agencies': None}
-    assert apply(book, {'opinion': 'the nlrb'}) == {'agencies': 'NLRB'}
-
-
-def test_label_uses_first_match_and_converts_numbers() -> None:
-    book = [
-        make(target = 'court', variable = 'court_num', kind = 'label', pattern = 'FIRST CIRCUIT', value = '1'),
-        make(target = 'court', variable = 'court_num', kind = 'label', pattern = 'CIRCUIT', value = 'other')]
-    assert apply(book, {'court': 'Court of Appeals for the First Circuit'})['court_num'] == 1
-    assert apply(book, {'court': 'Second Circuit'})['court_num'] == 'other'
-    assert apply(book, {'court': 'District Court'})['court_num'] is None
-
-
-def test_label_searches_every_target() -> None:
-    rule = make(
-        target = 'history, party1', variable = 'agency', kind = 'label',
-        pattern = 'LABOR RELATIONS', value = 'NLRB')
-    assert apply([rule], {'party1': 'National Labor Relations Board'}) == {'agency': 'NLRB'}
-
-
-def test_split_section_and_excerpts_make_new_sections() -> None:
-    book = [
-        make(target = 'text', variable = 'header, opinion', kind = 'split', pattern = r'\nOPINION\n'),
-        make(target = 'header', variable = 'judges', kind = 'section', pattern = r'JUDGES:[^\n]*'),
-        make(target = 'header', variable = 'dates', kind = 'excerpts', pattern = r'^\w+ \d+, \d{4}.*$',
-             dotall = 'FALSE'),
-        make(target = 'judges', variable = 'panel', kind = 'names', pattern = r'\bJUDGES\b|:|,|\bAND\b')]
-    rulebook = rules.Rulebook(rules = book)
-    sections = {'text': 'A v. B\nJudges: Smith, Jones and Brown\nMarch 3, 2009, Argued\nOPINION\nWe affirm.'}
-    found = rulebook.apply(sections)
-    assert sections['opinion'] == 'We affirm.'
-    assert found['judges'] == 'Judges: Smith, Jones and Brown'
-    assert found['panel'] == ['SMITH', 'JONES', 'BROWN']
-    assert rulebook.sections == ['header', 'opinion', 'judges', 'dates']
-    assert rulebook.variables == ['header', 'opinion', 'judges', 'dates', 'panel']
-
-
-def test_dates_excerpts_use_multiline_anchors() -> None:
-    rule = rules.Rule.create({
-        'target': 'header', 'variable': 'dates', 'kind': 'excerpts',
-        'pattern': r'(?<=\n)\w+ \d+, \d{4}.*?(?=\n)', 'ignorecase': 'TRUE',
-        'dotall': 'FALSE'})
-    found = apply([rule], {'header': '\nMarch 3, 2009, Argued\nJune 1, 2009, Decided\n'})
-    assert found['dates'] == 'March 3, 2009, Argued\nJune 1, 2009, Decided'
-
-
-def test_split_without_match_keeps_everything_first() -> None:
-    rule = make(target = 'party', variable = 'party1, party2', kind = 'split', pattern = r'\Wv\.\W')
-    assert apply([rule], {'party': 'In re Smith'}) == {'party1': 'In re Smith', 'party2': None}
-    assert apply([rule], {'party': 'Smith v. Jones'}) == {'party1': 'Smith', 'party2': 'Jones'}
-
-
-def test_remove_changes_later_rules_only() -> None:
-    book = [
-        make(target = 'party1', variable = 'defendant', kind = 'flag', pattern = 'DEFENDANT'),
-        make(target = 'party1', kind = 'remove', variable = '', pattern = 'DEFENDANT'),
-        make(target = 'party1', variable = 'still', kind = 'flag', pattern = 'DEFENDANT')]
-    assert apply(book, {'party1': 'Doe, Defendant'}) == {'defendant': True, 'still': False}
-
-
-def test_split_names() -> None:
-    separators = re.compile(r"\b(?:BEFORE|CIRCUIT|JUDGES?|AND)\b|[,:]")
-    names = rules.split_names(
-        "Before: O'Scannlain, Kirby, and HOLLAND, Circuit Judges.\nBybee", separators)
-    assert names == ['OSCANNLAIN', 'KIRBY', 'HOLLAND', 'BYBEE']
-
-
-def test_names_ignores_groups_in_pattern() -> None:
-    rule = make(target = 'j', variable = 'names', kind = 'names', pattern = r'(,)|(\bAND\b)')
-    assert apply([rule], {'j': 'Smith, Jones and Brown'}) == {'names': ['SMITH', 'JONES', 'BROWN']}
-
-
-@pytest.mark.parametrize(('cells', 'message'), [
-    ({'kind': 'nope'}, 'is not one of'),
-    ({'pattern': '('}, 'is not valid'),
-    ({'pattern': ''}, 'pattern is blank'),
-    ({'target': ''}, 'target is blank'),
-    ({'kind': 'split', 'variable': 'one'}, 'needs two variables'),
-    ({'ignorecase': 'maybe'}, 'is not TRUE or FALSE'),
-    ({'kind': 'labels'}, 'needs a value'),
-    ({'kind': 'labels', 'value': 'Health, Education, and Welfare'}, 'without a comma')])
-def test_invalid_rules(cells: dict[str, str], message: str) -> None:
-    row = {'target': 'opinion', 'variable': 'x', 'kind': 'flag', 'pattern': 'x',
-           'ignorecase': 'TRUE', 'dotall': 'FALSE', **cells}
-    with pytest.raises(ValueError, match = message):
-        rules.Rule.create(row)
-
-
-def test_load_csv_from_excel(tmp_path: pathlib.Path) -> None:
-    path = tmp_path / 'mine.csv'
-    path.write_text(
-        '﻿Target,Variable,Kind,Pattern,Value,IgnoreCase,DotAll,Note\n'
-        'opinion,my_flag,flag,"a, b",,true,false,anything\n\n',
-        encoding = 'utf-8')
-    rulebook = rules.Rulebook.load(path)
-    assert len(rulebook) == 1
-    assert rulebook.rules[0].pattern.pattern == 'a, b'
-    assert rulebook.rules[0].note == 'anything'
-
-
-def test_load_reports_file_and_row(tmp_path: pathlib.Path) -> None:
-    path = tmp_path / 'bad.csv'
-    path.write_text(
-        'target,variable,kind,pattern,ignorecase,dotall\n'
-        'opinion,ok,flag,x,TRUE,FALSE\n'
-        'opinion,bad,flag,(,TRUE,FALSE\n', encoding = 'utf-8')
-    with pytest.raises(ValueError, match = r'bad\.csv, row 3'):
-        rules.Rulebook.load(path)
-    missing = tmp_path / 'missing.csv'
-    missing.write_text('target,variable\n', encoding = 'utf-8')
-    with pytest.raises(ValueError, match = 'missing the columns'):
-        rules.Rulebook.load(missing)
-
-
-def test_find_instructions() -> None:
-    assert [p.name for p in rules.find_instructions('federal')] == [
-        'header.csv', 'general.csv', 'citations.csv', 'civil.csv',
-        'constitutional.csv', 'criminal.csv', 'agencies.csv']
-    assert rules.find_instructions('lexis_nexis')[0].name == 'lexis_nexis.csv'
-    civil = rules.find_instructions('civil')
-    assert [(p.parent.name, p.name) for p in civil] == [('federal', 'civil.csv')]
-    with pytest.raises(FileNotFoundError, match = 'built-in'):
-        rules.find_instructions('no_such_rules')
-
-
-def test_folder_of_rules(tmp_path: pathlib.Path) -> None:
-    for name, variable in (('b.csv', 'second'), ('a.csv', 'first')):
-        (tmp_path / name).write_text(
-            f'target,variable,kind,pattern,ignorecase,dotall\nopinion,{variable},flag,x,TRUE,FALSE\n',
-            encoding = 'utf-8')
-    assert rules.Rulebook.load(tmp_path).variables == ['first', 'second']
+def test_rulebooks_are_named() -> None:
+    assert amos.library.classify('parse_federal') == 'parser'
+    federal = amos.parsers.Rulebook.create('federal')
+    assert len(federal) == len(amos.parsers.Rulebook.create(rules.ParseFederal))
+    assert len(amos.parsers.Rulebook.create('lexis_nexis')) > 10
+    with pytest.raises(FileNotFoundError, match = 'federal'):
+        amos.parsers.Rulebook.create('no_such_rules')
 
 
 def test_files_named_twice_are_read_once() -> None:
-    both = rules.Rulebook.load('civil', 'federal')
-    assert len(both) == len(rules.Rulebook.load('federal'))
-    assert both.name.startswith('civil, header, general')
+    both = amos.parsers.Rulebook.create('civil', 'federal')
+    assert len(both) == len(amos.parsers.Rulebook.create('federal'))
 
 
 def test_built_in_rulebooks_are_valid() -> None:
-    federal = rules.Rulebook.load('federal')
-    lexis = rules.Rulebook.load('lexis_nexis')
+    federal = amos.parsers.Rulebook.create('federal')
+    lexis = amos.parsers.Rulebook.create('lexis_nexis')
     assert len(federal) > 300
     for variable in (
         'party1', 'party2', 'court_num', 'agency', 'panel_judges', 'authors',
@@ -205,13 +53,25 @@ def test_built_in_rulebooks_are_valid() -> None:
         'citations_case', 'citations_statute', 'cite_federal_reporter',
         'party1_appellant', 'party2_united_states', 'counsel_us_attorney',
         'docket_criminal', 'notice_unpublished', 'agencies'):
-        assert variable in federal.variables
-    assert lexis.sections == [
+        assert variable in federal.names
+    assert lexis.names == [
         'header', 'opinion', 'party', 'court', 'docket_number', 'history',
         'future', 'counsel', 'notice', 'dates', 'disposition', 'citation',
         'judges', 'opinion_by', 'concurring_lines', 'dissenting_lines']
-    combined = federal + lexis
-    assert len(combined) == len(federal) + len(lexis)
+    # Several values in a cell are separated by "; ", except the sections of
+    # lines, whose values are lines.
+    for rule in federal:
+        if rule.kind in ('names', 'matches'):
+            assert rule.separator == '; '
+
+
+def test_lexis_dates_are_lines() -> None:
+    found = apply(
+        'lexis_nexis',
+        text = (
+            '\nA v. B\n\nMarch 3, 2009, Argued\nJune 1, 2009, Decided\n'
+            'JUDGES: Smith.\nOPINION\n\nWe affirm.\n'))
+    assert found['dates'] == 'March 3, 2009, Argued\nJune 1, 2009, Decided'
 
 
 @pytest.mark.parametrize(('judges', 'expected'), [
@@ -229,8 +89,8 @@ def test_built_in_rulebooks_are_valid() -> None:
      'KENNEDY, and THOMAS, JJ., joined. GINSBURG, J., filed a dissenting '
      'opinion.', ['ROBERTS', 'SCALIA', 'KENNEDY', 'THOMAS', 'GINSBURG'])])
 def test_federal_rules_split_judges(judges: str, expected: list[str]) -> None:
-    found = rules.Rulebook.load('federal').apply({'judges': judges})
-    assert found['panel_judges'] == expected
+    found = apply('federal', judges = judges)
+    assert found['panel_judges'] == '; '.join(expected)
 
 
 @pytest.mark.parametrize(('opening', 'expected'), [
@@ -250,17 +110,18 @@ def test_federal_rules_split_judges(judges: str, expected: list[str]) -> None:
 def test_federal_rules_find_the_panel_in_the_opinion(
     opening: str,
     expected: list[str]) -> None:
-    found = rules.Rulebook.load('federal').apply({'opinion': opening})
-    assert found['panel_judges'] == expected
+    found = apply('federal', opinion = opening)
+    assert found['panel_judges'] == ('; '.join(expected) or None)
 
 
 def test_federal_rules_prefer_the_panel_in_the_opinion() -> None:
     # CourtListener's "judges" may name only the author.
-    found = rules.Rulebook.load('federal').apply({
-        'judges': 'Brennan',
-        'opinion': 'Before SYKES, Chief Judge, and BRENNAN and ST. EVE, Circuit '
-                   'Judges. BRENNAN, Circuit Judge.'})
-    assert found['panel_judges'] == ['SYKES', 'BRENNAN', 'ST EVE']
+    found = apply(
+        'federal',
+        judges = 'Brennan',
+        opinion = 'Before SYKES, Chief Judge, and BRENNAN and ST. EVE, Circuit '
+                  'Judges. BRENNAN, Circuit Judge.')
+    assert found['panel_judges'] == 'SYKES; BRENNAN; ST EVE'
 
 
 @pytest.mark.parametrize(('opening', 'roles'), [
@@ -294,8 +155,7 @@ def test_federal_rules_prefer_the_panel_in_the_opinion() -> None:
 def test_federal_rules_find_the_caption_in_the_opinion(
     opening: str,
     roles: tuple[bool, bool, bool, bool]) -> None:
-    found = rules.Rulebook.load('federal').apply({
-        'party': 'United States v. Doe', 'opinion': opening})
+    found = apply('federal', party = 'United States v. Doe', opinion = opening)
     assert (
         found['party1_appellant'], found['party1_appellee'],
         found['party2_appellant'], found['party2_appellee']) == roles
@@ -303,9 +163,10 @@ def test_federal_rules_find_the_caption_in_the_opinion(
 
 
 def test_federal_rules_keep_the_caption_of_the_header() -> None:
-    found = rules.Rulebook.load('federal').apply({
-        'party': 'Mary SMITH, Plaintiff-Appellant, v. ACME CORP., Defendant-Appellee',
-        'opinion': 'ACME CORP., Plaintiff-Appellee, v. MARY SMITH, Defendant-Appellant.'})
+    found = apply(
+        'federal',
+        party = 'Mary SMITH, Plaintiff-Appellant, v. ACME CORP., Defendant-Appellee',
+        opinion = 'ACME CORP., Plaintiff-Appellee, v. MARY SMITH, Defendant-Appellant.')
     assert found['caption'].startswith('Mary SMITH')
     assert found['party1_appellant'] and found['party2_appellee']
     assert not found['party1_appellee'] and not found['party2_appellant']
@@ -336,7 +197,7 @@ def test_federal_rules_find_the_stated_decision(
     opinion: str,
     decision: str | None,
     rulings: tuple[bool, ...]) -> None:
-    found = rules.Rulebook.load('federal').apply({'opinion': opinion})
+    found = apply('federal', opinion = opinion)
     assert found['decision'] == decision
     assert tuple(
         found[f'decision_{r}']
@@ -376,7 +237,7 @@ def test_federal_rules_find_the_stated_decision(
     ('The Salvation Army ran the shelter.', None),
     ('The district court granted summary judgment.', None)])
 def test_federal_rules_find_agencies(text: str, expected: str | None) -> None:
-    found = rules.Rulebook.load('agencies').apply({'opinion': text})
+    found = apply('agencies', opinion = text)
     assert found['agencies'] == expected
 
 
@@ -385,7 +246,7 @@ def test_agencies_are_those_of_fjc_idb() -> None:
     # except its codes for no agency, its second code for the Environmental
     # Protection Agency, and "RTCO", which it does not name.
     import fjc_idb.rules.appellate
-    book = rules.Rulebook.load('agencies')
+    book = amos.parsers.Rulebook.create('agencies')
     codes = {
         rule.note.split(':')[1].split('.')[0].strip()
         for rule in book if rule.note.startswith('fjc-idb:')}
@@ -393,4 +254,4 @@ def test_agencies_are_those_of_fjc_idb() -> None:
     values = {rule.value for rule in book}
     assert len(values) == 104
     assert all(',' not in value for value in values)
-    assert {rule.kind for rule in book} == {'labels'}
+    assert {rule.kind for rule in book} == {'categories'}

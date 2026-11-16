@@ -35,7 +35,33 @@ All notable changes to this project will be documented in this file.
   `load_politics` and `download_politics` (`courtpy.politics`), and
   `download_jcs` (`courtpy.jcs`). The "download_" techniques download the
   files first, again if "refresh" is true
-* Requires `amos` 0.8.1 or later. A loader's label that no coder makes is
+* Requires `amos` 0.9.0 or later, and courtpy's rules are `amos` rulebooks.
+  The `Rule` and `Rulebook` classes of `courtpy.rules` (and `courtpy.Rule`,
+  `courtpy.Rulebook`, `rules.split_names`, and `rules.find_instructions`)
+  are removed: `amos.parsers.Rulebook` and `amos.parsers.Rule` take their
+  place, and parsing applies each rule to a whole chunk of cases at once.
+  * The built-in CSV files are in `amos`'s layout (`column`, `name`, `kind`,
+    `pattern`, `value`, `flags`, `separator`, and `note`, with the kinds
+    `flags`, `counts`, `category`, `categories`, `match`, `matches`,
+    `names`, and `split`). Files in the older layout still work, since
+    `amos` reads them.
+  * Each rulebook is an `amos.parsers.ParseAll` technique of its own
+    (`parse_federal`, `parse_header`, `parse_general`, `parse_citations`,
+    `parse_civil`, `parse_constitutional`, `parse_criminal`,
+    `parse_agencies`, and `parse_lexis_nexis`), and its name (such as
+    "federal") can be a rulebook of `parse_all` or of another rulebook.
+  * **Breaking:** columns with several values in a case ("panel_judges",
+    "authors", "concurring", "dissenting", "docket_numbers", and the
+    "citations_" columns) are text with "; " between the values (such as
+    "LYNCH; HOWARD; THOMPSON") rather than lists. A case with none has a
+    missing value rather than an empty list. `split_values`
+    (`coders.SplitValues`, an `amos.Munger`) turns them into lists or into a
+    column for each value ("panel_judges_1", "panel_judges_2", and so on).
+  * `courtpy rules` lists the columns that the rules search and make.
+  * The recipe and test that searched kept text with `amos`'s
+    `flag_patterns` and `count_patterns` (removed from `amos`) use
+    `parse_flags` and `parse_counts`.
+* A loader's label that no coder makes is
   now pending, as in `amos`, instead of raising a `KeyError`: a later
   technique (such as "derive_columns") can still make it
 * `coders.code` passes the coders' parameters to `amos` as they are, now that

@@ -1,7 +1,7 @@
 """Techniques that code variables from parsed cases.
 
-`code_parties`, `code_case_type`, `code_outcome`, and `tidy_cases` are
-`amos.Munger` techniques, which change and add columns without adding or
+`code_parties`, `code_case_type`, `code_outcome`, `split_values`, and
+`tidy_cases` are `amos.Munger` techniques, which change and add columns without adding or
 removing rows, and `drop_text` is an `amos.Cleaner`, which removes columns.
 Each is added to the `amos` (and `chrisjen`) library as soon as courtpy is
 imported, and it can be named in the settings of any `amos` worker.
@@ -20,6 +20,8 @@ Contents:
         which side won.
     CodeParties: completes the roles of the parties.
     DropText: removes columns that models cannot use, such as text and lists.
+    SplitValues: turns text with several values in each cell into lists or
+        columns.
     TidyCases: gives columns of booleans or whole numbers with missing values
         types that allow them.
     code: applies coders (or other `amos` techniques) to parsed cases.
@@ -29,6 +31,7 @@ Contents:
 from __future__ import annotations
 
 import dataclasses
+import functools
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
@@ -36,7 +39,7 @@ import amos
 import chrisjen
 import pandas as pd
 
-from . import cases, options, utilities
+from . import cases, options, rules, utilities
 
 _NONE: frozenset[str] = frozenset({'', 'none', 'false', 'no', '0'})
 _OPPOSITES: tuple[tuple[str, str], ...] = (
@@ -45,6 +48,7 @@ _OPPOSITES: tuple[tuple[str, str], ...] = (
     ('plaintiff', 'defendant'))
 _SIDES: tuple[tuple[str, str], ...] = (
     ('party1', 'party2'), ('party2', 'party1'))
+_SPLIT_INTO: tuple[str, ...] = ('lists', 'columns')
 
 
 @dataclasses.dataclass
@@ -318,6 +322,76 @@ class DropText(amos.Cleaner):
 
 
 @dataclasses.dataclass
+class SplitValues(amos.Munger):
+    """Turns text with several values in each cell into lists or columns.
+
+    Rules that find several values in a case (`names` and `matches` rules,
+    such as "panel_judges" and "citations_case") write them as text, with
+    "; " between them. With "into" set to "lists" (the default), each cell
+    becomes a list of its values, and a cell without values an empty list.
+    With "columns", each value gets a column of its own, named for the column
+    and the value's place ("panel_judges_1", "panel_judges_2", and so on, for
+    as many values as the row with the most has), and the text is kept.
+
+    To make a row for each value instead, use the `lists_to_rows` technique
+    of `amos` (with "separator" set to ";").
+
+    """
+
+    """ Public Methods """
+
+    def munge(
+        self,
+        data: pd.DataFrame,
+        columns: str | Sequence[str] | None = None,
+        separator: str = cases._SEPARATOR,
+        into: str = 'lists',
+        **kwargs: Any) -> pd.DataFrame:
+        """Splits the values of each cell of `columns`.
+
+        Args:
+            data: the cases.
+            columns: names of the columns to split. Defaults to `None`, in
+                which case they are the columns of the `names` and `matches`
+                rules of the federal rulebook that are in the data.
+            separator: the text between the values. Defaults to "; ", as the
+                federal rules write them (the agencies of "agencies" are
+                separated by ", ").
+            into: "lists" or "columns". Defaults to "lists".
+            **kwargs: not used.
+
+        Raises:
+            KeyError: if a column is not in the data.
+            ValueError: if `into` is not "lists" or "columns".
+
+        Returns:
+            The cases, with lists in place of the text or with new columns.
+
+        """
+        if into not in _SPLIT_INTO:
+            message = f'into must be one of {list(_SPLIT_INTO)}, not {into!r}'
+            raise ValueError(message)
+        if columns is None:
+            names = [c for c in _several_values() if c in data.columns]
+        else:
+            names = utilities.listify(columns)
+        _require(data, names, self.name)
+        added: list[pd.DataFrame] = []
+        for column in names:
+            values = [_split(v, separator) for v in data[column].tolist()]
+            if into == 'lists':
+                data[column] = pd.Series(
+                    values, index = data.index, dtype = object)
+                continue
+            wide = pd.DataFrame(values, index = data.index, dtype = object)
+            wide.columns = [f'{column}_{n + 1}' for n in range(wide.shape[1])]
+            added.append(wide)
+        if added:
+            data = pd.concat([data, *added], axis = 1)
+        return data
+
+
+@dataclasses.dataclass
 class TidyCases(amos.Munger):
     """Gives columns of booleans or whole numbers with missing values a type.
 
@@ -379,6 +453,43 @@ def code(
 
 
 """ Private Functions """
+
+
+@functools.cache
+def _several_values() -> tuple[str, ...]:
+    """Returns the columns of the federal rules with several values in a cell.
+
+    The rulebook's files are read the first time only.
+
+    Returns:
+        The names of the columns that the `names` and `matches` rules of the
+            federal rulebook make, in order.
+
+    """
+    book = amos.parsers.Rulebook.create(rules.ParseFederal)
+    return tuple(dict.fromkeys(
+        n for r in book if r.kind in ('names', 'matches') for n in r.names))
+
+
+def _split(value: Any, separator: str) -> list[Any]:
+    """Returns the values in a cell, as a list.
+
+    Args:
+        value: a cell: text with `separator` between its values, a list (or
+            tuple) of values, or a missing value.
+        separator: the text between the values.
+
+    Returns:
+        The values, trimmed of spaces, without blank ones. A missing value
+            or blank text has none.
+
+    """
+    if isinstance(value, list | tuple):
+        return list(value)
+    if value is None or (not isinstance(value, str) and pd.isna(value)):
+        return []
+    pieces = (p.strip() for p in str(value).split(separator))
+    return [p for p in pieces if p]
 
 
 def _flags(data: pd.DataFrame, column: str) -> pd.Series:

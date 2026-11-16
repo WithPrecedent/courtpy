@@ -2,7 +2,7 @@
 
 The federal rules find the names of the judges on each case as the opinion
 writes them, such as "LYNCH" and "R THOMPSON" (the "panel_judges", "authors",
-"concurring", and "dissenting" columns). To study the judges, each name has to
+"concurring", and "dissenting" columns, with "; " between the names). To study the judges, each name has to
 be matched to a person. A `Roster` is a table of judges, with one row for each
 court that a judge has served on, which finds the judge that a name refers to
 from the court and year of the case.
@@ -1721,9 +1721,9 @@ def _named(
 
     Args:
         data: the parsed cases, with "court_num" and "year".
-        column: name of the column that lists judges' names: lists of names,
-            or the text that `cases.save_cases` writes for them (in a table
-            that was loaded without its lists being restored).
+        column: name of the column that lists judges' names: text with
+            "; " between the names, as the federal rules write them, or
+            lists of names (as `split_values` makes them).
         roster: the roster to find the judges in.
         columns: the columns to add for each judge, other than "nid" (see
             `MergeBiographies`). Defaults to an empty `tuple`.
@@ -1805,15 +1805,16 @@ def _number_courts(courts: Iterable[str]) -> dict[str, int]:
         The number of each court that the rules number, by its name.
 
     """
-    numbering = rules.Rulebook(rules = [
-        rule for rule in rules.Rulebook.load(options._DEFAULT_JURISDICTION)
-        if rule.variables == ('court_num',)])
-    numbers = {}
-    for court in dict.fromkeys(courts):
-        number = numbering.apply({'court': court}).get('court_num')
-        if number is not None:
-            numbers[court] = int(number)
-    return numbers
+    numbering = amos.parsers.Rulebook(rules = [
+        rule for rule in amos.parsers.Rulebook.create(rules.ParseHeader)
+        if rule.names == ('court_num',)])
+    names = list(dict.fromkeys(courts))
+    found = numbering.apply(
+        pd.DataFrame({'court': pd.Series(names, dtype = 'str')}))
+    return {
+        court: int(number)
+        for court, number in zip(names, found['court_num'], strict = True)
+        if not pd.isna(number)}
 
 
 def _require(data: pd.DataFrame, columns: Iterable[str], name: str) -> None:

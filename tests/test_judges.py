@@ -840,7 +840,8 @@ def test_reshape_by_judge(court_listener_folder: pathlib.Path, roster: judges.Ro
     # differs, lists, and ids are left out.
     assert list(table['court']) == ['ca1'] * 3
     assert 'case_id' not in table and 'case_name' not in table
-    assert 'panel_judges' not in table
+    assert 'panel_ids' not in table
+    assert list(table['panel_judges']) == ['LYNCH; HOWARD; THOMPSON'] * 3
     # "how" chooses other summaries, and "count" another name or none.
     listed = judges.ReshapeByJudge().shape(
         votes.copy(), how = {'case_id': 'list'}, count = None)

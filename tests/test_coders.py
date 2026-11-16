@@ -126,3 +126,22 @@ def test_tidy_cases() -> None:
     assert tidied['published'].dtype == 'boolean'
     assert tidied['year'].dtype == 'Int64'
     assert tidied['score'].dtype == 'float64'
+
+
+def test_split_values() -> None:
+    assert amos.library.classify('split_values') == 'munger'
+    data = pd.DataFrame({
+        'panel_judges': ['LYNCH; HOWARD; THOMPSON', None, 'KAYATTA'],
+        'agencies': ['Internal Revenue Service, United States Tax Court', None, None]})
+    listed = coders.SplitValues().apply(amos.Dataset(data.copy())).data
+    assert listed['panel_judges'].tolist() == [['LYNCH', 'HOWARD', 'THOMPSON'], [], ['KAYATTA']]
+    assert listed['agencies'].equals(data['agencies'])
+    wide = coders.SplitValues().apply(
+        amos.Dataset(data.copy()), columns = 'agencies', separator = ', ', into = 'columns').data
+    assert wide['agencies_1'].tolist() == ['Internal Revenue Service', None, None]
+    assert wide['agencies_2'].tolist() == ['United States Tax Court', None, None]
+    assert 'agencies' in wide.columns and 'agencies_3' not in wide.columns
+    with pytest.raises(ValueError, match = 'into'):
+        coders.SplitValues().apply(amos.Dataset(data.copy()), into = 'rows')
+    with pytest.raises(KeyError):
+        coders.SplitValues().apply(amos.Dataset(data.copy()), columns = 'missing')

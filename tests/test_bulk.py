@@ -128,7 +128,7 @@ def test_extract(bucket: pathlib.Path, tmp_path: pathlib.Path) -> None:
     table = courtpy.parse(output)
     assert table.loc['1', 'docket_number'] == '19-1234'
     assert table.loc['1', 'date_argued'] == '2020-01-15'
-    assert table.loc['1', 'dissenting'] == ['HOWARD']
+    assert table.loc['1', 'dissenting'] == 'HOWARD'
     assert table.loc['1', 'opinion_reverse']
 
 

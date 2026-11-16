@@ -88,7 +88,7 @@ def save_cases(data: pd.DataFrame, path: pathlib.Path | str) -> pathlib.Path:
     """Saves a table of parsed cases.
 
     A CSV file can be opened in a spreadsheet. Lists (such as the judges on a
-    panel) are written as text, with "; " between the items, and the names of
+    panel, once `split_values` has made them lists) are written as text, with "; " between the items, and the names of
     those columns are saved beside the file (as "{name}.lists.json") so that
     `load_cases` can restore them. A parquet file (which needs the optional
     pyarrow package) keeps lists and types as they are.

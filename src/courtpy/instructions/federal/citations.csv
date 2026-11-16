@@ -1,22 +1,22 @@
-target,variable,kind,pattern,value,ignorecase,dotall,note
-opinion,citations_admin,matches,\d* C\.F\.R\. §§* \d\d*.*?(?=\W?),,FALSE,FALSE,CFR
-opinion,citations_admin,matches,U.S. SENTENCING GUIDELINES MANUAL (?:ch\. |app\. )?§§* \d\d*.?(?=\W?),,TRUE,FALSE,Sent_Guide
-opinion,citations_case,matches,\d+ (?:F\.(?:[23]d|4th)|U\.S\.|S\. ?Ct\.) \d+,,TRUE,FALSE,case_pat
-opinion,citations_statute,matches,ADMINISTRATIVE PROCEDURE ACT §§* \d\d*.?\b,,TRUE,FALSE,APA
-opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?APP(?:\.|ELLATE) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,TRUE,FALSE,Fed_App_P
-opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?CIV(?:\.|IL) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,TRUE,FALSE,Fed_Civ_P
-opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?CRIM(?:\.|INAL) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,TRUE,FALSE,Fed_Crim_P
-opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?EVID(?:\.|ENCE) (?:§§? ?)?\d+(?:\(\w+\))*,,TRUE,FALSE,Fed_Evid
-opinion,citations_statute,matches,I.R.C. §§* \d\d*.?(?=\W?),,FALSE,FALSE,IRC
-opinion,citations_statute,matches,\b\d*. U\.S\.C\.[SC]?\.? §§* \d\d*.*?(?=\W?),,FALSE,FALSE,statute_pat
-opinion,citations_statute,matches,U.C.C. §§* \d\d*.?(?=\W?),,FALSE,FALSE,UCC
-opinion,citations_statute,matches,UNIF. ADOPTION ACT §§* \d\d*.?(?=\W?),,TRUE,FALSE,Unif_Adopt
-opinion,citations_statute,matches,UNIF. PROBATE CODE §§* \d\d*.?(?=\W?),,TRUE,FALSE,Unif_Probate
-opinion,citations_statute,matches,UNIF. TRUST CODE §§* \d\d*.?(?=\W?),,TRUE,FALSE,Unif_Trust
-opinion,citations_legislature,matches,\d*? CONG\. REC\. \d*?\b\(\d\d*.?\),,TRUE,FALSE,cong_rec
-opinion,citations_constitution,matches,U\.S\. CONST\. (?:Amend[s]?|Art)\.? \w\w*?(?=\W?),,TRUE,FALSE,const
-opinion,citations_legislature,matches,H\. REP\. NO\. \d\d*-\d\d*.?(?=\W?),,TRUE,FALSE,legis_list_h
-opinion,citations_legislature,matches,S\. REP\. NO\. \d\d*-\d\d*.?(?=\W?),,TRUE,FALSE,legis_hist_s
-opinion,citations_other,matches,MODEL CODE OF PROF'L CONDUCT R\. §§* \d\d*.?(?=\W?),,TRUE,FALSE,mcpc
-opinion,citations_other,matches,MODEL CODE OF PROF'L RESPONSIBILITY CANON §§* \d\d*.?(?=\W?),,TRUE,FALSE,mcprc
-opinion,citations_other,matches,MODEL PENAL CODE §§* \d\d*.?(?=\W?),,TRUE,FALSE,mpc
+column,name,kind,pattern,value,flags,separator,note
+opinion,citations_admin,matches,\d* C\.F\.R\. §§* \d\d*.*?(?=\W?),,,; ,CFR
+opinion,citations_admin,matches,U.S. SENTENCING GUIDELINES MANUAL (?:ch\. |app\. )?§§* \d\d*.?(?=\W?),,ignorecase,; ,Sent_Guide
+opinion,citations_case,matches,\d+ (?:F\.(?:[23]d|4th)|U\.S\.|S\. ?Ct\.) \d+,,ignorecase,; ,case_pat
+opinion,citations_statute,matches,ADMINISTRATIVE PROCEDURE ACT §§* \d\d*.?\b,,ignorecase,; ,APA
+opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?APP(?:\.|ELLATE) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,ignorecase,; ,Fed_App_P
+opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?CIV(?:\.|IL) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,ignorecase,; ,Fed_Civ_P
+opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?CRIM(?:\.|INAL) P(?:\.|ROC\.|ROCEDURE) (?:§§? ?)?\d+(?:\(\w+\))*,,ignorecase,; ,Fed_Crim_P
+opinion,citations_statute,matches,FED(?:\.|ERAL) R(?:\.|ULES?) (?:OF )?EVID(?:\.|ENCE) (?:§§? ?)?\d+(?:\(\w+\))*,,ignorecase,; ,Fed_Evid
+opinion,citations_statute,matches,I.R.C. §§* \d\d*.?(?=\W?),,,; ,IRC
+opinion,citations_statute,matches,\b\d*. U\.S\.C\.[SC]?\.? §§* \d\d*.*?(?=\W?),,,; ,statute_pat
+opinion,citations_statute,matches,U.C.C. §§* \d\d*.?(?=\W?),,,; ,UCC
+opinion,citations_statute,matches,UNIF. ADOPTION ACT §§* \d\d*.?(?=\W?),,ignorecase,; ,Unif_Adopt
+opinion,citations_statute,matches,UNIF. PROBATE CODE §§* \d\d*.?(?=\W?),,ignorecase,; ,Unif_Probate
+opinion,citations_statute,matches,UNIF. TRUST CODE §§* \d\d*.?(?=\W?),,ignorecase,; ,Unif_Trust
+opinion,citations_legislature,matches,\d*? CONG\. REC\. \d*?\b\(\d\d*.?\),,ignorecase,; ,cong_rec
+opinion,citations_constitution,matches,U\.S\. CONST\. (?:Amend[s]?|Art)\.? \w\w*?(?=\W?),,ignorecase,; ,const
+opinion,citations_legislature,matches,H\. REP\. NO\. \d\d*-\d\d*.?(?=\W?),,ignorecase,; ,legis_list_h
+opinion,citations_legislature,matches,S\. REP\. NO\. \d\d*-\d\d*.?(?=\W?),,ignorecase,; ,legis_hist_s
+opinion,citations_other,matches,MODEL CODE OF PROF'L CONDUCT R\. §§* \d\d*.?(?=\W?),,ignorecase,; ,mcpc
+opinion,citations_other,matches,MODEL CODE OF PROF'L RESPONSIBILITY CANON §§* \d\d*.?(?=\W?),,ignorecase,; ,mcprc
+opinion,citations_other,matches,MODEL PENAL CODE §§* \d\d*.?(?=\W?),,ignorecase,; ,mpc
