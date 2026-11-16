@@ -311,7 +311,7 @@ repository" button reads the same information from
 @software{yung_courtpy,
   author  = {Yung, Corey Rayburn},
   title   = {courtpy: Accessible tools for collecting, parsing, and analyzing court opinions},
-  version = {0.3.1},
+  version = {0.3.2},
   year    = {2026},
   url     = {https://github.com/WithPrecedent/courtpy},
   license = {Apache-2.0}

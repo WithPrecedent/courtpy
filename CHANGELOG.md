@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
-## Unreleased
+## 0.3.2
 
 * The README shows the courtpy logo (`docs/images/logo.webp`).
 * "Keeping your API key secret" moved from the README to the Advanced User
