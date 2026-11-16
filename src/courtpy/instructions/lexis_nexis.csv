@@ -7,13 +7,10 @@ header,history,match,\nPRIOR HISTORY\:.*?(?=\n\n|$),,"ignorecase, dotall",,
 header,future,match,\nSUBSEQUENT HISTORY\:.*?(?=\n\n|$),,"ignorecase, dotall",,
 header,counsel,match,"\nCOUNSEL\:.*?(?=(\nNOTICE\:|\nSUBSEQUENT HISTORY\:|\nPRIOR HISTORY\:|\n\n(DOCKET )?(NOS?\. )?\d\d*\-\d\d|\n(?:\d\d*)? ?(?:JAN(?:\.|UARY)|FEB(?:\.|RUARY)|MAR(?:\.|CH)|APR(?:\.|IL)|MAY |JUN(?:\.|E)|JUL(?:\.|Y)|AUG(?:\.|UST)|SEP(?:\.|T\.|TEMBER)|OCT(?:\.|OBER)|NOV(?:\.|EMBER)|DEC(?:\.|EMBER)).*? (?:\d\d*\, )?\d\d\d\d|\nDISPOSITION\:.|\n\d* (?:F\.[23]?d|U\.S\.|S\. Ct\.|U\.S\. APP\. LEXIS|Fed\. Appx\.) \d\d|\nJUDGES\:|\nOPINION BY\:|BEFORE\:|\nOPINION|$))",,"ignorecase, dotall",,
 header,notice,match,\nNOTICE\:.*?(?=\n\n|$),,"ignorecase, dotall",,
-header,dates,matches,"(?<=\n)(?:\d\d*)? ?(?:JAN(?:\.|UARY)|FEB(?:\.|RUARY)|MAR(?:\.|CH)|APR(?:\.|IL)|MAY |JUN(?:\.|E)|JUL(?:\.|Y)|AUG(?:\.|UST)|SEP(?:\.|T\.|TEMBER)|OCT(?:\.|OBER)|NOV(?:\.|EMBER)|DEC(?:\.|EMBER)).*? (?:\d\d*\, )?\d\d\d\d.*?(?=\n)",,ignorecase,"
-","Every line with a date (argued, submitted, decided, filed)"
+header,dates,matches,"(?<=\n)(?:\d\d*)? ?(?:JAN(?:\.|UARY)|FEB(?:\.|RUARY)|MAR(?:\.|CH)|APR(?:\.|IL)|MAY |JUN(?:\.|E)|JUL(?:\.|Y)|AUG(?:\.|UST)|SEP(?:\.|T\.|TEMBER)|OCT(?:\.|OBER)|NOV(?:\.|EMBER)|DEC(?:\.|EMBER)).*? (?:\d\d*\, )?\d\d\d\d.*?(?=\n)",,ignorecase,; ,"Every line with a date (argued, submitted, decided, filed)"
 header,disposition,match,\nDISPOSITION\:.*?(?=\n\n|$),,ignorecase,,
 header,citation,match,(?<=\n)\d* (?:F\.(?:[23]d|4th)|U\.S\.|S\. Ct\.|U\.S\. APP\. LEXIS|Fed\. Appx\.) \d\d*.*?(?=\n),,"ignorecase, dotall",,
 header,judges,match,\nJUDGES\:.*?(?=\n\n|\nOPINION|$),,"ignorecase, dotall",,"The ""JUDGES:"" paragraph"
 header,opinion_by,match,\nOPINION BY\:.*?(\n|$),,,,"The ""OPINION BY:"" line"
-text,concurring_lines,matches,(?<=\n)CONCUR.*?(?=\n)|concurring\:.*?(?=\n)|(?<=\n)Concur By\: .*?(?=\n)|(?<=\n)DISSENT[^\n]*?IN PART[^\n]*,,,"
-",Lines about concurrences (and opinions dissenting in part)
-text,dissenting_lines,matches,(?<=\n)DISSENT.*?(?=\n)|dissenting\:.*?(?=\n)|(?<=\n)Dissent By\: .*?(?=\n)|(?<=\n)CONCUR[^\n]*?IN PART[^\n]*,,,"
-",Lines about dissents (and opinions concurring in part)
+text,concurring_lines,matches,(?<=\n)CONCUR.*?(?=\n)|concurring\:.*?(?=\n)|(?<=\n)Concur By\: .*?(?=\n)|(?<=\n)DISSENT[^\n]*?IN PART[^\n]*,,,; ,Lines about concurrences (and opinions dissenting in part)
+text,dissenting_lines,matches,(?<=\n)DISSENT.*?(?=\n)|dissenting\:.*?(?=\n)|(?<=\n)Dissent By\: .*?(?=\n)|(?<=\n)CONCUR[^\n]*?IN PART[^\n]*,,,; ,Lines about dissents (and opinions concurring in part)

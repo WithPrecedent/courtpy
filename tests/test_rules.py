@@ -58,9 +58,9 @@ def test_built_in_rulebooks_are_valid() -> None:
         'header', 'opinion', 'party', 'court', 'docket_number', 'history',
         'future', 'counsel', 'notice', 'dates', 'disposition', 'citation',
         'judges', 'opinion_by', 'concurring_lines', 'dissenting_lines']
-    # Several values in a cell are separated by "; ", except the sections of
-    # lines, whose values are lines.
-    for rule in federal:
+    # Several values in a cell are separated by "; ", with no line breaks in
+    # the files (which a checkout on Windows would make "\r\n").
+    for rule in [*federal, *lexis]:
         if rule.kind in ('names', 'matches'):
             assert rule.separator == '; '
 
@@ -71,7 +71,7 @@ def test_lexis_dates_are_lines() -> None:
         text = (
             '\nA v. B\n\nMarch 3, 2009, Argued\nJune 1, 2009, Decided\n'
             'JUDGES: Smith.\nOPINION\n\nWe affirm.\n'))
-    assert found['dates'] == 'March 3, 2009, Argued\nJune 1, 2009, Decided'
+    assert found['dates'] == 'March 3, 2009, Argued; June 1, 2009, Decided'
 
 
 @pytest.mark.parametrize(('judges', 'expected'), [

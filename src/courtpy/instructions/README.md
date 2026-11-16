@@ -116,7 +116,7 @@ These sections can be targets in the `federal` rules (and your own):
 | `court` | The court's line in the header. | The court's full name. |
 | `docket_number` | The docket line. | The docket number (if dockets were downloaded). |
 | `citation` | The citation line. | The case's citations. |
-| `dates` | Every line with a date. | (Dates come from CourtListener's data.) |
+| `dates` | Every line with a date, with "; " between them. | (Dates come from CourtListener's data.) |
 | `history` | "PRIOR HISTORY". | The procedural history and the court appealed from. |
 | `future` | "SUBSEQUENT HISTORY". | (None.) |
 | `notice` | "NOTICE". | (None: publication comes from CourtListener's precedential status.) |
@@ -124,7 +124,7 @@ These sections can be targets in the `federal` rules (and your own):
 | `disposition` | "DISPOSITION". | The disposition (often blank). |
 | `judges` | "JUDGES". | The judges. |
 | `opinion_by` | "OPINION BY". | The authors of the majority (or lead) opinions. |
-| `concurring_lines`, `dissenting_lines` | Lines about concurrences and dissents. | The authors of concurrences and dissents. |
+| `concurring_lines`, `dissenting_lines` | Lines about concurrences and dissents, with "; " between them. | The authors of concurrences and dissents. |
 | `posture`, `syllabus` | (None.) | CourtListener's posture and syllabus. |
 | `opinion` | Everything after the line "OPINION". | The text of every opinion, the majority first. |
 

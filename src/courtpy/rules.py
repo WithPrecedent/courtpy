@@ -153,4 +153,3 @@ class ParseLexisNexis(amos.parsers.ParseAll):
     """
 
     rules: ClassVar[Any] = utilities.instructions_folder() / 'lexis_nexis.csv'
-

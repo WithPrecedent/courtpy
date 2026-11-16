@@ -59,12 +59,12 @@ def clean(text: str) -> str:
 def finish(row: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
     """Adds dates and publication status to a parsed Lexis-Nexis case.
 
-    The "dates" section has each line of the header with a date, such as
-    "March 3, 2009, Argued". Each kind of date (decided, filed, argued,
-    submitted, and amended) is stored as an ISO date in its own column
-    ("date_decided" and so on). "date_filed" is the date filed or, if there is
-    none, the date decided, as on CourtListener. "year" is the year of that
-    date (or of the first date found).
+    The "dates" section has each line of the header with a date (such as
+    "March 3, 2009, Argued"), with "; " between them. Each kind of date
+    (decided, filed, argued, submitted, and amended) is stored as an ISO date
+    in its own column ("date_decided" and so on). "date_filed" is the date
+    filed or, if there is none, the date decided, as on CourtListener. "year"
+    is the year of that date (or of the first date found).
 
     A case is published if it has a Federal Reporter citation and no notice
     that it is unpublished (as found by the federal rules).
@@ -76,7 +76,7 @@ def finish(row: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
         The same `row`, with the new columns.
 
     """
-    lines = str(row.get('dates') or '').splitlines()
+    lines = str(row.get('dates') or '').split(cases._SEPARATOR)
     for kind in _DATE_KINDS:
         column = f'date_{kind.lower()}'
         row.setdefault(column, None)

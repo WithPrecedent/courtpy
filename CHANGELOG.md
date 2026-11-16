@@ -57,6 +57,10 @@ All notable changes to this project will be documented in this file.
     missing value rather than an empty list. `split_values`
     (`coders.SplitValues`, an `amos.Munger`) turns them into lists or into a
     column for each value ("panel_judges_1", "panel_judges_2", and so on).
+    The Lexis-Nexis sections of lines ("dates", "concurring_lines", and
+    "dissenting_lines") also separate their lines with "; ", so that no rule
+    file has a line break in a cell (which a checkout on Windows made
+    "\r\n", failing the tests there).
   * `courtpy rules` lists the columns that the rules search and make.
   * The recipe and test that searched kept text with `amos`'s
     `flag_patterns` and `count_patterns` (removed from `amos`) use
