@@ -7,17 +7,22 @@ be matched to a person. A `Roster` is a table of judges, with one row for each
 court that a judge has served on, which finds the judge that a name refers to
 from the court and year of the case.
 
-`build_roster` makes that table from three files of the Federal Judicial
-Center's Biographical Directory of Article III Federal Judges (which
-`download` gets): the judges' service on each court, their demographics, and
-their careers before the bench. The rules in the "judges" rulebook (in
-courtpy's "instructions" folder) code the careers, so they can be changed
-without changing courtpy:
+`build_roster` makes that table with the fjc-biographies package
+(https://github.com/WithPrecedent/fjc_biographies), from three files of the
+Federal Judicial Center's Biographical Directory of Article III Federal
+Judges (which `download` gets with it): the judges' service on each court,
+their demographics, and their careers before the bench. The rules in its
+"judges" rulebook code the careers, and another rulebook can be named, so
+they can be changed without changing courtpy. fjc-biographies also adds
+scores of the judges' ideology, which it gets from the judicial-common-space
+package (https://github.com/WithPrecedent/judicial_common_space): each
+appointment's Judicial Common Space score ("jcs") and the justices'
+Martin-Quinn scores ("mq_first", "mq_last", "mq_mean", and "mq_terms"):
 
 ```python
 import courtpy
 
-roster = courtpy.judges.Roster.from_fjc()
+roster = courtpy.judges.Roster.from_fjc(jcs = True, martin_quinn = True)
 roster.save()
 ```
 
@@ -28,33 +33,54 @@ each judge's ideology) can be added to it in a spreadsheet. Every column of
 numbers or booleans that does not identify or date a judge's service is an
 attribute of the judge, which the techniques use.
 
-Three techniques use a roster. They are added to the `amos` library as soon
-as courtpy is imported, so they can be named in settings. Cases and judges
-are different things, so the techniques are built from the mergers and
-shapers of `amos`, which join tables whose rows are not the same:
+These techniques use a roster or the tables that it makes. They are added
+to the `amos` library as soon as courtpy is imported, so they can be named
+in settings. Cases and judges are different things, so the techniques are
+built from the mergers and shapers of `amos`, which join tables whose rows
+are not the same:
 
-* `merge_judges` (an `amos.Merger`) adds what the roster says about the judge
-  that each row names, such as the author of each opinion.
-* `code_judges` (an `amos.Munger`) adds the composition of each case's panel:
-  the share of its judges who are women, the mean party of the presidents who
-  appointed them, and so on. It makes a row for each judge on each case (with
-  `lists_to_rows`), finds the judges (with `merge_judges`), and adds summaries
-  of each case's judges to the case (with `merge_summary`).
-* `judge_votes` (an `amos.Shaper`) makes a table with one row for each judge
-  on each case, with the judge's attributes, those of the other judges on the
-  panel, and how the judge voted.
+* `merge_biographies` (an `amos.Merger`) adds what the roster says about the
+  judge that each row names, such as the author of each opinion.
+* `code_panels` (an `amos.Munger`) adds the composition of each case's
+  panel: the share of its judges who are women, the mean party of the
+  presidents who appointed them, and so on. It makes a row for each judge on
+  each case (with `lists_to_rows`), finds the judges (with
+  `merge_biographies`), and adds summaries of each case's judges to the case
+  (with `merge_summary`).
+* `reshape_by_votes` (an `amos.Shaper`) makes a table with one row for each
+  judge on each case, with the judge's attributes, those of the other judges
+  on the panel, and how the judge voted.
+* `reshape_by_panel` (an `amos.Shaper`) undoes `reshape_by_votes`: it makes
+  the table of votes a table of cases again.
+* `reshape_by_judge` (an `amos.Shaper`) makes a table with one row for each
+  judge, which summarizes the judge's votes (with `group_rows`).
+* `load_roster` and `download_biographies` (reference loaders, see
+  `courtpy.loaders.ReferenceLoader`) start a study of the judges themselves
+  with a saved roster or one made from the Federal Judicial Center's files.
 
 Contents:
-    CodeJudges: adds the judges and the composition of each case's panel.
-    JudgeVotes: makes a table with one row for each judge on each case.
-    MergeJudges: adds what a roster says about the judge that each row names.
+    CodePanels: adds the judges and the composition of each case's panel.
+    DownloadBiographies: downloads the Federal Judicial Center's files about
+        judges and loads the roster that they make.
+    LoadRoster: loads the table of a roster of judges.
+    MergeBiographies: adds what a roster says about the judge that each row
+        names.
+    ReshapeByJudge: makes a table with one row for each judge.
+    ReshapeByPanel: makes a table of votes a table of cases again.
+    ReshapeByVotes: makes a table with one row for each judge on each case.
     Roster: a table of judges that finds the judge a name refers to.
     build_roster: makes the table of a roster from the Federal Judicial
-        Center's files.
+        Center's files with fjc-biographies.
     clean_name: returns a name the way that names are compared.
-    download: downloads the Federal Judicial Center's files about judges.
-    name_forms: returns the ways that an opinion may write a judge's name.
+    download: downloads the Federal Judicial Center's files about judges
+        with fjc-biographies.
+    name_forms: returns the ways that an opinion may write a judge's name,
+        grouped by how much of the name they give.
     vote_table: returns a table with one row for each judge on each case.
+    _JUDGE_PREFIXES: the starts of the names of the columns that
+        `vote_table` makes for each judge, which `ReshapeByPanel` removes.
+    _NID: the column of a table of votes with each judge's number, which
+        labels the table that `ReshapeByJudge` makes.
 
 """
 
@@ -68,18 +94,12 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 import amos
+import fjc_biographies
 import numpy as np
 import pandas as pd
 
-from . import cases, coders, options, rules, utilities
-from . import jcs as common_space
+from . import cases, coders, loaders, options, rules, utilities
 
-_ABA_RATINGS: dict[str, int] = {
-    'Exceptionally Well Qualified': 4,
-    'Well Qualified': 3,
-    'Qualified': 2,
-    'Not Qualified': 1,
-    'Not Qualified By Reason of Age': 1}
 # Judge Johnson of the Fifth Circuit signed opinions as "Sam D. Johnson", and
 # Judge King of the Fifth Circuit sat as Carolyn Dineen Randall until 1988.
 _ALIASES: dict[int, str] = {
@@ -87,9 +107,10 @@ _ALIASES: dict[int, str] = {
     1386716: 'Carolyn Dineen Randall'}
 _APPELLATE: frozenset[str] = frozenset({
     'U.S. Court of Appeals', 'Supreme Court'})
-_APPOINTMENT: tuple[str, ...] = (
-    'appointing president', 'party of appointing president', 'aba rating',
-    'recess appointment date', 'senate vote type', 'ayes/nays')
+# The categories of the Federal Judicial Center's files that a roster is made
+# from, which are the names of the parameters of `build_roster` that take
+# them.
+_CATEGORIES: tuple[str, ...] = ('service', 'demographics', 'career')
 # Names of the columns that the techniques add to the tables that they make
 # on the way to their results, which no table of cases or roster has.
 _CASE: str = '__case__'
@@ -97,33 +118,14 @@ _FOUND: str = '__found__'
 _NAME: str = '__name__'
 _OTHER: str = '__other__'
 _PLACE: str = '__place__'
-_CIRCUITS: dict[str, int] = {
-    'Maine': 1, 'Massachusetts': 1, 'New Hampshire': 1, 'Puerto Rico': 1,
-    'Rhode Island': 1,
-    'Connecticut': 2, 'New York': 2, 'Vermont': 2,
-    'Delaware': 3, 'New Jersey': 3, 'Pennsylvania': 3, 'Virgin Islands': 3,
-    'Maryland': 4, 'North Carolina': 4, 'South Carolina': 4, 'Virginia': 4,
-    'West Virginia': 4,
-    'Canal Zone': 5, 'Louisiana': 5, 'Mississippi': 5, 'Texas': 5,
-    'Kentucky': 6, 'Michigan': 6, 'Ohio': 6, 'Tennessee': 6,
-    'Illinois': 7, 'Indiana': 7, 'Wisconsin': 7,
-    'Arkansas': 8, 'Iowa': 8, 'Minnesota': 8, 'Missouri': 8, 'Nebraska': 8,
-    'North Dakota': 8, 'South Dakota': 8,
-    'Alaska': 9, 'Arizona': 9, 'California': 9, 'Guam': 9, 'Hawaii': 9,
-    'Idaho': 9, 'Montana': 9, 'Nevada': 9, 'Northern Mariana Islands': 9,
-    'Oregon': 9, 'Washington': 9,
-    'Colorado': 10, 'Kansas': 10, 'New Mexico': 10, 'Oklahoma': 10,
-    'Utah': 10, 'Wyoming': 10,
-    'Alabama': 11, 'Florida': 11, 'Georgia': 11,
-    'Columbia': 12}
-# "Middle District of Georgia" and "Districts of North Carolina" both end
-# with the state, which any note in parentheses follows.
-_DISTRICT: re.Pattern[str] = re.compile(
-    r'Districts? of ([A-Za-z ]+?)\s*(?:\(|$)')
+_SEAT: str = '__seat__'
 _DISTRICT_COURT: str = 'U.S. District Court'
 _IDENTIFIERS: frozenset[str] = frozenset({
-    'nid', 'court_num', 'circuit_num', 'start_year', 'end_year',
+    'nid', 'sequence', 'court_num', 'circuit_num', 'start_year', 'end_year',
     'senior_year', 'birth_year'})
+# The groups of the forms of a judge's name (see `name_forms`), in the order
+# that `Roster.match` tries them: from the most of the name to the least.
+_LEVELS: tuple[str, ...] = ('full', 'initials', 'last')
 # The curly apostrophe (U+2019) is added with `chr` so that the source file
 # has only plain characters.
 _NAME_PUNCTUATION: re.Pattern[str] = re.compile(
@@ -131,23 +133,29 @@ _NAME_PUNCTUATION: re.Pattern[str] = re.compile(
 _NEEDED: tuple[str, ...] = (
     'nid', 'judge', 'last_name', 'first_name', 'court_num', 'circuit_num',
     'start_year', 'end_year')
-_PARTIES: dict[str, int] = {'Democratic': -1, 'Republican': 1}
-_PERSONAL: tuple[str, ...] = (
-    'nid', 'last name', 'first name', 'middle name', 'suffix', 'birth year',
-    'gender', 'race or ethnicity')
+# The other columns of text that fjc-biographies puts in a roster: the career
+# that the rules searched, the ways of writing each judge's name, and the
+# dates of each appointment. A saved roster would read such a column that is
+# blank in every row as numbers, which would make it an attribute.
+_OTHER_TEXT: re.Pattern[str] = re.compile(r'career|name_.+|.+_date')
+# The start of the names of the columns in which fjc-biographies writes each
+# judge's full name in different ways.
+_PERMUTATIONS: str = 'name_'
 _RELATIVE: tuple[str, ...] = ('age', 'senior', 'designated', 'district_judge')
 _ROLES: dict[str, str] = {
     'authors': 'judge_author',
     'concurring': 'judge_concurred',
     'dissenting': 'judge_dissented'}
+# The column of a table of votes with the Federal Judicial Center's number
+# for each judge, which labels a table of judges.
+_NID: str = 'judge_nid'
+# The starts of the names of the columns that `vote_table` makes for each
+# judge (with "judge" itself), which a table of cases does not have.
+_JUDGE_PREFIXES: tuple[str, ...] = ('judge_', 'colleagues_', 'vote_')
 _ROSTER_FILE: str = 'roster.csv'
-_SERVICE: tuple[str, ...] = (
-    'nid', 'judge name', 'court type', 'court name', 'commission date',
-    'senior status date', 'termination date', *_APPOINTMENT)
 _TEXT: tuple[str, ...] = (
     'judge', 'last_name', 'first_name', 'middle_name', 'suffix', 'aliases',
     'court', 'court_type', 'president')
-_VOTES: re.Pattern[str] = re.compile(r'(\d+)\s*/\s*(\d+)')
 
 
 @dataclasses.dataclass
@@ -156,23 +164,37 @@ class Roster:
 
     Each row of the table is a judge's service on one court, so a judge who
     was promoted from a district court to a court of appeals has two rows,
-    with the president who made each appointment. An opinion usually gives
-    only a judge's last name, which many judges share, so a name is matched
-    with the court and year of its case:
+    with the president who made each appointment. Only judges who were
+    serving in the year of the case (or had left their court no more than
+    `grace` years before it) are considered. A name is matched by how much of
+    a judge's name it gives, from the most to the least (see `name_forms`):
+
+    1. a full name: one of the ways that fjc-biographies writes the judge's
+       name (the "name_..." columns, such as "Sandra Lea Lynch", "Sandra L.
+       Lynch", "Sandra Lynch", and each with any suffix), or one of the
+       judge's "aliases",
+    2. or else initials and the last name ("S. Lynch", "S. L. Lynch", "S.L.
+       Lynch", or "S. Lea Lynch"), or the middle and last names ("Lea Lynch",
+       for a judge who goes by a middle name),
+    3. or else the last name alone, which is how opinions usually name
+       judges.
+
+    The first of them that fits any judge who was serving is used. Many
+    judges share a name, especially a last name, so the judges whose names
+    fit are then narrowed by the court of the case:
 
     1. to a judge of the case's court,
     2. or else to a judge of a district court in the case's circuit, who may
        sit on its court of appeals by designation,
-    3. or else to a judge of any other court, who may be visiting.
+    3. or else to a judge of any other court, such as a court of appeals or
+       district court of another circuit, who may sit by designation.
 
-    Only judges who were serving in the year of the case (or had left their
-    court no more than `grace` years before it) are considered. If a name
-    fits more than one such judge at the first step that it fits any, the
-    name is not matched, since there is no telling which judge was meant. Nor
-    is a name on a case of a court that has no judges in the table (such as a
-    bankruptcy appellate panel, whose judges are not in the Federal Judicial
-    Center's files), since a judge of another court who shares the name
-    would be a guess.
+    If more than one judge fits at the first step that any judge fits, the
+    name is not matched, since there is no telling which judge was meant.
+    Nor is a name on a case of a court that has no judges in the table (such
+    as a bankruptcy appellate panel, whose judges are not in the Federal
+    Judicial Center's files), since a judge of another court who shares the
+    name would be a guess.
 
     Args:
         data: the table. It needs the columns "nid" (a number that identifies
@@ -180,8 +202,9 @@ class Roster:
             "last_name", "first_name", "court_num" and "circuit_num" (the
             numbers that the federal rules give the judge's court and its
             circuit), and "start_year" and "end_year" (of the judge's service
-            on the court). "middle_name", "aliases" (other names that
-            opinions use for the judge, as "First Middle Last", separated by
+            on the court). "middle_name", "suffix", the "name_..." columns
+            that fjc-biographies makes, "aliases" (other names that opinions
+            use for the judge, as "First Middle Last", separated by
             semicolons), "senior_year", "birth_year", and "court_type" are
             used if they are there.
         grace: years after a judge's service on a court ended in which an
@@ -196,7 +219,7 @@ class Roster:
     _described: dict[
         tuple[int, int | None, int | None], dict[str, float | None]] = (
             dataclasses.field(default_factory = dict, init = False, repr = False))
-    _forms: dict[str, list[int]] = dataclasses.field(
+    _forms: dict[str, dict[str, list[int]]] = dataclasses.field(
         default_factory = dict, init = False, repr = False)
     _found: dict[tuple[str, int | None, int | None], int | None] = (
         dataclasses.field(default_factory = dict, init = False, repr = False))
@@ -222,18 +245,36 @@ class Roster:
             self._text[column] = (
                 self.data[column].fillna('').astype(str).tolist()
                 if column in self.data.columns else [''] * len(self.data))
+        permutations = [
+            self.data[column].tolist() for column in self.data.columns
+            if str(column).startswith(_PERMUTATIONS)]
+        self._forms = {level: {} for level in _LEVELS}
         people = zip(
             self._text['first_name'], self._text['middle_name'],
-            self._text['last_name'], self._text['aliases'], strict = True)
-        for row, (first, middle, last, aliases) in enumerate(people):
-            forms = name_forms(first, middle, last)
+            self._text['last_name'], self._text['suffix'],
+            self._text['aliases'], strict = True)
+        for row, (first, middle, last, suffix, aliases) in enumerate(people):
+            levels = name_forms(first, middle, last, suffix)
+            # The ways that fjc-biographies writes a name are full names.
+            levels['full'].extend(
+                clean_name(values[row]) for values in permutations
+                if isinstance(values[row], str))
             for alias in aliases.split(';'):
                 parts = alias.split()
                 if len(parts) > 1:
-                    forms.extend(name_forms(
-                        parts[0], ' '.join(parts[1:-1]), parts[-1]))
-            for form in dict.fromkeys(forms):
-                self._forms.setdefault(form, []).append(row)
+                    found = name_forms(
+                        parts[0], ' '.join(parts[1:-1]), parts[-1])
+                    for level, forms in found.items():
+                        levels[level].extend(forms)
+            # A form is indexed only at the first level that has it, so a
+            # judge whose first name is an initial ("J. Smith") is matched by
+            # it as a full name.
+            seen: set[str] = set()
+            for level in _LEVELS:
+                for form in levels[level]:
+                    if form and form not in seen:
+                        seen.add(form)
+                        self._forms[level].setdefault(form, []).append(row)
         for column in sorted(_IDENTIFIERS):
             self._numbers[column] = (
                 [_whole(value) for value in self.data[column]]
@@ -275,24 +316,43 @@ class Roster:
         update: bool = False,
         scores: pd.DataFrame | pathlib.Path | str | None = None,
         jcs: bool = False,
-        rulebook: rules.Rulebook | pathlib.Path | str = 'judges') -> Roster:
+        martin_quinn: bool | pathlib.Path | str = False,
+        rulebook: fjc_biographies.Rulebook | pathlib.Path | str = 'judges') -> (
+            Roster):
         """Returns a roster made from the Federal Judicial Center's files.
 
         Any of the files that `folder` lacks is downloaded to it first (see
-        `download`).
+        `download`). The files that the scores of `jcs` and `martin_quinn`
+        are computed from (Voteview's NOMINATE scores, the dates of
+        senators' service, and the justices' Martin-Quinn scores) are
+        downloaded by fjc-biographies and judicial-common-space into
+        `utilities.data_folder()`, where `courtpy.politics` keeps the same
+        files.
 
         Args:
-            folder: the folder with the files. Defaults to `None`, in which
-                case "judges" in `utilities.data_folder()` is used.
+            folder: the folder with the files, whose "raw" folder they are
+                kept in. Defaults to `None`, in which case "judges" in
+                `utilities.data_folder()` is used.
             update: whether to download the files again even if they are
                 there, to get the judges and changes since they were
                 downloaded. Defaults to `False`.
             scores: scores of the judges to add (see `build_roster`). Defaults
                 to `None`.
-            jcs: whether to add each judge's Judicial Common Space score as
-                "jcs" (see `courtpy.jcs.judges`), which is downloaded unless
-                it was before (or again, with `update`). Only judges of the
-                courts of appeals have scores. Defaults to `False`.
+            jcs: whether to add each appointment's Judicial Common Space
+                score as "jcs" (see `fjc_biographies.add_jcs`): the NOMINATE
+                score of the judge's home-state senators of the president's
+                party, or else of the president, and for a justice, the
+                Martin-Quinn score of the appointment's first term on the
+                same scale. Defaults to `False`.
+            martin_quinn: whether to add the Martin-Quinn scores of each
+                appointment to the Supreme Court as "mq_first", "mq_last",
+                "mq_mean", and "mq_terms" (see
+                `fjc_biographies.add_martin_quinn`), or the path of the file
+                of the justices' scores ("justices.csv" from
+                https://mqscores.wustl.edu/measures.php), which is used for
+                `jcs` too. The Martin-Quinn website sometimes refuses
+                automated requests, so the file may have to be saved in a
+                browser. Defaults to `False`.
             rulebook: the rules that code the judges' careers (see
                 `build_roster`). Defaults to "judges".
 
@@ -300,18 +360,20 @@ class Roster:
             The roster.
 
         """
+        folder = pathlib.Path(folder).expanduser() if folder else _folder()
         files = download(folder, overwrite = update)
         table = build_roster(
             files['service'], files['demographics'], files['career'],
             scores = scores, rulebook = rulebook)
+        named = None if isinstance(martin_quinn, bool) else martin_quinn
         if jcs:
-            common_space.download(overwrite = update)
-            found = common_space.judges(roster = cls(table))
-            table = amos.mergers.MergeKeys().apply(
-                amos.Dataset(table),
-                source = found.dropna(subset = ["nid"])[["nid", "jcs"]],
-                on = "nid",
-                duplicates = "first").data
+            table = fjc_biographies.add_jcs(
+                table, folder, scores_folder = utilities.data_folder(),
+                martin_quinn = named, update = update)
+        if martin_quinn is not False:
+            table = fjc_biographies.add_martin_quinn(
+                table, folder, scores_folder = utilities.data_folder(),
+                martin_quinn = named, update = update)
         return cls(table)
 
     @classmethod
@@ -339,8 +401,10 @@ class Roster:
                 f'`save` method'
             )
             raise FileNotFoundError(message)
+        columns = pd.read_csv(found, encoding = 'utf-8', nrows = 0).columns
         return cls(pd.read_csv(
-            found, encoding = 'utf-8', dtype = dict.fromkeys(_TEXT, str)))
+            found, encoding = 'utf-8',
+            dtype = {column: str for column in columns if _is_text(column)}))
 
     """ Properties """
 
@@ -355,7 +419,7 @@ class Roster:
         """
         return [
             column for column in self.data.columns
-            if column not in _IDENTIFIERS and column not in _TEXT and (
+            if column not in _IDENTIFIERS and not _is_text(column) and (
                 pd.api.types.is_bool_dtype(self.data[column].dtype)
                 or pd.api.types.is_numeric_dtype(self.data[column].dtype))]
 
@@ -531,12 +595,33 @@ class Roster:
 
         """
         courts = self._numbers['court_num']
-        circuits = self._numbers['circuit_num']
         if court_num is not None and court_num not in courts:
             return None
-        rows = [
-            row for row in self._forms.get(name, ())
-            if year is None or self._serving(row, year)]
+        for level in _LEVELS:
+            rows = [
+                row for row in self._forms[level].get(name, ())
+                if year is None or self._serving(row, year)]
+            if rows:
+                return self._choose(rows, court_num)
+        return None
+
+    def _choose(self, rows: list[int], court_num: int | None) -> int | None:
+        """Returns the judge that a name refers to among judges it fits.
+
+        Args:
+            rows: the rows of the judges whose names fit, who were serving.
+            court_num: the number of the case's court, or `None`.
+
+        Returns:
+            The row of the judge's service at the first of the steps (the
+                case's court, a district court of its circuit, and any
+                court) at which any judge fits, the most recent if more than
+                one of the judge's rows fits, or `None` if more than one
+                judge fits there.
+
+        """
+        courts = self._numbers['court_num']
+        circuits = self._numbers['circuit_num']
         tiers = (
             [r for r in rows if court_num is not None
              and courts[r] == court_num],
@@ -572,14 +657,20 @@ class Roster:
 
 
 @dataclasses.dataclass
-class CodeJudges(amos.Munger):
+class CodePanels(amos.Munger):
     """Adds the judges and the composition of each case's panel.
 
     Each name in "panel_judges" is matched to a judge in a roster (see
     `Roster`) with the case's court and year. The judges who are found are
     listed in "panel_names" (as the roster names them, such as "Lynch, Sandra
     Lea"), and "panel_found" is how many there are, which can be compared
-    with "panel_size". For each attribute in the roster, "panel_{attribute}"
+    with "panel_size". Each of them also has columns of its own, numbered by
+    the place of the judge's name in "panel_judges": "judge1" (the judge's
+    name as the Federal Judicial Center reports it) and "judge1_nid" (the
+    center's number for the judge), "judge2" and "judge2_nid", and so on, for
+    as many names as the longest panel lists. A name that is not matched
+    leaves its place missing, so the judges after it keep theirs, and a case
+    with fewer names has missing values in the rest. For each attribute in the roster, "panel_{attribute}"
     is its mean among those judges: "panel_woman" is the share of the judges
     who are women, and "panel_party" is the mean party of the presidents who
     appointed them (-1 for a Democrat and 1 for a Republican). So are
@@ -591,8 +682,8 @@ class CodeJudges(amos.Munger):
     judges they name are added as "author_name" (the first author found),
     "concurring_names", and "dissenting_names".
 
-    The judges of each case are found as `merge_judges` finds them (see
-    `MergeJudges`), in a table with a row for each judge on each case, and
+    The judges of each case are found as `merge_biographies` finds them (see
+    `MergeBiographies`), in a table with a row for each judge on each case, and
     the case gets summaries of its rows (as the `merge_summary` technique of
     `amos` adds them).
 
@@ -621,8 +712,12 @@ class CodeJudges(amos.Munger):
         coders._require(data, ['panel_judges', 'court_num', 'year'], self.name)
         judges = Roster.create(roster)
         described = judges.described
+        seated = _named(
+            data, 'panel_judges', judges, ['judge', *described],
+            unmatched = True)
+        panel = seated[seated['nid'].notna()].astype({'nid': 'int64'})
         panels = _summarize(
-            _named(data, 'panel_judges', judges, ['judge', *described]),
+            panel,
             len(data),
             {'judge': 'list', **dict.fromkeys(described, 'mean')},
             count = _FOUND)
@@ -635,6 +730,8 @@ class CodeJudges(amos.Munger):
         data['panel_names'] = pd.Series(
             panels['judge'].tolist(), index = data.index, dtype = object)
         data['panel_found'] = panels[_FOUND].to_numpy()
+        for column, values in _numbered(seated, len(data)).items():
+            data[column] = pd.Series(values.array, index = data.index)
         if 'authors' in names:
             data['author_name'] = pd.Series(
                 [found[0] if found else None for found in names['authors']],
@@ -649,7 +746,7 @@ class CodeJudges(amos.Munger):
 
 
 @dataclasses.dataclass
-class JudgeVotes(amos.Shaper):
+class ReshapeByVotes(amos.Shaper):
     """Makes a table with one row for each judge on each case.
 
     The table is for studying how judges vote, rather than what courts
@@ -694,7 +791,205 @@ class JudgeVotes(amos.Shaper):
 
 
 @dataclasses.dataclass
-class MergeJudges(amos.Merger):
+class ReshapeByPanel(amos.Shaper):
+    """Makes a table of votes a table of cases again.
+
+    It undoes `reshape_by_votes`: the rows of each case become one row,
+    labeled by "case_id" as a table of parsed cases is, with the case's
+    columns in their order. The columns that `reshape_by_votes` makes for
+    each judge are removed: "judge", and those whose names begin with
+    "judge_", "colleagues_", or "vote_" (such as "judge_party",
+    "colleagues_party", "judge_dissented", and "vote_reversal"). Every other
+    column is the case's, so each case keeps the value of its first row. A
+    case with no judge who was found in the roster has no rows in the table
+    of votes, so it is not in the table of cases either. To summarize the
+    judges of each case instead, use `code_panels` on the cases, or
+    `group_rows` on the votes.
+
+    Like every shaper, it takes "label", "task", and "groups". Without them,
+    a label of votes (such as "vote_reversal") becomes the outcome that it
+    was made from ("outcome_reversal"), and the groups are those of the
+    votes other than "case_id" and the judges' columns.
+
+    """
+
+    """ Public Methods """
+
+    def apply(
+        self,
+        item: amos.Dataset,
+        *,
+        label: str | None = None,
+        groups: Sequence[str] | str | None = None,
+        **kwargs: Any) -> amos.Dataset:
+        """Makes the table of votes of `item` a table of cases.
+
+        Args:
+            item: the dataset of votes.
+            label: name of the label of the cases. Defaults to `None`, in
+                which case it is the outcome that the label of the votes was
+                made from, if it was made from one, and otherwise the label
+                of `item`.
+            groups: names of the groups of the cases. Defaults to `None`, in
+                which case they are the groups of `item` that are columns of
+                the cases.
+            **kwargs: "task", and parameters for `shape`.
+
+        Returns:
+            The dataset of cases.
+
+        """
+        if label is None and item.label is not None:
+            outcome = 'outcome_' + str(item.label).removeprefix('vote_')
+            if (str(item.label).startswith('vote_')
+                    and outcome in item.data.columns):
+                label = outcome
+        if groups is None:
+            groups = [
+                group for group in item.groups
+                if group != 'case_id' and not _is_judge_column(group)]
+        return super().apply(item, label = label, groups = groups, **kwargs)
+
+    def shape(self, data: pd.DataFrame, **kwargs: Any) -> pd.DataFrame:
+        """Returns a table with one row for each case.
+
+        Args:
+            data: the table of votes (see `vote_table`).
+            **kwargs: not used.
+
+        Raises:
+            KeyError: if `data` lacks "case_id".
+
+        Returns:
+            The table of cases, labeled by "case_id".
+
+        """
+        _require(data, ['case_id'], repr(self.name))
+        judged = [c for c in data.columns if _is_judge_column(c)]
+        table = data.drop(columns = judged).drop_duplicates(subset = 'case_id')
+        return table.set_index('case_id')
+
+
+@dataclasses.dataclass
+class ReshapeByJudge(amos.Shaper):
+    """Makes a table with one row for each judge.
+
+    The rows of each judge in a table of votes (see `vote_table`) become one
+    row, labeled by "judge_nid" (the Federal Judicial Center's number for the
+    judge), with "judge" (the judge's name), "cases" (the number of the
+    judge's votes), and summaries of the other columns, as `group_rows`
+    takes them. A column that has one value among each judge's votes keeps
+    it (such as "judge_woman", or "court" for judges of one court). Of the
+    other columns of numbers and booleans, the mean is taken, which is a
+    share for a boolean: "vote_reversal" is the share of the judge's votes
+    to reverse, "judge_dissented" the share of the judge's cases in which
+    the judge dissented, and "judge_age" the judge's mean age when deciding
+    them. Columns of text or lists that differ among a judge's votes (such
+    as "case_id" and the cases' names) are left out, and so are ids (columns
+    whose names end with "_id"), unless "how" names a summary for them.
+
+    If the data is a table of cases (it has no "judge_nid" column), the
+    table of votes is made first, as `reshape_by_votes` makes it, with
+    "roster" and "outcomes".
+
+    Like every shaper, it takes "label", "task", and "groups". Without
+    "groups", the table has none, since the groups of votes (such as
+    "case_id") are not columns of it. Without "task", the task is inferred
+    from the label, since a label that was a vote is now a share.
+
+    """
+
+    """ Public Methods """
+
+    def apply(
+        self,
+        item: amos.Dataset,
+        *,
+        task: str | None = None,
+        groups: Sequence[str] | str | None = None,
+        **kwargs: Any) -> amos.Dataset:
+        """Makes the table of `item` a table of judges.
+
+        Args:
+            item: the dataset of votes or of cases.
+            task: "classify" or "regress". Defaults to `None`, in which case
+                it is inferred from the label (see `amos.Dataset.infer_task`).
+            groups: names of the groups of the judges. Defaults to `None`,
+                for none.
+            **kwargs: "label", and parameters for `shape`.
+
+        Returns:
+            The dataset of judges.
+
+        """
+        dataset = super().apply(
+            item, task = task, groups = [] if groups is None else groups,
+            **kwargs)
+        if task is None and dataset.label is not None:
+            dataset.task = dataset.infer_task()
+        return dataset
+
+    def shape(
+        self,
+        data: pd.DataFrame,
+        roster: Roster | pd.DataFrame | pathlib.Path | str | None = None,
+        outcomes: Sequence[str] | str | None = None,
+        how: Mapping[str, Any] | None = None,
+        count: str | None = 'cases',
+        **kwargs: Any) -> pd.DataFrame:
+        """Returns a table with one row for each judge.
+
+        Args:
+            data: a table of votes (see `vote_table`), or the parsed cases.
+            roster: for a table of cases, a roster, the table of one, or the
+                path of a saved one. Defaults to `None`, in which case the
+                roster saved in "judges" in `utilities.data_folder()` is
+                used.
+            outcomes: for a table of cases, names of the columns with the
+                outcomes of the cases, for which each judge's vote is added.
+                Defaults to `None`, in which case they are the columns whose
+                names start with "outcome_".
+            how: the summaries of columns, by their names, which take the
+                place of the usual ones (see `group_rows`), such as
+                {"court": "list"}. Defaults to `None`.
+            count: name of the column with the number of each judge's votes,
+                or `None` for no such column. Defaults to "cases".
+            **kwargs: not used.
+
+        Raises:
+            KeyError: if `data` lacks a column that is needed or named.
+
+        Returns:
+            The table of judges, labeled by "judge_nid".
+
+        """
+        votes = data if _NID in data.columns else vote_table(
+            data, roster, outcomes = utilities.listify(outcomes) or None)
+        votes = votes.reset_index(drop = True)
+        chosen = dict(how or {})
+        summarized = [
+            column for column in votes.columns
+            if column != _NID and (
+                column in chosen or column == 'judge'
+                or _is_number(votes[column], column))]
+        others = [
+            column for column in votes.columns
+            if column != _NID and column not in summarized]
+        constant = _constant(votes, _NID, others)
+        kept = [
+            column for column in votes.columns
+            if column in summarized or column in constant]
+        table = amos.shapers.GroupRows().shape(
+            votes[[_NID, *kept]], by = _NID, how = chosen or None,
+            count = count)
+        first = [c for c in ('judge', count) if c is not None and c in table]
+        ordered = [_NID, *first, *[
+            c for c in table.columns if c != _NID and c not in first]]
+        return table[ordered].set_index(_NID)
+
+
+@dataclasses.dataclass
+class MergeBiographies(amos.Merger):
     """Adds what a roster says about the judge that each row names.
 
     Each row of the data names one judge, as an opinion writes the name
@@ -870,30 +1165,134 @@ class MergeJudges(amos.Merger):
             [-1 if row is None else row for row in found], dtype = 'int64')
 
 
+@dataclasses.dataclass
+class LoadRoster(loaders.ReferenceLoader):
+    """Loads the table of a roster of judges.
+
+    The table (see `Roster`), with a row for each court that each judge has
+    served on, starts a study of the judges themselves. Its "source" is the
+    path of a saved roster. Without one, the roster saved in "judges" in
+    `courtpy.utilities.data_folder()` is used (see `Roster.load`). To add
+    what a roster says about judges to cases, use `merge_biographies` or
+    `code_panels` instead.
+
+    """
+
+    """ Public Methods """
+
+    def load(self, source: Any, **kwargs: Any) -> pd.DataFrame:
+        """Returns the table of a saved roster.
+
+        Args:
+            source: the path of a saved roster, or "current" for the roster
+                saved in "judges" in `utilities.data_folder()`.
+            **kwargs: not used.
+
+        Raises:
+            FileNotFoundError: if there is no roster at the path.
+
+        Returns:
+            The roster's table.
+
+        """
+        return Roster.load(self._locate(source)).data
+
+
+@dataclasses.dataclass
+class DownloadBiographies(loaders.ReferenceLoader):
+    """Downloads the Federal Judicial Center's files and loads their roster.
+
+    The center's files about judges are downloaded unless they are there
+    already, or "refresh" is true (see `download`), and a roster is made from
+    them (see `Roster.from_fjc`), which is saved too if "save" is set. Its
+    "source" is the folder to keep the files in, which is "judges" in
+    `courtpy.utilities.data_folder()` unless another is set.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        refresh: bool | str = False,
+        scores: pathlib.Path | str | None = None,
+        jcs: bool | str = False,
+        martin_quinn: bool | pathlib.Path | str = False,
+        rulebook: str = 'judges',
+        save: bool | pathlib.Path | str = False,
+        **kwargs: Any) -> pd.DataFrame:
+        """Downloads the files and returns the table of the roster they make.
+
+        Args:
+            source: the folder to keep the files in, or "current" for
+                "judges" in `utilities.data_folder()`.
+            refresh: whether to download the files even if they are there,
+                to get the judges and changes since. Defaults to `False`.
+            scores: the path of a file of scores of the judges to add (see
+                `build_roster`). Defaults to `None`.
+            jcs: whether to add each appointment's Judicial Common Space
+                score as "jcs". Defaults to `False`.
+            martin_quinn: whether to add the justices' Martin-Quinn scores,
+                or the path of the file of them. Defaults to `False`.
+            rulebook: the rules that code the judges' careers. Defaults to
+                "judges".
+            save: whether to save the roster where the techniques look for
+                it (see `Roster.save`), or the path to save it to. Defaults
+                to `False`.
+            **kwargs: not used.
+
+        Returns:
+            The roster's table.
+
+        """
+        chosen = self._choose(martin_quinn)
+        roster = Roster.from_fjc(
+            self._locate(source),
+            update = utilities.to_bool(refresh),
+            scores = None if scores is None else utilities.locate(
+                scores, self._get_clerk()),
+            jcs = utilities.to_bool(jcs),
+            martin_quinn = False if chosen is None else chosen,
+            rulebook = rulebook)
+        target = self._choose(save)
+        if target is True:
+            roster.save()
+        elif isinstance(target, pathlib.Path):
+            roster.save(target)
+        return roster.data
+
+
 def build_roster(
     service: pd.DataFrame | pathlib.Path | str,
     demographics: pd.DataFrame | pathlib.Path | str,
     career: pd.DataFrame | pathlib.Path | str | None = None,
     *,
     scores: pd.DataFrame | pathlib.Path | str | None = None,
-    rulebook: rules.Rulebook | pathlib.Path | str = 'judges') -> pd.DataFrame:
+    rulebook: fjc_biographies.Rulebook | pathlib.Path | str = 'judges') -> (
+        pd.DataFrame):
     """Makes the table of a roster from the Federal Judicial Center's files.
 
     The files are those of the Biographical Directory of Article III Federal
-    Judges that are organized by category (see `download`). The table has one
-    row for each court that each judge has served on, with these columns:
+    Judges that are organized by category (see `download`). The table is the
+    roster that `fjc_biographies.build_roster` makes, with one row for each
+    court that each judge has served on, and the two columns that courtpy
+    adds to find the judges of cases. Among its columns are:
 
     | Column | Meaning |
     | --- | --- |
     | `nid` | The center's number for the judge. |
     | `judge` | The judge's name, as the center reports it. |
     | `last_name`, `first_name`, `middle_name`, `suffix` | Its parts. |
-    | `aliases` | Other names that opinions use for the judge. |
+    | `aliases` | Other names that opinions use for the judge. Added by courtpy. |
+    | `name_first_middle_last`, ... | The name written in the ways that fjc-biographies writes it, for matching it against other sources. |
+    | `sequence` | The center's number for the order of the judge's service on the court among the judge's. |
     | `court`, `court_type` | The court's name and its type. |
-    | `court_num` | The number that the federal rules give a court of appeals or the Supreme Court. Missing for other courts. |
-    | `circuit_num` | The number of the court's circuit: its own, or for a district court, that of its state. |
-    | `start_year`, `end_year` | The years the judge's service on the court began (with a commission or a recess appointment) and ended. `end_year` is missing for a judge who is still serving. |
-    | `senior_year` | The year the judge took senior status, if any. |
+    | `court_num` | The number that the federal rules give a court of appeals or the Supreme Court. Missing for other courts. Added by courtpy. |
+    | `circuit_num` | The number of the court's circuit: its own `court_num`, or for a district court, that of its state. |
+    | `start_date`, `end_date`, `senior_date` | The dates the judge's service on the court began (with a commission or a recess appointment) and ended, and the judge took senior status. |
+    | `start_year`, `end_year`, `senior_year` | Their years. `end_year` is missing for a judge who is still serving. |
     | `birth_year` | The year the judge was born. |
     | `president` | The president who appointed the judge. |
     | `party` | That president's party: -1 for Democratic and 1 for Republican. Missing for other parties. |
@@ -907,15 +1306,11 @@ def build_roster(
     president, party, rating, recess appointment, and vote of the judge's
     last appointment.
 
-    If `career` is passed, each variable that `rulebook` makes from a
-    judge's career is a column too. The "judges" rulebook makes
+    If `career` is passed, the judge's career is the column "career" (each
+    position on its own line), and each variable that `rulebook` makes from
+    it is a column too. The "judges" rulebook of fjc-biographies makes
     "prosecutor", "public_defender", "law_clerk", "supreme_court_clerk",
     "solicitor_general", and "law_professor".
-
-    The files have a row for each court that a judge has served on, for each
-    judge, and for each position that a judge has held, so they are combined
-    by the judges' numbers with the `merge_keys` technique of `amos`: each
-    row of a judge's service gets the columns of the judge.
 
     Args:
         service: the file of federal judicial service
@@ -925,14 +1320,14 @@ def build_roster(
             ("professional-career.csv"). Defaults to `None`, in which case no
             careers are coded.
         scores: a table (or the path of a CSV file) with an "nid" column and
-            columns of scores for the judges (such as their Judicial Common
-            Space scores), which are added to the roster. If it has more
-            than one row for a judge, the first is used, and a column whose
-            name the roster already has is left out. Defaults to `None`.
-        rulebook: the rules that code careers: a rulebook, or the name of a
-            built-in rulebook or the path of a CSV file. Its rules search the
-            section "career", which has each position that a judge held on
-            its own line. Defaults to "judges".
+            columns of scores for the judges, which are added to the roster
+            with the `merge_keys` technique of `amos`. If it has more than
+            one row for a judge, the first is used, and a column whose name
+            the roster already has is left out. Defaults to `None`.
+        rulebook: the rules that code careers: a rulebook of fjc-biographies,
+            or the name of one of its built-in rulebooks or the path of a CSV
+            file. Its rules search the section "career", which has each
+            position that a judge held on its own line. Defaults to "judges".
 
     Raises:
         KeyError: if a file lacks a column that is needed.
@@ -944,81 +1339,26 @@ def build_roster(
             service.
 
     """
-    merger = amos.mergers.MergeKeys()
-    served = _read(service)
-    _require(served, _SERVICE, 'the file of federal judicial service')
-    people = _read(demographics)
-    _require(people, _PERSONAL, 'the file of demographics')
-    order = (
-        pd.to_numeric(served['sequence'], errors = 'coerce')
-        if 'sequence' in served.columns else 0)
-    served = (
-        served.assign(nid = served['nid'].astype(int), order = order)
-        .sort_values(['nid', 'order'], kind = 'stable')
-        .reset_index(drop = True))
-    # A reassigned judge has "None (reassignment)" in place of a president,
-    # so the columns of the appointment are taken from the judge's row above.
-    reassigned = served['appointing president'].str.startswith('None')
-    columns = list(_APPOINTMENT)
-    appointment = served[columns].astype(object).mask(reassigned)
-    inherited = appointment.groupby(served['nid']).ffill()
-    served[columns] = inherited.where(reassigned, served[columns]).fillna('')
-    # Each row of a judge's service gets the judge's demographics. A judge
-    # who is not in the file of demographics has blank ones.
-    details = [column for column in _PERSONAL if column != 'nid']
-    personal = merger.apply(
-        amos.Dataset(served[['nid']]),
-        source = people.assign(nid = people['nid'].astype(int)),
-        on = 'nid',
-        columns = details).data[details].fillna('')
+    roster = fjc_biographies.build_roster(
+        service, demographics, career, rulebook = rulebook)
     numbers = _number_courts(
-        served.loc[served['court type'].isin(_APPELLATE), 'court name'])
-    court_num = served['court name'].map(numbers).astype('Int64')
-    circuit_num = court_num.where(
-        served['court type'] != _DISTRICT_COURT,
-        served['court name'].map(_circuit).astype('Int64'))
-    started = _year(served['commission date'])
-    roster = pd.DataFrame({
-        'nid': served['nid'],
-        'judge': served['judge name'],
-        'last_name': personal['last name'],
-        'first_name': personal['first name'],
-        'middle_name': personal['middle name'],
-        'suffix': personal['suffix'],
-        'aliases': served['nid'].map(_ALIASES).fillna(''),
-        'court': served['court name'],
-        'court_type': served['court type'],
-        'court_num': court_num,
-        'circuit_num': circuit_num,
-        'start_year': started.fillna(_year(served['recess appointment date'])),
-        'end_year': _year(served['termination date']),
-        'senior_year': _year(served['senior status date']),
-        'birth_year': _year(personal['birth year']),
-        'president': served['appointing president'].astype(str),
-        'party': served['party of appointing president'].map(
-            _PARTIES).astype('Int64'),
-        'aba_rating': served['aba rating'].map(_ABA_RATINGS).astype('Int64'),
-        'recess': served['recess appointment date'] != '',
-        'senate_vote': [
-            _vote_share(kind, votes) for kind, votes in zip(
-                served['senate vote type'], served['ayes/nays'],
-                strict = True)],
-        'woman': (personal['gender'] == 'Female').astype('boolean').mask(
-            personal['gender'] == ''),
-        'minority': (
-            personal['race or ethnicity'] != 'White').astype('boolean').mask(
-                personal['race or ethnicity'] == '')})
-    if career is not None:
-        flags = _career_flags(_read(career), rulebook, roster['nid'])
-        roster = merger.apply(
-            amos.Dataset(roster), source = flags.rename_axis('nid').reset_index(),
-            on = 'nid').data
+        roster.loc[roster['court_type'].isin(_APPELLATE), 'court'])
+    court_num = roster['court'].map(numbers).astype('Int64')
+    # A court of appeals or the Supreme Court is the circuit of its own cases,
+    # as `Roster.match` compares them, so its circuit is its number.
+    roster['circuit_num'] = court_num.where(
+        roster['court_type'] != _DISTRICT_COURT, roster['circuit_num'])
+    columns = list(roster.columns)
+    roster.insert(columns.index('circuit_num'), 'court_num', court_num)
+    roster.insert(
+        columns.index('suffix') + 1, 'aliases',
+        roster['nid'].map(_ALIASES).fillna('').astype(str))
     if scores is not None:
         scored = (
             scores.copy() if isinstance(scores, pd.DataFrame)
             else utilities.read_csv(scores))
         _require(scored, ['nid'], 'the table of scores')
-        roster = merger.apply(
+        roster = amos.mergers.MergeKeys().apply(
             amos.Dataset(roster),
             source = scored.assign(
                 nid = pd.to_numeric(scored['nid'], errors = 'coerce')),
@@ -1051,27 +1391,27 @@ def clean_name(name: str) -> str:
 def download(
     folder: pathlib.Path | str | None = None,
     *,
-    overwrite: bool = False,
-    session: Any = None) -> dict[str, pathlib.Path]:
+    overwrite: bool = False) -> dict[str, pathlib.Path]:
     """Downloads the Federal Judicial Center's files about judges.
 
     The files are three of those of the Biographical Directory of Article III
     Federal Judges that are organized by category (see
     https://www.fjc.gov/history/judges/biographical-directory-article-iii-federal-judges-export):
     federal judicial service, demographics, and professional careers. They
-    need no account and are a few megabytes together.
+    need no account and are a few megabytes together. fjc-biographies
+    downloads them (see `fjc_biographies.download`), into the "raw" folder of
+    `folder`, which is where its scores look for them too.
 
     Args:
-        folder: the folder to save them in. Defaults to `None`, in which case
-            "judges" in `utilities.data_folder()` is used.
+        folder: the folder whose "raw" folder they are saved in. Defaults to
+            `None`, in which case "judges" in `utilities.data_folder()` is
+            used.
         overwrite: whether to download a file that is already there. The
             center adds new judges and changes as they happen. Defaults to
             `False`.
-        session: an object with a `get` method like a `requests.Session`.
-            Defaults to `None`, in which case a `requests.Session` is made.
 
     Raises:
-        requests.HTTPError: if a file cannot be downloaded.
+        urllib.error.URLError: if a file cannot be downloaded.
 
     Returns:
         The path of each file, by the name of the parameter of `build_roster`
@@ -1079,49 +1419,77 @@ def download(
 
     """
     folder = pathlib.Path(folder).expanduser() if folder else _folder()
-    session = utilities.open_session(session)
-    return {
-        kind: utilities.download_file(
-            options._FJC_URL + name, folder / name, overwrite = overwrite,
-            session = session)
-        for kind, name in options._FJC_FILES.items()}
+    return fjc_biographies.download(
+        _CATEGORIES, folder, overwrite = overwrite)
 
 
-def name_forms(first: str, middle: str, last: str) -> list[str]:
+def name_forms(
+    first: str,
+    middle: str,
+    last: str,
+    suffix: str = '') -> dict[str, list[str]]:
     """Returns the ways that an opinion may write a judge's name.
 
     Opinions name judges by their last names, with initials or first names
-    only when two judges of a court share one. For Sandra Lea Lynch, the
-    forms are "SANDRA LEA LYNCH", "SANDRA L LYNCH", "SANDRA LYNCH", "S LEA
-    LYNCH", "S L LYNCH", "SL LYNCH" (as "S.L." is written once its periods
-    are removed), "S LYNCH", "LEA LYNCH" (for a judge who goes by a middle
-    name), and "LYNCH".
+    only when two judges of a court share one. The forms are grouped by how
+    much of the name they give, which is the order in which `Roster.match`
+    tries them. For Sandra Lea Lynch, they are:
+
+    | Level | Forms |
+    | --- | --- |
+    | `full` | "SANDRA LEA LYNCH", "SANDRA L LYNCH", and "SANDRA LYNCH". |
+    | `initials` | "S LEA LYNCH", "S L LYNCH", "SL LYNCH" (as "S.L." is written once its periods are removed), "S LYNCH", and "LEA LYNCH" (for a judge who goes by a middle name). |
+    | `last` | "LYNCH". |
+
+    With a suffix, each form is also written with it after the last name
+    (such as "M D SMITH JR" and "SMITH JR"). A form is in only the first
+    level that has it.
 
     Args:
         first: the judge's first name.
         middle: the judge's middle name or names, which may be blank.
         last: the judge's last name.
+        suffix: the suffix of the judge's name, such as "Jr." or "III".
+            Defaults to an empty `str`.
 
     Returns:
-        The forms, as `clean_name` writes them, without repeats. There are
-            none if `last` is blank.
+        The forms of each level ("full", "initials", and "last"), as
+            `clean_name` writes them, without repeats. There are none if
+            `last` is blank.
 
     """
-    first, middle, last = clean_name(first), clean_name(middle), clean_name(last)
+    first, middle, last, suffix = (
+        clean_name(part) for part in (first, middle, last, suffix))
+    levels: dict[str, list[str]] = {level: [] for level in _LEVELS}
     if not last:
-        return []
-    forms = [
-        f'{first} {middle} {last}',
-        f'{first} {middle[:1]} {last}',
-        f'{first} {last}',
-        f'{first[:1]} {middle} {last}',
-        f'{first[:1]} {middle[:1]} {last}',
-        f'{first[:1]}{middle[:1]} {last}',
-        f'{first[:1]} {last}',
-        # An initial alone is not a name that a judge goes by.
-        f'{middle} {last}' if len(middle) > 1 else last,
-        last]
-    return list(dict.fromkeys(' '.join(form.split()) for form in forms))
+        return levels
+    written = {
+        'full': [
+            f'{first} {middle} {last}',
+            f'{first} {middle[:1]} {last}',
+            f'{first} {last}'],
+        'initials': [
+            f'{first[:1]} {middle} {last}',
+            f'{first[:1]} {middle[:1]} {last}',
+            f'{first[:1]}{middle[:1]} {last}',
+            f'{first[:1]} {last}',
+            # An initial alone is not a name that a judge goes by.
+            f'{middle} {last}' if len(middle) > 1 else ''],
+        'last': [last]}
+    # Without a first name, a full name or initials would be the last name
+    # alone, which belongs to the last level.
+    alone = {last, f'{last} {suffix}'.strip()}
+    seen: set[str] = set()
+    for level, forms in written.items():
+        for form in forms:
+            for written_form in (form, f'{form} {suffix}' if suffix else ''):
+                named = ' '.join(written_form.split())
+                if not named or named in seen or (
+                    level != 'last' and named in alone):
+                    continue
+                seen.add(named)
+                levels[level].append(named)
+    return levels
 
 
 def vote_table(
@@ -1136,8 +1504,8 @@ def vote_table(
     id and the judge's place among them (such as "4567890-2"). Cases with no
     judge who is found are left out. The table is made as `amos` reshapes
     and merges data: the `lists_to_rows` technique makes a row for each name,
-    and `merge_judges` (see `MergeJudges`) adds the judge that each name
-    refers to. The columns are:
+    and `merge_biographies` (see `MergeBiographies`) adds the judge that each
+    name refers to. The columns are:
 
     | Column | Meaning |
     | --- | --- |
@@ -1215,57 +1583,6 @@ def vote_table(
 """ Private Functions """
 
 
-def _career_flags(
-    career: pd.DataFrame,
-    rulebook: rules.Rulebook | pathlib.Path | str,
-    nids: Iterable[int]) -> pd.DataFrame:
-    """Codes the careers of judges with a rulebook.
-
-    Args:
-        career: the file of professional careers, as `_read` returns it.
-        rulebook: a rulebook, or the name or path of one.
-        nids: the ids of the judges to code. A judge with no career in the
-            file gets what the rules make of nothing (a flag is false).
-
-    Raises:
-        KeyError: if `career` lacks a column that is needed.
-
-    Returns:
-        A table with the variables that the rules make as its columns,
-            labeled by the judges' ids ("nid").
-
-    """
-    _require(
-        career, ['nid', 'professional career'],
-        'the file of professional careers')
-    book = (
-        rulebook if isinstance(rulebook, rules.Rulebook)
-        else rules.Rulebook.load(rulebook))
-    positions = career.assign(nid = career['nid'].astype(int)).groupby('nid')[
-        'professional career'].agg('\n'.join)
-    coded = {
-        nid: book.apply({'career': positions.get(nid, '')})
-        for nid in dict.fromkeys(nids)}
-    return pd.DataFrame.from_dict(coded, orient = 'index')[book.variables]
-
-
-def _circuit(court: str) -> int | None:
-    """Returns the number of the circuit of a district court.
-
-    Args:
-        court: the name of the court, such as "U.S. District Court for the
-            Middle District of Georgia".
-
-    Returns:
-        The number of the circuit that the court's state or territory is in
-            now (12 for the District of Columbia), or `None` if the name has
-            none that `_CIRCUITS` knows.
-
-    """
-    match = _DISTRICT.search(court)
-    return _CIRCUITS.get(match.group(1)) if match else None
-
-
 def _colleagues(panel: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
     """Returns the means of columns among the other judges of each case.
 
@@ -1295,6 +1612,78 @@ def _colleagues(panel: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
     return others
 
 
+def _constant(
+    data: pd.DataFrame,
+    key: str,
+    columns: Sequence[str]) -> list[str]:
+    """Returns the columns that have one value among each group's rows.
+
+    Args:
+        data: the table.
+        key: the column that says which group each row belongs to.
+        columns: the columns to check.
+
+    Returns:
+        Those of `columns`, in order, whose values (missing ones included)
+            are the same in every row of each group. A column with lists (or
+            other values that cannot be compared as wholes) is left out.
+
+    """
+    whole = [
+        column for column in columns
+        if data[column].dtype != object
+        or not data[column].map(_is_container).any()]
+    if not whole:
+        return []
+    counts = data.groupby(key, sort = False)[whole].nunique(dropna = False)
+    return [column for column in whole if bool((counts[column] <= 1).all())]
+
+
+def _is_container(value: Any) -> bool:
+    """Returns whether a value holds other values, such as a list.
+
+    Args:
+        value: a value of a table.
+
+    Returns:
+        Whether it is a list, tuple, set, `dict`, or array.
+
+    """
+    return isinstance(value, list | tuple | set | frozenset | dict | np.ndarray)
+
+
+def _is_judge_column(column: Any) -> bool:
+    """Returns whether a column of a table of votes is about one judge.
+
+    Args:
+        column: the name of the column.
+
+    Returns:
+        Whether it is "judge" or begins with one of `_JUDGE_PREFIXES`.
+
+    """
+    name = str(column)
+    return name == 'judge' or name.startswith(_JUDGE_PREFIXES)
+
+
+def _is_number(values: pd.Series, column: Any) -> bool:
+    """Returns whether a column is numbers or booleans that can be averaged.
+
+    Args:
+        values: the column.
+        column: the name of the column.
+
+    Returns:
+        Whether it is numbers or booleans and is not an id (a column whose
+            name is "id" or ends with "_id").
+
+    """
+    name = str(column)
+    return (
+        pd.api.types.is_numeric_dtype(values.dtype)
+        and name != 'id' and not name.endswith('_id'))
+
+
 def _folder() -> pathlib.Path:
     """Returns the folder where a roster and its sources are kept.
 
@@ -1305,15 +1694,30 @@ def _folder() -> pathlib.Path:
     return utilities.data_folder() / 'judges'
 
 
+def _is_text(column: Any) -> bool:
+    """Returns whether a column of a roster is text.
+
+    Args:
+        column: the name of the column.
+
+    Returns:
+        Whether it is one of `_TEXT` or matches `_OTHER_TEXT`.
+
+    """
+    return column in _TEXT or bool(_OTHER_TEXT.fullmatch(str(column)))
+
+
 def _named(
     data: pd.DataFrame,
     column: str,
     roster: Roster,
-    columns: Sequence[str] = ()) -> pd.DataFrame:
+    columns: Sequence[str] = (),
+    *,
+    unmatched: bool = False) -> pd.DataFrame:
     """Finds the judges that a column of the cases names.
 
     The `lists_to_rows` technique of `amos` makes a row for each name that a
-    case lists, and `MergeJudges` finds the judge that each name refers to.
+    case lists, and `MergeBiographies` finds the judge that each name refers to.
 
     Args:
         data: the parsed cases, with "court_num" and "year".
@@ -1322,14 +1726,18 @@ def _named(
             that was loaded without its lists being restored).
         roster: the roster to find the judges in.
         columns: the columns to add for each judge, other than "nid" (see
-            `MergeJudges`). Defaults to an empty `tuple`.
+            `MergeBiographies`). Defaults to an empty `tuple`.
+        unmatched: whether to keep the names that are not matched, with
+            missing values. Defaults to `False`.
 
     Returns:
-        A table with a row for each judge who was found, in the order of the
-            cases and then of the names, with each judge once for a case. Its
+        A table with a row for each judge who was found (and, with
+            `unmatched`, each name that was not), in the order of the cases
+            and then of the names, with each judge once for a case. Its
             columns are the position of the judge's case in `data`, the
-            judge's "nid", and `columns`, and its rows are labeled 0, 1, 2,
-            and so on.
+            place of the judge's name in the case's list (1 for the first),
+            the judge's "nid" (missing for a name that was not matched), and
+            `columns`, and its rows are labeled 0, 1, 2, and so on.
 
     """
     names = pd.DataFrame({
@@ -1339,16 +1747,48 @@ def _named(
         'year': pd.Series(data['year'].tolist(), dtype = object)})
     listed = amos.shapers.ListsToRows().shape(
         names, column = _NAME, separator = cases._SEPARATOR.strip())
-    merged = MergeJudges().apply(
+    # A case with no names has one row, whose name is missing, so each name's
+    # place is its row among its case's.
+    listed[_SEAT] = listed.groupby(_CASE).cumcount() + 1
+    merged = MergeBiographies().apply(
         amos.Dataset(listed),
         source = roster,
         name = _NAME,
         columns = ['nid', *columns],
         prefix = None,
         indicator = _FOUND).data
-    found: pd.DataFrame = merged[merged[_FOUND]].drop_duplicates(
-        [_CASE, 'nid'])[[_CASE, 'nid', *columns]]
-    return found.astype({'nid': 'int64'}).reset_index(drop = True)
+    repeated = merged[_FOUND] & merged.duplicated([_CASE, 'nid'])
+    kept = (merged[_FOUND] | (unmatched & merged[_NAME].notna())) & ~repeated
+    found: pd.DataFrame = merged[kept][[_CASE, _SEAT, 'nid', *columns]]
+    return found.astype(
+        {'nid': 'Int64' if unmatched else 'int64'}).reset_index(drop = True)
+
+
+def _numbered(panel: pd.DataFrame, size: int) -> pd.DataFrame:
+    """Returns the name and number of each judge of each case, in columns.
+
+    Args:
+        panel: a table with a row for each name on each case, with "judge"
+            and "nid" (as `_named` returns it with `unmatched`).
+        size: the number of cases.
+
+    Returns:
+        A table with a row for each case, in order, and "judge1",
+            "judge1_nid", "judge2", "judge2_nid", and so on, numbered by the
+            places of the names in the cases' lists, for as many as the
+            longest list has. A name that was not matched leaves its place
+            missing. It has no columns if `panel` has no rows.
+
+    """
+    place = panel[_SEAT].to_numpy()
+    columns: dict[str, pd.Series] = {}
+    for number in range(1, int(place.max(initial = 0)) + 1):
+        judges = panel[place == number].set_index(_CASE)
+        columns[f'judge{number}'] = judges['judge'].astype(object).reindex(
+            range(size))
+        columns[f'judge{number}_nid'] = judges['nid'].astype('Int64').reindex(
+            range(size))
+    return pd.DataFrame(columns, index = pd.RangeIndex(size))
 
 
 def _number_courts(courts: Iterable[str]) -> dict[str, int]:
@@ -1374,28 +1814,6 @@ def _number_courts(courts: Iterable[str]) -> dict[str, int]:
         if number is not None:
             numbers[court] = int(number)
     return numbers
-
-
-def _read(source: pd.DataFrame | pathlib.Path | str) -> pd.DataFrame:
-    """Returns a file of the Federal Judicial Center as a table of text.
-
-    Args:
-        source: the path of a CSV file (in UTF-8 or Windows-1252), or a table
-            that was loaded from one.
-
-    Returns:
-        The table, with the names of its columns in lower case and every cell
-            as text without spaces at its ends. A missing cell is blank.
-
-    """
-    table = (
-        source.copy() if isinstance(source, pd.DataFrame)
-        else utilities.read_csv(source, dtype = str, keep_default_na = False))
-    return pd.DataFrame({
-        str(column).strip().lower(): [
-            '' if pd.isna(cell) else str(cell).strip()
-            for cell in table[column]]
-        for column in table.columns})
 
 
 def _require(data: pd.DataFrame, columns: Iterable[str], name: str) -> None:
@@ -1464,27 +1882,6 @@ def _summarize(
     return summaries
 
 
-def _vote_share(kind: str, votes: str) -> float | None:
-    """Returns the share of senators who voted to confirm a judge.
-
-    Args:
-        kind: the type of vote: "Voice", "Roll Call", or anything else.
-        votes: the ayes and nays of a roll call, such as "96/2".
-
-    Returns:
-        1 for a voice vote, the share of ayes for a roll call, or `None` if
-            there was neither (or no votes are recorded).
-
-    """
-    if kind == 'Voice':
-        return 1.0
-    match = _VOTES.search(votes)
-    if match is None:
-        return None
-    ayes, nays = int(match.group(1)), int(match.group(2))
-    return ayes / (ayes + nays) if ayes + nays else None
-
-
 def _whole(value: Any) -> int | None:
     """Returns a value as a whole number, or `None` if it is missing.
 
@@ -1496,18 +1893,3 @@ def _whole(value: Any) -> int | None:
 
     """
     return None if value is None or pd.isna(value) else int(value)
-
-
-def _year(dates: pd.Series) -> pd.Series:
-    """Returns the years in a column of dates.
-
-    Args:
-        dates: dates as text, such as "2014-11-20" or "11/20/2014", or years.
-
-    Returns:
-        The first four digits in a row of each cell as a whole number, which
-            is missing if there are none.
-
-    """
-    found = dates.astype(str).str.extract(r'(\d{4})', expand = False)
-    return pd.to_numeric(found, errors = 'coerce').astype('Int64')

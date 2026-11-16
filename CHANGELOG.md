@@ -4,6 +4,141 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## Unreleased
+
+* Every process of courtpy is an `amos`/`chrisjen` technique. The techniques
+  are renamed for what they do, and the old names are removed (settings that
+  use them must be updated):
+  * `merge_judges` (`MergeJudges`) is `merge_biographies`
+    (`MergeBiographies`)
+  * `code_judges` (`CodeJudges`) is `code_panels` (`CodePanels`)
+  * `judge_votes` (`JudgeVotes`) is `reshape_by_votes` (`ReshapeByVotes`),
+    and `examples/judge_votes.ini` is `examples/reshape_by_votes.ini`
+  * `code_politics` (`CodePolitics`) is `add_politics` (`AddPolitics`)
+  * `code_scdb` (`CodeScdb`) is `merge_scdb` (`MergeScdb`)
+  * `code_idb` (`CodeIdb`) is `merge_idb` (`MergeIdb`)
+* `reshape_by_panel` (`judges.ReshapeByPanel`, an `amos.Shaper`) undoes
+  `reshape_by_votes`: the table of votes becomes the table of cases again,
+  labeled by "case_id", without the columns about each judge
+* `reshape_by_judge` (`judges.ReshapeByJudge`, an `amos.Shaper`) makes a table
+  with one row for each judge, labeled by "judge_nid", with the number of the
+  judge's votes ("cases"), the judge's attributes, and the means (shares) of
+  the other numbers and booleans, as `group_rows` takes them. Given a table of
+  cases, it makes the table of votes first
+* `tidy_cases` (`coders.TidyCases`, an `amos.Munger`) is `cases.tidy` as a
+  technique
+* `loaders.ReferenceLoader` is a genre of `amos` loaders that load a table of
+  reference data, needing no "source": `load_roster` and
+  `download_biographies` (`courtpy.judges`), `load_scdb` and `download_scdb`
+  (`courtpy.scdb`), `load_idb` and `download_idb` (`courtpy.fjc_idb`),
+  `load_politics` and `download_politics` (`courtpy.politics`), and
+  `download_jcs` (`courtpy.jcs`). The "download_" techniques download the
+  files first, again if "refresh" is true
+* Requires `amos` 0.8.1 or later. A loader's label that no coder makes is
+  now pending, as in `amos`, instead of raising a `KeyError`: a later
+  technique (such as "derive_columns") can still make it
+* `coders.code` passes the coders' parameters to `amos` as they are, now that
+  `amos.Operation` takes string keys
+* Updated to the `snickerdoodle` 0.4.3 template
+* The version is read from `__version__` in `src/courtpy/__init__.py` instead
+  of being repeated in `pyproject.toml`, and the license is the SPDX
+  expression "Apache-2.0" (PEP 639)
+* The `ci` Action uploads test coverage to Codecov, tests each Python version
+  in its matrix with that version, runs the `pre-commit` hooks once instead of
+  in every test job, and only runs on pushes to `main` and pull requests
+* GitHub releases are made with the GitHub CLI, only from `main` after the
+  tests and linters pass, and their notes are the released version's section
+  of this changelog
+* The documentation has a coverage report page
+* `dependabot` checks the `uv` dependencies and GitHub Actions weekly
+* `.python-version` (3.11) is kept in the repository
+* The federal rules are divided into `header`, `general`, `citations`,
+  `civil`, `constitutional`, and `criminal` (in the "federal" folder of
+  `instructions`), replacing `federal/opinion.csv`. `header` and `general` are
+  always applied; the others can be named alone (`rulebooks = civil,
+  criminal`), and "federal" (still the default) is all six. A file named more
+  than once is applied once
+* The citation variables are named `citations_...` instead of
+  `references_...`, and the constitutional ones `constitutional_...` instead
+  of `general_...`. A rule for the Third Amendment (`constitutional_amend3`)
+  is added
+* The Federal Judicial Center's biographies, the Martin-Quinn scores, and the
+  Judicial Common Space scores come from
+  [fjc-biographies](https://github.com/WithPrecedent/fjc_biographies) and
+  [judicial-common-space](https://github.com/WithPrecedent/judicial_common_space),
+  now dependencies, instead of courtpy's own code:
+  * `judges.download` downloads the center's files with fjc-biographies, into
+    the "raw" folder of "judges" in the data folder, and no longer takes a
+    `session`. `judges.build_roster` is fjc-biographies' roster with courtpy's
+    `aliases` and `court_num`, so it also has `sequence`, the dates of each
+    appointment, the ways of writing each name (`name_...`), and `career`.
+    Unknown names are missing instead of blank. The careers are coded by
+    fjc-biographies' "judges" rulebook (the same rules), so
+    `instructions/judges.csv` is removed and `rulebook` takes a rulebook of
+    fjc-biographies.
+  * `Roster.from_fjc(jcs = True)` adds each appointment's Judicial Common
+    Space score as computed by judicial-common-space (for district judges
+    too), instead of matching the published scores of the judges of the
+    courts of appeals by name. `Roster.from_fjc(martin_quinn = True)` (or the
+    path of a saved "justices.csv") adds the justices' Martin-Quinn scores
+    (`mq_first`, `mq_last`, `mq_mean`, and `mq_terms`).
+  * `politics.download` downloads the Martin-Quinn and NOMINATE files with
+    judicial-common-space, into "politics" in the data folder as before, and
+    its `folder` is now the data folder. The Martin-Quinn "court" file is no
+    longer used: `politics.martin_quinn` summarizes the justices' scores in
+    each term (their median, lowest, and highest), and takes the "justices"
+    file.
+  * `politics.justices` reads the scores with judicial-common-space, which
+    adds `jcs` (the score on the Common Space scale) in place of
+    `martin_quinn_sd`.
+  * `jcs.download` downloads the published files with judicial-common-space,
+    and its `folder` is now the data folder. `jcs.judges` and `jcs.justices`
+    are removed: use `Roster.from_fjc(jcs = True)` and `politics.justices`.
+  * The options for these sources' files and addresses (`_FJC_FILES`,
+    `_FJC_URL`, `_JCS_FILES`, `_JCS_PAGE`, `_MQ_FILES`, `_MQ_PAGE`,
+    `_VOTEVIEW_FILES`, and `_VOTEVIEW_URL`) are removed.
+* `Roster.match` matches a name by how much of it the opinion gives: first a
+  full name (any of fjc-biographies' `name_...` forms, or an alias), then
+  initials and the last name ("S. Lynch", "S. L. Lynch") or the middle and
+  last names, and then the last name alone. Each is narrowed by the years of
+  service and then by court, as before: the case's court, a district court of
+  its circuit, and then any other court (a judge sitting by designation). A
+  full name no longer counts as ambiguous because another judge's initials or
+  middle name fit it, and a suffix ("SMITH, JR.") is part of a name.
+  `name_forms` takes the suffix and returns the forms grouped by level
+  (`full`, `initials`, and `last`) instead of one list.
+* The `reference` folder is removed, since its data now come from
+  fjc-biographies, judicial-common-space, and the other sources' current
+  files. The tables that are still needed are dictionaries in `options`:
+  `_PRESIDENTS` (the party of the president in each year since 1933, which
+  `politics.presidents` reads in place of the years in which the party
+  changed), `_COURTS` (a number and folder name for each court, by a pattern
+  of the Federal Judicial Center's name for it), and `_TRIAL_COURTS` (each
+  district court's name, by a pattern of how opinions name it). The last two
+  are not yet used. Their patterns escape the periods and parentheses that
+  the old files left as regular-expression syntax, and the District of
+  Columbia's name is no longer "DISTRICT OF DISTRICT OF COLUMBIA".
+  `politics.presidents`' `start` defaults to the first year it knows, and its
+  `president_party` is a nullable whole number.
+  `utilities.instructions_folder` returns the folder of rulebooks.
+* `code_judges` adds `judge1`, `judge1_nid`, `judge2`, `judge2_nid`, and so
+  on: the Federal Judicial Center's name and `nid` of the judge that each
+  name in `panel_judges` refers to, numbered by the name's place in the list.
+  A name that is not matched leaves its place missing, so the judges after
+  it keep theirs.
+* A `labels` kind of rule, which lists the value of every rule for its
+  variable whose pattern appears, once each and separated by commas.
+* `federal/agencies.csv` (part of the "federal" rulebook, which is now seven
+  files) makes `agencies`: every federal agency that a case's caption,
+  history, or opinion names, by its name or a common abbreviation (such as
+  "ATF", which fjc-idb calls "BATF"), as their names separated by commas.
+  The agencies are the Integrated Database's, as fjc-idb lists them. An
+  abbreviation that is also something else is not counted when the case
+  names the other thing (such as "EPA" in a case about the Equal Pay Act,
+  or "DOT" in one that cites the Dictionary of Occupational Titles), and a
+  department that states also have needs "the", "U.S.", "United States", or
+  "federal" right before its name.
+
 ## 0.3.1
 
 * `parse` with more than one worker gives each process a chunk of cases at a

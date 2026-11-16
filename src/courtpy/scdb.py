@@ -13,7 +13,7 @@ with a row for each justice in each case. Both keep the database's names for
 their columns (such as "issueArea" and "decisionDirection"), so the codebook
 applies to them as it is.
 
-`code_scdb` (an `amos.Merger`, which is added to the `amos` library as soon
+`merge_scdb` (an `amos.Merger`, which is added to the `amos` library as soon
 as courtpy is imported) adds the database's columns to parsed cases of the
 Supreme Court, with "scdb_" before their names. A case is matched by the
 database's id for it, which CourtListener records ("scdb_id"), or else by
@@ -23,12 +23,19 @@ one of its citations:
 import courtpy
 
 cases = courtpy.parse("data/court_listener")
-dataset = courtpy.code(cases, "code_scdb", parameters = {
-    "code_scdb": {"columns": "issueArea, decisionDirection, partyWinning"}})
+dataset = courtpy.code(cases, "merge_scdb", parameters = {
+    "merge_scdb": {"columns": "issueArea, decisionDirection, partyWinning"}})
 ```
 
+`load_scdb` and `download_scdb` (reference loaders, see
+`courtpy.loaders.ReferenceLoader`) start a study of the database itself,
+such as of how the justices vote ("kind" set to "votes").
+
 Contents:
-    CodeScdb: adds the Supreme Court Database's columns to each case.
+    DownloadScdb: downloads the Supreme Court Database and loads its cases
+        or votes.
+    LoadScdb: loads the Supreme Court Database's table of cases or of votes.
+    MergeScdb: adds the Supreme Court Database's columns to each case.
     cases: returns the database's table with a row for each case.
     download: downloads the latest release of the database.
     votes: returns the database's table with a row for each justice in each
@@ -58,7 +65,7 @@ import amos
 import numpy as np
 import pandas as pd
 
-from . import options, utilities
+from . import loaders, options, utilities
 
 logger = logging.getLogger(__name__)
 _CITATIONS: tuple[str, ...] = ('usCite', 'sctCite', 'ledCite', 'lexisCite')
@@ -67,7 +74,7 @@ _SYMBOLS: re.Pattern[str] = re.compile(r'[^A-Z0-9]')
 
 
 @dataclasses.dataclass
-class CodeScdb(amos.Merger):
+class MergeScdb(amos.Merger):
     """Adds the Supreme Court Database's columns to each case.
 
     Each case is matched to the database's row for it: the row with the
@@ -227,6 +234,92 @@ class CodeScdb(amos.Merger):
         if isinstance(source, str | pathlib.Path):
             return cases(utilities.locate(source, self.clerk))
         return super().read(source, **kwargs)
+
+
+@dataclasses.dataclass
+class LoadScdb(loaders.ReferenceLoader):
+    """Loads the Supreme Court Database's table of cases or of votes.
+
+    The table starts a study of the database itself, such as of how the
+    justices vote ("kind" set to "votes"). Its "source" is the path of one
+    of the database's files. Without one, the latest release that was
+    downloaded is used, which is downloaded first if there is none (see
+    `download`). To add the database's columns to parsed cases, use
+    `merge_scdb` instead.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        kind: str = 'cases',
+        **kwargs: Any) -> pd.DataFrame:
+        """Returns the database's table.
+
+        Args:
+            source: the path of the database's file of the kind (a CSV file
+                or the zip archive of one), or "current" for the latest
+                release that was downloaded.
+            kind: "cases" (a row for each case) or "votes" (a row for each
+                justice in each case). Defaults to "cases".
+            **kwargs: not used.
+
+        Returns:
+            The table (see `cases` and `votes`).
+
+        """
+        return _read(self._locate(source), _kind(kind))
+
+
+@dataclasses.dataclass
+class DownloadScdb(loaders.ReferenceLoader):
+    """Downloads the Supreme Court Database and loads its cases or votes.
+
+    The file is downloaded (see `download`) unless the folder has one
+    already, or "refresh" is true, which looks for a newer release. Its
+    "source" is the folder to keep the files in, which is "scdb" in
+    `courtpy.utilities.data_folder()` unless another is set.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        kind: str = 'cases',
+        refresh: bool | str = False,
+        session: Any = None,
+        **kwargs: Any) -> pd.DataFrame:
+        """Downloads the database's file of a kind and returns its table.
+
+        Args:
+            source: the folder to keep the files in, or "current" for "scdb"
+                in `utilities.data_folder()`.
+            kind: "cases" (a row for each case) or "votes" (a row for each
+                justice in each case). Defaults to "cases".
+            refresh: whether to look for the latest release even if the
+                folder has a file of the kind. Defaults to `False`.
+            session: an object with a `get` method like a
+                `requests.Session`. Defaults to `None`, in which case a
+                `requests.Session` is made.
+            **kwargs: not used.
+
+        Returns:
+            The table (see `cases` and `votes`).
+
+        """
+        kind = _kind(kind)
+        paths = download(
+            self._locate(source),
+            kinds = kind,
+            overwrite = utilities.to_bool(refresh),
+            session = session)
+        return _read(paths[kind], kind)
 
 
 def cases(
@@ -404,6 +497,27 @@ def _cited(table: pd.DataFrame) -> dict[str, int]:
                 shared = rows.get(cite, position) != position
                 rows[cite] = -1 if shared else position
     return rows
+
+
+def _kind(kind: Any) -> str:
+    """Returns a kind of the database's files, checked.
+
+    Args:
+        kind: "cases" or "votes".
+
+    Raises:
+        ValueError: if `kind` is not one of the files that courtpy knows.
+
+    Returns:
+        `kind` as text.
+
+    """
+    text = str(kind).strip()
+    if text not in options._SCDB_FILES:
+        message = (
+            f'kind must be one of {list(options._SCDB_FILES)}, not {kind!r}')
+        raise ValueError(message)
+    return text
 
 
 def _folder() -> pathlib.Path:

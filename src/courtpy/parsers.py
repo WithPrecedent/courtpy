@@ -7,9 +7,13 @@ Parsing has three stages:
    information that needs no parsing (such as CourtListener's date filed).
 2. For Lexis-Nexis, the "lexis_nexis" rules find the sections of the header
    (see `courtpy.lexis`). CourtListener's sections come from its data.
-3. The rules of the jurisdiction (by default, the "federal" rules) find
-   variables in the sections: the parties' roles, the court, the
-   disposition, the judges, the issues discussed in the opinion, and so on.
+3. Rules find variables in the sections. The "header" rules (the parties'
+   roles, the court, the disposition, and the judges) and the "general"
+   rules (the decision, procedure, and standards of review) are always
+   applied, and then the rulebooks that are named (by default, the
+   "federal" rules, which add citations and civil, constitutional, and
+   criminal issues; "citations", "civil", "constitutional", and "criminal"
+   can be named alone).
 
 Every section except those whose names end in "_lines" is collapsed onto one
 line between stages 2 and 3, so that phrases broken across lines are found.
@@ -112,10 +116,13 @@ class Parser:
         keep_text: bool = False) -> Parser:
         """Returns a parser with the rules in `rulebooks`.
 
+        The rules of `options._REQUIRED_RULEBOOKS` are always applied first,
+        whether or not they are named.
+
         Args:
-            rulebooks: names of built-in rulebooks (such as "federal") or
-                paths to CSV files or folders of them, applied in order.
-                Defaults to `options._DEFAULT_JURISDICTION`.
+            rulebooks: names of built-in rulebooks (such as "federal" or
+                "civil") or paths to CSV files or folders of them, applied in
+                order. Defaults to `options._DEFAULT_JURISDICTION`.
             keep_text: whether to keep the text of the opinions in the table.
                 Defaults to `False`.
 
@@ -126,8 +133,9 @@ class Parser:
         if isinstance(rulebooks, str | pathlib.Path):
             rulebooks = utilities.listify(str(rulebooks)) if isinstance(
                 rulebooks, str) else [rulebooks]
-        return cls(
-            rulebook = rules.Rulebook.load(*rulebooks), keep_text = keep_text)
+        rulebook = rules.Rulebook.load(
+            *options._REQUIRED_RULEBOOKS, *rulebooks)
+        return cls(rulebook = rulebook, keep_text = keep_text)
 
     """ Public Methods """
 

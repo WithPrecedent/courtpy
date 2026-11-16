@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import io
 import pathlib
 import random
 from typing import Any
 
 import amos
 import chrisjen
+import fjc_biographies
 import pandas as pd
 import pytest
 from conftest import make_cluster, make_opinion, write_case
@@ -101,9 +103,13 @@ def found(roster: judges.Roster, name: str, court: Any, year: Any) -> tuple[int,
 
 def test_techniques_are_in_the_library() -> None:
     # Each is the genre of `amos` that says what it does to the cases.
-    assert amos.library.classify('merge_judges') == 'merger'
-    assert amos.library.classify('code_judges') == 'munger'
-    assert amos.library.classify('judge_votes') == 'shaper'
+    assert amos.library.classify('merge_biographies') == 'merger'
+    assert amos.library.classify('code_panels') == 'munger'
+    assert amos.library.classify('reshape_by_votes') == 'shaper'
+    assert amos.library.classify('reshape_by_panel') == 'shaper'
+    assert amos.library.classify('reshape_by_judge') == 'shaper'
+    assert amos.library.classify('load_roster') == 'reference_loader'
+    assert amos.library.classify('download_biographies') == 'reference_loader'
 
 
 def test_build_roster(table: pd.DataFrame) -> None:
@@ -136,9 +142,13 @@ def test_build_roster_courts(table: pd.DataFrame) -> None:
     massachusetts = numbers.loc['U.S. District Court for the District of Massachusetts']
     assert pd.isna(massachusetts['court_num']) and massachusetts['circuit_num'] == 1
     assert numbers.loc['U.S. District Court for the Southern District of New York', 'circuit_num'] == 2
-    assert judges._circuit('U.S. District Court for the District of Columbia (Supreme Court)') == 12
-    assert judges._circuit('U.S. District Court for the Edenton & Wilmington Districts of North Carolina') == 4
-    assert judges._circuit('U.S. District Court for the District of Orleans') is None
+    # A court of appeals or the Supreme Court is its own circuit, numbered as
+    # the federal rules number it.
+    assert numbers.loc['Supreme Court of the United States', 'circuit_num'] == 99
+    # The columns that courtpy adds are beside those of fjc-biographies.
+    columns = list(table.columns)
+    assert columns.index('aliases') == columns.index('suffix') + 1
+    assert columns.index('court_num') == columns.index('circuit_num') - 1
 
 
 def test_build_roster_appointments(table: pd.DataFrame) -> None:
@@ -216,16 +226,64 @@ def test_build_roster_missing_columns() -> None:
 
 
 def test_name_forms() -> None:
-    assert judges.name_forms('Sandra', 'Lea', 'Lynch') == [
-        'SANDRA LEA LYNCH', 'SANDRA L LYNCH', 'SANDRA LYNCH', 'S LEA LYNCH',
-        'S L LYNCH', 'SL LYNCH', 'S LYNCH', 'LEA LYNCH', 'LYNCH']
-    assert judges.name_forms('Ronnie', '', 'Abrams') == ['RONNIE ABRAMS', 'R ABRAMS', 'ABRAMS']
-    assert 'R LANIER FIELDS' in judges.name_forms('R[ay]', 'Lanier', 'Fields')
-    assert "D OSCANNLAIN" in judges.name_forms('Diarmuid', 'F.', "O'Scannlain")
-    assert 'F OSCANNLAIN' not in judges.name_forms('Diarmuid', 'F.', "O'Scannlain")
-    assert judges.name_forms('John', '', '') == []
+    assert judges.name_forms('Sandra', 'Lea', 'Lynch') == {
+        'full': ['SANDRA LEA LYNCH', 'SANDRA L LYNCH', 'SANDRA LYNCH'],
+        'initials': ['S LEA LYNCH', 'S L LYNCH', 'SL LYNCH', 'S LYNCH', 'LEA LYNCH'],
+        'last': ['LYNCH']}
+    assert judges.name_forms('Ronnie', '', 'Abrams') == {
+        'full': ['RONNIE ABRAMS'], 'initials': ['R ABRAMS'], 'last': ['ABRAMS']}
+    # Each form is also written with the suffix.
+    smith = judges.name_forms('Milton', 'Dale', 'Smith', 'Jr.')
+    assert smith['full'][:2] == ['MILTON DALE SMITH', 'MILTON DALE SMITH JR']
+    assert 'M SMITH JR' in smith['initials'] and smith['last'] == ['SMITH', 'SMITH JR']
+    assert 'R LANIER FIELDS' in judges.name_forms('R[ay]', 'Lanier', 'Fields')['initials']
+    oscannlain = judges.name_forms('Diarmuid', 'F.', "O'Scannlain")
+    assert 'D OSCANNLAIN' in oscannlain['initials'] and 'F OSCANNLAIN' not in oscannlain['initials']
+    # A first name that is an initial makes a full name, and without a first
+    # name, there is only the last name.
+    assert judges.name_forms('J.', '', 'Doe') == {'full': ['J DOE'], 'initials': [], 'last': ['DOE']}
+    assert judges.name_forms('', '', 'Doe') == {'full': [], 'initials': [], 'last': ['DOE']}
+    assert judges.name_forms('John', '', '') == {'full': [], 'initials': [], 'last': []}
     assert judges.clean_name(" N.R.  Smith, Jr. ") == 'NR SMITH JR'
     assert judges.clean_name('Gelpí') == judges.clean_name('Gelpi') == 'GELPI'
+
+
+def test_match_by_how_much_of_the_name(roster: judges.Roster) -> None:
+    # A full name, in any of the ways that fjc-biographies writes it.
+    assert found(roster, 'Mary Ann Lynch', 1, 2020) == (101, FIRST)
+    assert found(roster, 'Milton Dale Smith, Jr.', 9, 2010) == (104, NINTH)
+    assert found(roster, 'Norman Roy Smith', 9, 2010) == (105, NINTH)
+    assert found(roster, 'R. Lanier Fields', 11, 1990) == (108, 'U.S. Court of Appeals for the Eleventh Circuit')
+    # Initials and the last name tell apart judges who share a last name.
+    assert found(roster, 'M. D. Smith', 9, 2010) == (104, NINTH)
+    assert found(roster, 'N.R. Smith', 9, 2010) == (105, NINTH)
+    # A suffix is part of the last name.
+    assert found(roster, 'SMITH, JR.', 9, 2010) == (104, NINTH)
+    # A full name finds a judge of another circuit, who sits by designation.
+    assert found(roster, 'Ray Fields', 1, 1990) == (108, 'U.S. Court of Appeals for the Eleventh Circuit')
+    # Every level uses the years of the judges' service.
+    assert found(roster, 'Norman Roy Smith', 9, 2006) is None
+
+
+def test_match_prefers_a_full_name() -> None:
+    files = tables()
+    files['service'] = pd.concat([files['service'], pd.DataFrame([
+        (120, 1, 'Lynch, Ann', DISTRICT, 'U.S. District Court for the District of Maine', 'Barack Obama', 'Democratic', '', '', 'Voice', '', '2012-05-01', '', '')],
+        columns = SERVICE_COLUMNS)])
+    files['demographics'] = pd.concat([files['demographics'], pd.DataFrame([
+        (120, 'Lynch', 'Ann', '', '', '1960', 'Female', 'White')], columns = DEMOGRAPHICS_COLUMNS)])
+    roster = judges.Roster(judges.build_roster(**files))
+    maine = 'U.S. District Court for the District of Maine'
+    # "Ann Lynch" is the full name of the district judge, and only the middle
+    # and last names of the circuit judge, so it is the district judge.
+    assert found(roster, 'ANN LYNCH', 1, 2020) == (120, maine)
+    assert found(roster, 'A. LYNCH', 1, 2020) == (120, maine)
+    assert found(roster, 'M. LYNCH', 1, 2020) == (101, FIRST)
+    # The last name alone is the judge of the case's court, and then a
+    # district judge of its circuit.
+    assert found(roster, 'LYNCH', 1, 2020) == (101, FIRST)
+    assert found(roster, 'LYNCH', 1, 1990) is None
+    assert found(roster, 'LYNCH', 1, 1996) == (101, FIRST)
 
 
 def test_match_prefers_the_court(roster: judges.Roster) -> None:
@@ -313,94 +371,107 @@ def test_save_and_load(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     assert judges.Roster.create(elsewhere).match('HOWARD', 1, 2020) is not None
     assert judges.Roster.create(roster) is roster
     assert judges.Roster.create(roster.data).match('HOWARD', 1, 2020) is not None
+    # The columns of text that fjc-biographies adds are not attributes, even
+    # when they are blank, which a saved roster would read as numbers.
+    blank = judges.Roster(roster.data.assign(name_other = None, recess_date = None, career = None))
+    assert blank.attributes == roster.attributes
+    assert judges.Roster.load(blank.save(tmp_path / 'blank.csv')).attributes == roster.attributes
+    assert 'sequence' not in roster.attributes and 'name_first_last' in roster.data.columns
 
 
-class Response:
-    """A response like those from `requests`."""
+class Website:
+    """Serves the invented judges' files in place of the center's website."""
 
-    def __init__(self, content: bytes, status: int = 200) -> None:
-        self.content = content
-        self.status = status
-
-    def raise_for_status(self) -> None:
-        """Raises an error for a response that failed."""
-        if self.status >= 400:
-            raise RuntimeError(f'status {self.status}')
-
-
-class Session:
-    """A session that serves the invented judges' files."""
-
-    def __init__(self, status: int = 200) -> None:
-        self.status = status
-        self.headers: dict[str, str] = {}
+    def __init__(self) -> None:
         self.urls: list[str] = []
         self.files = {
-            courtpy.options._FJC_FILES[kind]: frame.to_csv(index = False).encode()
+            fjc_biographies.options._CATEGORIES[kind]: frame.to_csv(index = False).encode()
             for kind, frame in tables().items()}
 
-    def get(self, url: str, **kwargs: Any) -> Response:
+    def open(self, url: str) -> io.BytesIO:
         """Records the request and returns the file it names."""
         self.urls.append(url)
-        return Response(self.files[url.rsplit('/', 1)[-1]], self.status)
+        return io.BytesIO(self.files[url.rsplit('/', 1)[-1]])
 
 
-def test_download(tmp_path: pathlib.Path) -> None:
-    session = Session()
-    paths = judges.download(tmp_path / 'fjc', session = session)
+@pytest.fixture
+def website(monkeypatch: pytest.MonkeyPatch) -> Website:
+    """Returns the website that fjc-biographies downloads the files from."""
+    site = Website()
+    monkeypatch.setattr(fjc_biographies.downloader, '_open', site.open)
+    return site
+
+
+def test_download(website: Website, tmp_path: pathlib.Path) -> None:
+    paths = judges.download(tmp_path / 'fjc')
     assert list(paths) == ['service', 'demographics', 'career']
-    assert [p.name for p in paths.values()] == list(courtpy.options._FJC_FILES.values())
-    assert session.urls[0] == 'https://www.fjc.gov/sites/default/files/history/federal-judicial-service.csv'
-    assert len(session.urls) == 3
+    assert [p.name for p in paths.values()] == [
+        'federal-judicial-service.csv', 'demographics.csv', 'professional-career.csv']
+    # fjc-biographies keeps the files in the "raw" folder of the folder.
+    assert {p.parent for p in paths.values()} == {tmp_path / 'fjc' / 'raw'}
+    assert website.urls[0] == 'https://www.fjc.gov/sites/default/files/history/federal-judicial-service.csv'
+    assert len(website.urls) == 3
     # Files that are there are not downloaded again unless asked.
-    judges.download(tmp_path / 'fjc', session = session)
-    assert len(session.urls) == 3
-    judges.download(tmp_path / 'fjc', session = session, overwrite = True)
-    assert len(session.urls) == 6
+    judges.download(tmp_path / 'fjc')
+    assert len(website.urls) == 3
+    judges.download(tmp_path / 'fjc', overwrite = True)
+    assert len(website.urls) == 6
     assert judges.Roster(judges.build_roster(**paths)).match('LYNCH', 1, 2020) is not None
-    with pytest.raises(RuntimeError, match = '503'):
-        judges.download(tmp_path / 'other', session = Session(status = 503))
     # The default folder is outside of any project.
-    assert judges.download(session = session)['service'].parent == (
-        courtpy.utilities.data_folder() / 'judges')
+    assert judges.download()['service'].parent == (
+        courtpy.utilities.data_folder() / 'judges' / 'raw')
 
 
-def test_download_identifies_courtpy(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
-    made = []
-
-    def make() -> Session:
-        made.append(Session())
-        return made[-1]
-
-    monkeypatch.setattr(courtpy.utilities.requests, 'Session', make)
-    judges.download(tmp_path)
-    assert made[0].headers == {'User-Agent': courtpy.options._USER_AGENT}
-    assert len(made[0].urls) == 3
-
-
-def test_from_fjc(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
-    calls = []
-
-    def fake(folder: Any = None, *, overwrite: bool = False, session: Any = None) -> dict[str, pathlib.Path]:
-        calls.append(overwrite)
-        return original(folder, overwrite = overwrite, session = Session())
-
-    original = judges.download
-    monkeypatch.setattr(judges, 'download', fake)
-    roster = judges.Roster.from_fjc(tmp_path, update = True)
-    assert calls == [True]
+def test_from_fjc(website: Website, tmp_path: pathlib.Path) -> None:
+    roster = judges.Roster.from_fjc(tmp_path)
+    assert len(website.urls) == 3
     assert found(roster, 'LYNCH', 1, 2020) == (101, FIRST)
     assert 'prosecutor' in roster.attributes
+    assert 'jcs' not in roster.data.columns
+    judges.Roster.from_fjc(tmp_path, update = True)
+    assert len(website.urls) == 6
 
 
-def test_merge_judges(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+def test_from_fjc_scores(website: Website, monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    calls: list[tuple[str, Any, dict[str, Any]]] = []
+
+    def add_jcs(roster: pd.DataFrame, folder: Any = None, **kwargs: Any) -> pd.DataFrame:
+        calls.append(('jcs', folder, kwargs))
+        return roster.assign(jcs = roster['nid'].astype('Float64') / 1000)
+
+    def add_martin_quinn(roster: pd.DataFrame, folder: Any = None, **kwargs: Any) -> pd.DataFrame:
+        calls.append(('martin_quinn', folder, kwargs))
+        return roster.assign(mq_mean = pd.array([None] * len(roster), dtype = 'Float64'))
+
+    monkeypatch.setattr(fjc_biographies, 'add_jcs', add_jcs)
+    monkeypatch.setattr(fjc_biographies, 'add_martin_quinn', add_martin_quinn)
+    roster = judges.Roster.from_fjc(tmp_path, jcs = True)
+    # The scores are computed from the files that fjc-biographies downloaded,
+    # and the files of judicial-common-space are kept with courtpy's.
+    assert calls == [('jcs', tmp_path, {
+        'scores_folder': courtpy.utilities.data_folder(), 'martin_quinn': None, 'update': False})]
+    assert 'jcs' in roster.attributes and 'mq_mean' not in roster.data.columns
+    assert roster.describe(roster.match('LYNCH', 1, 2020), 1, 2020)['jcs'] == pytest.approx(0.101)
+    calls.clear()
+    saved = tmp_path / 'justices.csv'
+    roster = judges.Roster.from_fjc(tmp_path, jcs = True, martin_quinn = saved, update = True)
+    assert [call[0] for call in calls] == ['jcs', 'martin_quinn']
+    assert all(call[2]['martin_quinn'] == saved and call[2]['update'] for call in calls)
+    assert 'mq_mean' in roster.attributes
+    calls.clear()
+    judges.Roster.from_fjc(tmp_path, martin_quinn = True)
+    assert [call[0] for call in calls] == ['martin_quinn']
+    assert calls[0][2]['martin_quinn'] is None
+
+
+def test_merge_biographies(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # A row for each judge on each case, as `lists_to_rows` makes them.
     data = pd.DataFrame({
         'judge': ['LYNCH', 'WOODS', 'NOBODY', None, 'SMITH', 'M. SMITH'],
         'court_num': [1, 1, 1, 1, 9, 9],
         'year': [2016, 2016, 2016, 2016, 2010, 2010],
         'reversed': [True, True, True, False, False, False]}, index = list('abcdef'))
-    dataset = judges.MergeJudges().apply(
+    dataset = judges.MergeBiographies().apply(
         amos.Dataset(data.copy(), label = 'reversed'), source = roster, indicator = 'found')
     merged = dataset.data
     # A merger never adds, removes, or reorders rows.
@@ -412,13 +483,13 @@ def test_merge_judges(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     assert merged.loc[['c', 'd', 'e'], 'judge_party'].isna().all()
     assert all(merged[c].dtype == 'float64' for c in merged.columns[4:-1])
     record = dataset.history[0]
-    assert (record['technique'], record['source'], record['rows'], record['matched']) == ('merge_judges', 'Roster', 6, 3)
+    assert (record['technique'], record['source'], record['rows'], record['matched']) == ('merge_biographies', 'Roster', 6, 3)
     assert record['created'] == list(merged.columns[4:])
     # Other columns of the roster can be added, under another prefix, and
     # the judge can be named by another column, such as a case's author.
     cases = data.rename(columns = {'judge': 'author'})
     path = roster.save(tmp_path / 'roster.csv')
-    dataset = judges.MergeJudges().apply(
+    dataset = judges.MergeBiographies().apply(
         amos.Dataset(cases), source = str(path), name = 'author', prefix = 'author_',
         columns = 'judge, nid, president, party, age')
     merged = dataset.data
@@ -427,28 +498,32 @@ def test_merge_judges(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
         'Smith, Milton Dale, Jr.', 104, 'George W. Bush']
     assert pd.isna(merged.loc['c', 'author_judge'])
     assert dataset.history[0]['source'] == str(path)
-    assert judges.MergeJudges().match(data, roster).tolist() == [0, 5, -1, -1, -1, 3]
+    assert judges.MergeBiographies().match(data, roster).tolist() == [0, 5, -1, -1, -1, 3]
 
 
-def test_merge_judges_fails_clearly(roster: judges.Roster) -> None:
+def test_merge_biographies_fails_clearly(roster: judges.Roster) -> None:
     data = pd.DataFrame({'judge': ['LYNCH'], 'court_num': [1], 'year': [2016], 'judge_party': [0]})
     with pytest.raises(ValueError, match = 'prefix'):
-        judges.MergeJudges().apply(amos.Dataset(data), source = roster)
+        judges.MergeBiographies().apply(amos.Dataset(data), source = roster)
     with pytest.raises(KeyError, match = 'no_such'):
-        judges.MergeJudges().apply(amos.Dataset(data), source = roster, columns = ['party', 'no_such'])
-    with pytest.raises(KeyError, match = 'merge_judges'):
-        judges.MergeJudges().apply(amos.Dataset(data.drop(columns = 'year')), source = roster)
+        judges.MergeBiographies().apply(amos.Dataset(data), source = roster, columns = ['party', 'no_such'])
+    with pytest.raises(KeyError, match = 'merge_biographies'):
+        judges.MergeBiographies().apply(amos.Dataset(data.drop(columns = 'year')), source = roster)
     with pytest.raises(FileNotFoundError, match = 'no roster'):
-        judges.MergeJudges().apply(amos.Dataset(data))
+        judges.MergeBiographies().apply(amos.Dataset(data))
 
 
-def test_code_judges(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_code_panels(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     parsed = courtpy.parse(court_listener_folder)
     dataset = courtpy.code(
-        parsed, ['code_judges'], parameters = {'code_judges': {'roster': roster}})
+        parsed, ['code_panels'], parameters = {'code_panels': {'roster': roster}})
     data = dataset.data
     assert data.loc['1', 'panel_names'] == ['Lynch, Mary Ann', 'Howard, John Q.', 'Thompson, Rita Mae']
     assert list(data['panel_found']) == [3, 3, 3]
+    # Each judge who is found has the center's name and number.
+    assert [data.loc['1', f'judge{n}'] for n in (1, 2, 3)] == data.loc['1', 'panel_names']
+    assert [data.loc['1', f'judge{n}_nid'] for n in (1, 2, 3)] == [101, 102, 103]
+    assert data['judge1_nid'].dtype == 'Int64' and 'judge4' not in data.columns
     assert list(data['panel_found']) == list(data['panel_size'])
     assert data.loc['1', 'author_name'] == 'Lynch, Mary Ann'
     assert data.loc['1', 'dissenting_names'] == []
@@ -463,22 +538,37 @@ def test_code_judges(court_listener_folder: pathlib.Path, roster: judges.Roster)
     assert {'author_name', 'concurring_names', 'panel_senior', 'panel_district_judge'} <= set(created)
 
 
-def test_code_judges_with_little(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+def test_code_panels_with_little(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # Names can be the text of a saved table, and judges and years missing.
     data = pd.DataFrame({
         'panel_judges': ['LYNCH; WOODS', None, 'NOBODY', 'HOWARD'],
         'court_num': pd.array([1, 1, 1, pd.NA], dtype = 'Int64'),
         'year': pd.array([2016, 2016, 2016, pd.NA], dtype = 'Int64')})
     path = roster.save(tmp_path / 'roster.csv')
-    result = judges.CodeJudges().apply(amos.Dataset(data), roster = str(path)).data
+    result = judges.CodePanels().apply(amos.Dataset(data), roster = str(path)).data
     assert list(result['panel_found']) == [2, 0, 0, 1]
+    assert [c for c in result.columns if c.startswith('judge')] == ['judge1', 'judge1_nid', 'judge2', 'judge2_nid']
+    assert list(result['judge1_nid'].astype(object).where(result['judge1_nid'].notna(), None)) == [101, None, None, 102]
+    assert result.loc[0, 'judge2'] == 'Woods, Dana Paul' and pd.isna(result.loc[3, 'judge2'])
+    # A name that is not matched leaves its place empty, so the judges after
+    # it keep their places.
+    gaps = pd.DataFrame({
+        'panel_judges': [['NOBODY', 'LYNCH', 'HOWARD'], ['LYNCH', 'NOBODY', 'NOBODY']],
+        'court_num': [1, 1], 'year': [2016, 2016]})
+    seated = judges.CodePanels().apply(amos.Dataset(gaps), roster = roster).data
+    assert [c for c in seated.columns if c.startswith('judge')] == [
+        'judge1', 'judge1_nid', 'judge2', 'judge2_nid', 'judge3', 'judge3_nid']
+    assert pd.isna(seated.loc[0, 'judge1']) and pd.isna(seated.loc[0, 'judge1_nid'])
+    assert (seated.loc[0, 'judge2_nid'], seated.loc[0, 'judge3_nid']) == (101, 102)
+    assert seated.loc[1, 'judge1'] == 'Lynch, Mary Ann' and seated.loc[1, ['judge2', 'judge3']].isna().all()
+    assert list(seated['panel_found']) == [2, 1]
     assert result.loc[0, 'panel_district_judge'] == 0.5
     assert pd.isna(result.loc[1, 'panel_party']) and pd.isna(result.loc[3, 'panel_age'])
     assert 'author_name' not in result.columns
     with pytest.raises(KeyError, match = 'panel_judges'):
-        judges.CodeJudges().apply(amos.Dataset(pd.DataFrame({'year': [2016]})), roster = roster)
+        judges.CodePanels().apply(amos.Dataset(pd.DataFrame({'year': [2016]})), roster = roster)
     with pytest.raises(FileNotFoundError, match = 'no roster'):
-        judges.CodeJudges().apply(amos.Dataset(data))
+        judges.CodePanels().apply(amos.Dataset(data))
 
 
 def test_vote_table(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
@@ -534,30 +624,30 @@ def test_vote_table_options(roster: judges.Roster) -> None:
     assert judges.vote_table(data.iloc[1:3], roster).empty
 
 
-def test_judge_votes_in_a_loader(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_reshape_by_votes_in_a_loader(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     # With a roster saved where the techniques look for it, a loader can make
     # the judges' votes, and a vote can be the label of a study.
     roster.save()
     dataset = loaders.LoadCourtListener().apply(
         None, source = court_listener_folder,
-        coders = 'code_parties, code_case_type, code_outcome, code_judges, judge_votes',
+        coders = 'code_parties, code_case_type, code_outcome, code_panels, reshape_by_votes',
         label = 'vote_reversal', groups = 'case_id')
     assert dataset.label == 'vote_reversal'
     assert dataset.groups == ['case_id']
     assert dataset.data.shape[0] == 9
-    assert [e['technique'] for e in dataset.history][-2:] == ['code_judges', 'judge_votes']
+    assert [e['technique'] for e in dataset.history][-2:] == ['code_panels', 'reshape_by_votes']
     assert dataset.history[-1]['rows'] == [3, 9]
     assert {'panel_party', 'judge_party', 'colleagues_party'} <= set(dataset.data.columns)
-    shaped = judges.JudgeVotes().apply(
+    shaped = judges.ReshapeByVotes().apply(
         amos.Dataset(courtpy.code(courtpy.parse(court_listener_folder)).data),
         outcomes = 'outcome_reversal')
     assert [c for c in shaped.data.columns if c.startswith('vote_')] == ['vote_reversal']
 
 
-def test_judge_votes_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_reshape_by_votes_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     coded = courtpy.code(courtpy.parse(court_listener_folder)).data
     # Like every shaper, it names the label and groups of the table it makes.
-    dataset = judges.JudgeVotes().apply(
+    dataset = judges.ReshapeByVotes().apply(
         amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
         label = 'vote_reversal', groups = 'case_id')
     assert (dataset.label, dataset.task, dataset.groups) == ('vote_reversal', 'classify', ['case_id'])
@@ -566,21 +656,22 @@ def test_judge_votes_is_a_shaper(court_listener_folder: pathlib.Path, roster: ju
     # It changes what a row is, so it must come before the data is split.
     split = amos.Dataset(coded.copy(), label = 'outcome_reversal', test = coded.index[:1])
     with pytest.raises(ValueError, match = 'before the data is split'):
-        judges.JudgeVotes().apply(split, roster = roster)
+        judges.ReshapeByVotes().apply(split, roster = roster)
     with pytest.raises(KeyError, match = 'no_such'):
-        judges.JudgeVotes().apply(amos.Dataset(coded.copy()), roster = roster, label = 'no_such')
+        judges.ReshapeByVotes().apply(amos.Dataset(coded.copy()), roster = roster, label = 'no_such')
 
 
 def test_build_roster_merges_by_judge() -> None:
     files = tables()
-    # A judge who is not in the file of demographics has blank ones.
+    # A judge who is not in the file of demographics has missing ones.
     table = judges.build_roster(files['service'], files['demographics'].iloc[1:])
     lynch = table.loc[table['nid'] == 101].iloc[0]
-    assert (lynch['last_name'], lynch['first_name']) == ('', '') and pd.isna(lynch['woman'])
+    assert pd.isna(lynch['last_name']) and pd.isna(lynch['first_name']) and pd.isna(lynch['woman'])
+    assert judges.Roster(table).match('LYNCH', 1, 2020) is None
     assert table.loc[table['nid'] == 102, 'last_name'].iloc[0] == 'Howard'
     # A judge can only be one row of the demographics.
     twice = pd.concat([files['demographics'], files['demographics'].iloc[:1]])
-    with pytest.raises(ValueError, match = 'same'):
+    with pytest.raises(ValueError, match = 'not unique'):
         judges.build_roster(files['service'], twice)
     # The first of a judge's scores is used, and a judge without a number or
     # a column that the roster already has is left out.
@@ -592,7 +683,7 @@ def test_build_roster_merges_by_judge() -> None:
     assert by_nid.loc[101, 'party'] == -1
 
 
-def test_judge_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+def test_reshape_by_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # The example study of judges' votes, on invented cases.
     rng = random.Random(7)
     folder = tmp_path / 'data' / 'court_listener'
@@ -616,14 +707,14 @@ def test_judge_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> N
                 date_filed = f'{rng.randint(2011, 2014)}-06-15'),
             opinions)
     roster.save()
-    idea = chrisjen.Idea.create(EXAMPLES / 'judge_votes.ini')
+    idea = chrisjen.Idea.create(EXAMPLES / 'reshape_by_votes.ini')
     idea['load_court_listener_parameters']['download'] = 'none'
     project = courtpy.Project.create(idea, clerk = tmp_path)
     result = project.result
     assert result.label == 'vote_reversal' and result.groups == ['case_id']
     assert [e['technique'] for e in result.history][:7] == [
         'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome',
-        'code_judges', 'code_politics', 'judge_votes']
+        'code_panels', 'add_politics', 'reshape_by_votes']
     assert (tmp_path / 'data' / 'votes.csv').is_file()
     assert len(result.data) == 270
     assert {'vote_reversal', 'case_id', 'judge_party', 'colleagues_woman',
@@ -668,30 +759,30 @@ def test_techniques_in_a_wrangler(
         '[panels_project]\n'
         'panels_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, merge_judges, code_judges, code_politics, judge_votes\n'
-        '[merge_judges_parameters]\n'
+        'techniques = load_court_listener, merge_biographies, code_panels, add_politics, reshape_by_votes\n'
+        '[merge_biographies_parameters]\n'
         'source = my_roster.csv\n'
         'name = author\n'
         'prefix = author_\n'
         'columns = judge, party, age\n'
         'indicator = author_found\n'
-        '[code_judges_parameters]\n'
+        '[code_panels_parameters]\n'
         f'roster = {named.as_posix()}\n'
-        '[code_politics_parameters]\n'
+        '[add_politics_parameters]\n'
         'source = years.csv\n'
         'prefix = court_\n'
-        '[judge_votes_parameters]\n'
+        '[reshape_by_votes_parameters]\n'
         f'roster = {named.as_posix()}\n'
         'outcomes = outcome_reversal\n'
         'label = vote_reversal\n'
         'groups = case_id\n', encoding = 'utf-8')
     result = courtpy.Project.create(settings, clerk = tmp_path).result
     history = {e['technique']: e for e in result.history}
-    assert list(history)[-4:] == ['merge_judges', 'code_judges', 'code_politics', 'judge_votes']
+    assert list(history)[-4:] == ['merge_biographies', 'code_panels', 'add_politics', 'reshape_by_votes']
     # Each merger records its source and how many rows it matched.
-    assert (history['merge_judges']['source'], history['merge_judges']['matched']) == ('my_roster.csv', 3)
-    assert (history['code_politics']['source'], history['code_politics']['matched']) == ('years.csv', 3)
-    assert history['judge_votes']['rows'] == [3, 9]
+    assert (history['merge_biographies']['source'], history['merge_biographies']['matched']) == ('my_roster.csv', 3)
+    assert (history['add_politics']['source'], history['add_politics']['matched']) == ('years.csv', 3)
+    assert history['reshape_by_votes']['rows'] == [3, 9]
     # The shaper names the label and groups of the table that it makes.
     assert (result.label, result.task, result.groups) == ('vote_reversal', 'classify', ['case_id'])
     assert len(result.data) == 9
@@ -700,3 +791,115 @@ def test_techniques_in_a_wrangler(
     assert result.data['author_found'].all() and result.data.loc['1-1', 'author_age'] == 74.0
     assert result.data.loc['1-1', 'panel_found'] == 3
     assert [c for c in result.data.columns if c.startswith('vote_')] == ['vote_reversal']
+
+
+def test_reshape_by_panel(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+    coded = courtpy.code(courtpy.parse(court_listener_folder)).data
+    votes = judges.ReshapeByVotes().apply(
+        amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
+        label = 'vote_reversal', groups = 'case_id')
+    table = votes.data.copy()
+    # It undoes `reshape_by_votes`: the cases come back as they were.
+    dataset = judges.ReshapeByPanel().apply(votes)
+    pd.testing.assert_frame_equal(dataset.data, coded)
+    # The label of the votes becomes the outcome it was made from, and the
+    # groups of the votes are dropped.
+    assert (dataset.label, dataset.groups) == ('outcome_reversal', [])
+    assert dataset.history[-1]['rows'] == [9, 3]
+    # Columns added to the votes about each judge are removed, and others
+    # are kept from each case's first row.
+    extra = table.assign(judge_extra = 1.0, colleagues_extra = 2.0, note = 'x')
+    shaped = judges.ReshapeByPanel().shape(extra)
+    assert 'judge_extra' not in shaped and 'colleagues_extra' not in shaped
+    assert list(shaped['note']) == ['x'] * 3
+    # A case with no judge who was found is not in the table of votes.
+    some = pd.DataFrame({
+        'panel_judges': [['LYNCH'], ['NOBODY']], 'court_num': [1, 1],
+        'year': [2016, 2016]}, index = pd.Index(['a', 'b'], name = 'case_id'))
+    assert list(judges.ReshapeByPanel().shape(judges.vote_table(some, roster)).index) == ['a']
+    with pytest.raises(KeyError, match = 'case_id'):
+        judges.ReshapeByPanel().shape(coded.reset_index(drop = True))
+
+
+def test_reshape_by_judge(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+    coded = courtpy.code(courtpy.parse(court_listener_folder)).data
+    votes = judges.vote_table(coded, roster)
+    table = judges.ReshapeByJudge().shape(votes.copy())
+    assert table.index.name == 'judge_nid'
+    assert list(table.index) == [101, 102, 103]
+    assert list(table.columns[:2]) == ['judge', 'cases']
+    assert list(table['judge']) == ['Lynch, Mary Ann', 'Howard, John Q.', 'Thompson, Rita Mae']
+    assert list(table['cases']) == [3, 3, 3]
+    # Shares of votes, and the judge's attributes, which do not change.
+    assert table.loc[103, 'judge_dissented'] == pytest.approx(1 / 3)
+    assert table.loc[101, 'judge_dissented'] == 0
+    assert table.loc[101, 'judge_woman'] == 1
+    # Lynch wrote every opinion, so the column has one value for each judge.
+    assert list(table['judge_author']) == [True, False, False]
+    # Text that is the same in each judge's cases is kept, and text that
+    # differs, lists, and ids are left out.
+    assert list(table['court']) == ['ca1'] * 3
+    assert 'case_id' not in table and 'case_name' not in table
+    assert 'panel_judges' not in table
+    # "how" chooses other summaries, and "count" another name or none.
+    listed = judges.ReshapeByJudge().shape(
+        votes.copy(), how = {'case_id': 'list'}, count = None)
+    assert listed.loc[101, 'case_id'] == ['1', '2', '3']
+    assert 'cases' not in listed
+    # A table of cases is made a table of votes first.
+    pd.testing.assert_frame_equal(
+        judges.ReshapeByJudge().shape(coded.copy(), roster = roster), table)
+
+
+def test_reshape_by_judge_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+    coded = courtpy.code(courtpy.parse(court_listener_folder)).data
+    votes = judges.ReshapeByVotes().apply(
+        amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
+        label = 'vote_reversal', groups = 'case_id')
+    assert votes.task == 'classify'
+    # A vote is a share of votes for a judge, so the task is inferred again,
+    # and the groups of the votes are not columns of the judges.
+    dataset = judges.ReshapeByJudge().apply(votes)
+    assert (dataset.label, dataset.task, dataset.groups) == ('vote_reversal', 'regress', [])
+    assert dataset.history[-1]['rows'] == [9, 3]
+    roster.save()
+    project = courtpy.code(
+        coded.copy(), ['reshape_by_judge'],
+        parameters = {'reshape_by_judge': {'outcomes': 'outcome_reversal'}})
+    assert list(project.data.index) == [101, 102, 103]
+    # As in the recipe, a loader's coders can make a table of judges.
+    dataset = loaders.LoadCourtListener().apply(
+        None, source = court_listener_folder,
+        coders = 'code_parties, code_case_type, code_outcome, reshape_by_votes, reshape_by_judge',
+        label = 'judge_dissented')
+    assert (dataset.label, dataset.task) == ('judge_dissented', 'regress')
+    assert dataset.data.loc[103, 'judge_dissented'] == pytest.approx(1 / 3)
+
+
+def test_load_roster(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+    # Without a source, the roster saved where the techniques look for it.
+    with pytest.raises(FileNotFoundError, match = 'no roster'):
+        judges.LoadRoster().apply(None)
+    roster.save()
+    dataset = judges.LoadRoster().apply(None)
+    assert len(dataset.data) == len(roster.data)
+    assert dataset.history[-1]['source'] == 'current'
+    path = roster.save(tmp_path / 'mine.csv')
+    dataset = judges.LoadRoster().apply(None, source = str(path))
+    assert set(dataset.data['nid']) == set(roster.data['nid'])
+
+
+def test_download_biographies(website: Website, tmp_path: pathlib.Path) -> None:
+    dataset = judges.DownloadBiographies().apply(
+        None, source = str(tmp_path / 'fjc'), save = 'true')
+    assert len(website.urls) == 3
+    assert 101 in set(dataset.data['nid'])
+    # The roster was saved where the techniques look for it.
+    assert judges.Roster.load().match('LYNCH', 1, 2020) is not None
+    judges.DownloadBiographies().apply(None, source = str(tmp_path / 'fjc'))
+    assert len(website.urls) == 3
+    judges.DownloadBiographies().apply(
+        None, source = str(tmp_path / 'fjc'), refresh = 'yes',
+        save = str(tmp_path / 'saved.csv'))
+    assert len(website.urls) == 6
+    assert (tmp_path / 'saved.csv').is_file()

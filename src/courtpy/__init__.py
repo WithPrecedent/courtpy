@@ -13,6 +13,7 @@ __all__: list[str] = [
     'CourtListener',
     'Parser',
     'Project',
+    'ReferenceLoader',
     'Rule',
     'Rulebook',
     'code',
@@ -39,6 +40,6 @@ from .bulk import BulkData
 from .cases import Case, load_cases, save_cases
 from .coders import code
 from .courtlistener import CourtListener
-from .loaders import CaseLoader
+from .loaders import CaseLoader, ReferenceLoader
 from .parsers import Parser, parse
 from .rules import Rule, Rulebook

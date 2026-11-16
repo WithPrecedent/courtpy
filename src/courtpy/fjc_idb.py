@@ -21,7 +21,7 @@ also has the district court's record of the case that was appealed (in
 columns that begin with "district_"), which fjc-idb's `merge_district`
 finds.
 
-`code_idb` (an `amos.Merger`, which is added to the `amos` library as soon
+`merge_idb` (an `amos.Merger`, which is added to the `amos` library as soon
 as courtpy is imported) adds the database's columns to parsed cases of the
 courts of appeals, with "idb_" before their names. A case is matched by its
 circuit and one of its docket numbers:
@@ -30,12 +30,20 @@ circuit and one of its docket numbers:
 import courtpy
 
 cases = courtpy.parse("data/court_listener")
-dataset = courtpy.code(cases, "code_idb", parameters = {
-    "code_idb": {"columns": "appeal_type, judgment_date, published"}})
+dataset = courtpy.code(cases, "merge_idb", parameters = {
+    "merge_idb": {"columns": "appeal_type, judgment_date, published"}})
 ```
 
+`load_idb` and `download_idb` (reference loaders, see
+`courtpy.loaders.ReferenceLoader`) start a study of the appeals themselves,
+whether or not they have opinions.
+
 Contents:
-    CodeIdb: adds the Integrated Database's record of each appeal to its
+    DownloadIdb: downloads the Integrated Database's files and loads its
+        appeals.
+    LoadIdb: loads the Integrated Database's table of appeals for a range of
+        years.
+    MergeIdb: adds the Integrated Database's record of each appeal to its
         case.
     appeals: returns the database's table of appeals for a range of years.
     download: downloads the database's yearly files that are missing.
@@ -62,7 +70,7 @@ import fjc_idb.rules
 import numpy as np
 import pandas as pd
 
-from . import options, utilities
+from . import loaders, options, utilities
 
 logger = logging.getLogger(__name__)
 _COURTS: tuple[str, ...] = ("court_num", "court")
@@ -81,7 +89,7 @@ _TEXT_COLUMNS: tuple[str, ...] = (
 
 
 @dataclasses.dataclass
-class CodeIdb(amos.Merger):
+class MergeIdb(amos.Merger):
     """Adds the Integrated Database's record of each appeal to its case.
 
     Each case of a court of appeals is matched to the database's record of
@@ -303,6 +311,120 @@ class CodeIdb(amos.Merger):
                         table[column], errors = "coerce", format = "ISO8601")
             return table
         return super().read(source, **kwargs)
+
+
+@dataclasses.dataclass
+class LoadIdb(loaders.ReferenceLoader):
+    """Loads the Integrated Database's table of appeals for a range of years.
+
+    The table starts a study of the appeals themselves, which need not have
+    opinions. Its "source" is the folder of the database's yearly files, in
+    fjc-idb's layout, which is "fjc_idb" in
+    `courtpy.utilities.data_folder()` unless another is set. The files that
+    are missing are downloaded first unless "download" is false (see
+    `appeals`). To add the database's records to parsed cases, use
+    `merge_idb` instead.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        start_year: int | str | None = None,
+        stop_year: int | str | None = None,
+        district: bool | str = False,
+        download: bool | str = True,
+        fix_city_spellings: bool | str = True,
+        **kwargs: Any) -> pd.DataFrame:
+        """Returns the database's table of appeals.
+
+        Args:
+            source: the folder of the yearly files, or "current" for
+                "fjc_idb" in `utilities.data_folder()`.
+            start_year: the first fiscal year to include. Defaults to `None`,
+                in which case it is the database's first year.
+            stop_year: the last fiscal year to include. Defaults to `None`,
+                in which case it is this year.
+            district: whether to add the district court's record of the case
+                that each appeal is from. Defaults to `False`.
+            download: whether to download the yearly files that are missing.
+                Defaults to `True`.
+            fix_city_spellings: whether to correct the names of cities that
+                the database's codebook misspells. Defaults to `True`.
+            **kwargs: not used.
+
+        Returns:
+            The table (see `appeals`).
+
+        """
+        return appeals(
+            _year(start_year),
+            _year(stop_year),
+            self._locate(source),
+            district = utilities.to_bool(district),
+            download = utilities.to_bool(download),
+            fix_city_spellings = utilities.to_bool(fix_city_spellings))
+
+
+@dataclasses.dataclass
+class DownloadIdb(loaders.ReferenceLoader):
+    """Downloads the Integrated Database's files and loads its appeals.
+
+    The yearly files that are missing are downloaded (see `download`), and
+    every file of the years is downloaded again if "refresh" is true, which
+    gets the latest records of the current year. Its "source" is the folder
+    to keep the files in, which is "fjc_idb" in
+    `courtpy.utilities.data_folder()` unless another is set.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        start_year: int | str | None = None,
+        stop_year: int | str | None = None,
+        district: bool | str = False,
+        refresh: bool | str = False,
+        fix_city_spellings: bool | str = True,
+        **kwargs: Any) -> pd.DataFrame:
+        """Downloads the database's yearly files and returns its appeals.
+
+        Args:
+            source: the folder to keep the yearly files in, or "current" for
+                "fjc_idb" in `utilities.data_folder()`.
+            start_year: the first fiscal year to download and include.
+                Defaults to `None`, in which case it is the database's first
+                year.
+            stop_year: the last fiscal year to download and include. Defaults
+                to `None`, in which case it is this year.
+            district: whether to also download the district courts' files and
+                add the district court's record of the case that each appeal
+                is from. Defaults to `False`.
+            refresh: whether to download the files of years that are in the
+                folder again. Defaults to `False`.
+            fix_city_spellings: whether to correct the names of cities that
+                the database's codebook misspells. Defaults to `True`.
+            **kwargs: not used.
+
+        Returns:
+            The table (see `appeals`).
+
+        """
+        folder = self._locate(source)
+        start, stop = _year(start_year), _year(stop_year)
+        with_district = utilities.to_bool(district)
+        download(
+            start, stop, folder, district = with_district,
+            overwrite = utilities.to_bool(refresh))
+        return appeals(
+            start, stop, folder, district = with_district, download = False,
+            fix_city_spellings = utilities.to_bool(fix_city_spellings))
 
 
 def appeals(
@@ -541,6 +663,24 @@ def _download(
                 kind, min(missing), max(missing), root,
                 overwrite = overwrite))
     return saved
+
+
+def _year(value: int | str | None) -> int | None:
+    """Returns a year from a setting.
+
+    Args:
+        value: a year, as a number or as text, or `None`.
+
+    Raises:
+        ValueError: if `value` is text that is not a whole number.
+
+    Returns:
+        The year, or `None` if `value` is `None` or blank.
+
+    """
+    if value is None or str(value).strip() == '':
+        return None
+    return int(value)
 
 
 def _folder(folder: pathlib.Path | str | None = None) -> pathlib.Path:

@@ -9,7 +9,7 @@ changed without knowing Python. Each row is one rule. The columns are:
 | `variable` | The name of the column that the rule makes (or adds to). |
 | `kind` | What the rule does (see below). |
 | `pattern` | A regular expression to search for. |
-| `value` | For a `label` rule, the value to record. Otherwise blank. |
+| `value` | For a `label` or `labels` rule, the value to record. Otherwise blank. |
 | `ignorecase` | TRUE to ignore the difference between capital and lower-case letters. |
 | `dotall` | TRUE for "." in the pattern to also match line breaks. |
 | `note` | Anything you want to say about the rule. It is not used. |
@@ -22,6 +22,7 @@ The kinds of rules:
 | `count` | The number of times the pattern appears. |
 | `matches` | A list of every match. |
 | `label` | The rule's `value` if the pattern appears. The first rule for a variable that matches wins, so it can turn text into categories (such as the name of a court into its number). |
+| `labels` | The `value` of every rule for the variable whose pattern appears, once each, in the order of the rules and separated by commas (such as "Internal Revenue Service, United States Tax Court"), or nothing if none appears. A value cannot have a comma. |
 | `names` | A list of names, found by splitting the text wherever the pattern matches. The pattern should match the words and punctuation between names (such as "JUDGES", "BEFORE", and commas). |
 | `section` | A new section of text: the first match. Later rules can search it. |
 | `excerpts` | A new section of text: every match, one per line. |
@@ -31,7 +32,8 @@ The kinds of rules:
 Rules are applied from top to bottom, so a rule can search a section made by
 a rule above it. Rules with the same `variable` are combined: flags are TRUE if
 any rule matches, counts are added, lists of matches and names are joined, and
-the first `label` or `section` that matches is used.
+the first `label` or `section` that matches is used, and the values of
+`labels` rules are joined.
 
 Contents:
     KINDS: the kinds of rules.
@@ -41,7 +43,9 @@ Contents:
     split_names: splits text into names wherever a pattern matches.
     _BUILT_IN: the CSV files of each built-in rulebook that is made of
         several files, by its name, in the order they are applied. Any other
-        name is a file or folder in courtpy's "instructions" folder.
+        name is a file or folder in courtpy's "instructions" folder, or a
+        file in the folder of the default jurisdiction (such as "civil" for
+        "federal/civil.csv").
     _PUNCTUATION: pattern for the periods and apostrophes (straight and curly)
         that `split_names` removes from names.
     _REQUIRED: columns that every rules file must have. "value" and "note"
@@ -55,7 +59,6 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-import importlib.resources
 import pathlib
 import re
 from collections.abc import (
@@ -67,11 +70,11 @@ from collections.abc import (
 )
 from typing import Any
 
-from . import utilities
+from . import options, utilities
 
 KINDS: tuple[str, ...] = (
-    'count', 'excerpts', 'flag', 'label', 'matches', 'names', 'remove',
-    'section', 'split')
+    'count', 'excerpts', 'flag', 'label', 'labels', 'matches', 'names',
+    'remove', 'section', 'split')
 _SECTION_KINDS: frozenset[str] = frozenset({'excerpts', 'section', 'split'})
 # The curly apostrophe (U+2019) is added with `chr` so that the source file
 # has only plain characters.
@@ -79,7 +82,10 @@ _PUNCTUATION: re.Pattern[str] = re.compile("[.'" + chr(0x2019) + ']')
 _REQUIRED: tuple[str, ...] = (
     'target', 'variable', 'kind', 'pattern', 'ignorecase', 'dotall')
 _BUILT_IN: dict[str, tuple[str, ...]] = {
-    'federal': ('federal/header.csv', 'federal/opinion.csv')}
+    'federal': (
+        'federal/header.csv', 'federal/general.csv', 'federal/citations.csv',
+        'federal/civil.csv', 'federal/constitutional.csv',
+        'federal/criminal.csv', 'federal/agencies.csv')}
 
 
 @dataclasses.dataclass(frozen = True)
@@ -93,7 +99,8 @@ class Rule:
             rule has more than one.
         kind: one of `KINDS`.
         pattern: the compiled regular expression.
-        value: for a `label` rule, the value to record. Defaults to `None`.
+        value: for a `label` or `labels` rule, the value to record.
+            Defaults to `None`.
         note: a description of the rule. Defaults to an empty `str`.
 
     """
@@ -156,12 +163,22 @@ class Rule:
             message = f'the pattern {source!r} is not valid: {error}'
             raise ValueError(message) from error
         value = row.get('value')
+        if kind == 'labels':
+            value = str(value or '').strip()
+            if not value or ',' in value:
+                message = (
+                    'a labels rule needs a value without a comma, since commas '
+                    'separate the values'
+                )
+                raise ValueError(message)
         return cls(
             targets = targets,
             variables = variables,
             kind = kind,
             pattern = pattern,
-            value = _convert(value) if kind == 'label' else None,
+            value = (
+                _convert(value) if kind == 'label'
+                else value if kind == 'labels' else None),
             note = str(row.get('note') or ''))
 
     """ Properties """
@@ -215,6 +232,15 @@ class Rule:
             if results.get(self.variable) is None:
                 matched = any(self.pattern.search(text) for text in texts)
                 results[self.variable] = self.value if matched else None
+        elif self.kind == 'labels':
+            found = results.get(self.variable)
+            if any(self.pattern.search(text) for text in texts):
+                labels = found.split(', ') if found else []
+                if self.value not in labels:
+                    labels.append(self.value)
+                results[self.variable] = ', '.join(labels)
+            else:
+                results[self.variable] = found
         elif self.kind == 'names':
             names = results.setdefault(self.variable, [])
             for text in texts:
@@ -292,10 +318,13 @@ class Rulebook:
         """Loads rules from CSV files.
 
         Args:
-            *sources: names of built-in rulebooks (such as "federal" or
-                "lexis_nexis"), or paths to CSV files or to folders of them.
-                The rules are applied in the order they are given (and, in a
-                folder, in the alphabetical order of the files).
+            *sources: names of built-in rulebooks (such as "federal",
+                "civil", or "lexis_nexis"), or paths to CSV files or to
+                folders of them. The rules are applied in the order they are
+                given (and, in a folder, in the alphabetical order of the
+                files). A file that two sources name (such as
+                "federal/civil.csv", which "civil" and "federal" both name)
+                is read only the first time.
 
         Raises:
             FileNotFoundError: if a source is not a built-in rulebook or a file
@@ -309,8 +338,12 @@ class Rulebook:
         """
         rules: list[Rule] = []
         names: list[str] = []
+        read: set[pathlib.Path] = set()
         for source in sources:
             for path in find_instructions(source):
+                if path.resolve() in read:
+                    continue
+                read.add(path.resolve())
                 rules.extend(_read(path))
                 names.append(path.stem)
         return cls(rules = rules, name = ', '.join(names))
@@ -364,7 +397,8 @@ class Rulebook:
         Returns:
             The value of each variable, by name. A variable whose rules found
                 nothing is `False` (flags), 0 (counts), an empty `list`
-                (matches and names), or `None` (labels and sections).
+                (matches and names), or `None` (`label`, `labels`, and
+                `section` rules).
 
         """
         results: dict[str, Any] = {}
@@ -411,8 +445,8 @@ def find_instructions(source: str | pathlib.Path) -> list[pathlib.Path]:
     """Returns the CSV files for a built-in or custom rulebook.
 
     Args:
-        source: the name of a built-in rulebook (such as "federal" or
-            "lexis_nexis"), or the path to a CSV file or a folder of them.
+        source: the name of a built-in rulebook (such as "federal", "civil",
+            or "lexis_nexis"), or the path to a CSV file or a folder of them.
 
     Raises:
         FileNotFoundError: if `source` is not a built-in rulebook, a CSV file,
@@ -424,18 +458,24 @@ def find_instructions(source: str | pathlib.Path) -> list[pathlib.Path]:
     """
     path = pathlib.Path(source)
     if not path.exists():
-        folder = pathlib.Path(str(importlib.resources.files('courtpy'))) / 'instructions'
+        folder = utilities.instructions_folder()
+        jurisdiction = folder / options._DEFAULT_JURISDICTION
         name = str(source)
         if name in _BUILT_IN:
             return [folder / part for part in _BUILT_IN[name]]
-        for candidate in (folder / name, folder / f'{name}.csv'):
+        for candidate in (
+                folder / name, folder / f'{name}.csv',
+                jurisdiction / f'{name}.csv'):
             if candidate.exists():
                 path = candidate
                 break
         else:
+            built_in = [
+                *_BUILT_IN, 'lexis_nexis',
+                *(p.stem for p in jurisdiction.glob('*.csv'))]
             message = (
                 f'{source!r} is not a CSV file, a folder, or a built-in '
-                f'rulebook ({sorted([*_BUILT_IN, "lexis_nexis"])})'
+                f'rulebook ({sorted(built_in)})'
             )
             raise FileNotFoundError(message)
     if path.is_dir():

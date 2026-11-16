@@ -7,6 +7,7 @@ import pathlib
 
 import pandas as pd
 import pytest
+from conftest import make_cluster, make_opinion, write_case
 
 import courtpy
 from courtpy import cases, options, parsers
@@ -24,13 +25,28 @@ def test_parse_court_listener(court_listener_folder: pathlib.Path) -> None:
     assert doe['disposition_reverse'] and doe['disposition_remand']
     assert doe['panel_judges'] == ['LYNCH', 'HOWARD', 'THOMPSON']
     assert doe['panel_size'] == 3 and doe['author'] == 'LYNCH'
-    assert doe['references_case'] == ['554 U.S. 570']
-    assert doe['references_statute'][0].startswith('18 U.S.C. § 922')
+    assert doe['citations_case'] == ['554 U.S. 570']
+    assert doe['citations_statute'][0].startswith('18 U.S.C. § 922')
     assert doe['cite_federal_reporter'] and doe['published']
     assert table.loc['2', 'dissenting'] == ['THOMPSON']
     assert table.loc['2', 'civil_titlevii']
     assert pd.api.types.is_bool_dtype(table['published'].dtype)
     assert table['year'].dtype == 'int64'
+
+
+def test_parse_finds_agencies(tmp_path: pathlib.Path) -> None:
+    # The agencies of the caption, the history, and the opinion are listed
+    # once each, in alphabetical order.
+    folder = tmp_path / 'court_listener'
+    write_case(folder, make_cluster(
+        4, case_name_full = 'NATIONAL LABOR RELATIONS BOARD, Petitioner, v. ACME CORP., Respondent',
+        procedural_history = 'On application for enforcement of an order of the NLRB.'),
+        [make_opinion(41, 4, html_with_citations = (
+            '<p>The Board relied on a ruling of the IRS. The NLRB is right.</p>'))])
+    write_case(folder, make_cluster(5), [make_opinion(51, 5)])
+    table = courtpy.parse(folder)
+    assert table.loc['4', 'agencies'] == 'Internal Revenue Service, National Labor Relations Board'
+    assert pd.isna(table.loc['5', 'agencies'])
 
 
 def test_missing_values_get_nullable_types() -> None:
@@ -92,7 +108,8 @@ def test_custom_rulebook(court_listener_folder: pathlib.Path, tmp_path: pathlib.
     table = courtpy.parse(court_listener_folder, rulebooks = [rules])
     assert table.loc['1', 'mentions_firearm'] and not table.loc['2', 'mentions_firearm']
     assert table.loc['1', 'we_count'] == 2
-    assert 'party1_appellant' not in table.columns
+    assert 'party1_appellant' in table.columns and 'decision' in table.columns
+    assert 'criminal_firearm' not in table.columns
 
 
 def test_save_and_load(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:

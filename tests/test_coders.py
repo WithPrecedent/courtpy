@@ -78,7 +78,7 @@ def test_drop_text(coded: amos.Dataset) -> None:
     coded.data['case_name'] = coded.data['case_name'].astype('category')
     coders.DropText().apply(coded, keep = ['court'])
     data = coded.data
-    for column in ('party1', 'panel_judges', 'date_filed', 'url', 'references_case'):
+    for column in ('party1', 'panel_judges', 'date_filed', 'url', 'citations_case'):
         assert column not in data.columns
     for column in ('court', 'case_name', 'court_num', 'published', 'outcome_party1_won', 'year'):
         assert column in data.columns
@@ -114,3 +114,15 @@ def test_code_outcome_prefers_stated_decisions() -> None:
     result = coders.CodeOutcome().apply(amos.Dataset(
         data.drop(columns = [c for c in data.columns if c.startswith('decision')]))).data
     assert list(result['outcome_reversal']) == [False, True, False, True]
+
+
+def test_tidy_cases() -> None:
+    assert amos.library.classify('tidy_cases') == 'munger'
+    data = pd.DataFrame({
+        'published': [True, None, False],
+        'year': [2019.0, None, 2020.0],
+        'score': [0.5, None, 1.0]})
+    tidied = courtpy.code(data, ['tidy_cases']).data
+    assert tidied['published'].dtype == 'boolean'
+    assert tidied['year'].dtype == 'Int64'
+    assert tidied['score'].dtype == 'float64'

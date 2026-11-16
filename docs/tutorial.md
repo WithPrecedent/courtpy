@@ -68,8 +68,8 @@ parties (`party1` and `party2`) and their roles (`party1_appellant`,
 `dissenting`), the disposition (`disposition_reverse`, `decision_reverse`, and
 others), the issues
 the opinions discuss (`criminal_firearm`, `civil_titlevii`,
-`general_amend4`, and many more), and the citations in the opinions
-(`references_case` and others).
+`constitutional_amend4`, and many more), and the citations in the opinions
+(`citations_case` and others).
 
 ## 3. Code the outcomes
 

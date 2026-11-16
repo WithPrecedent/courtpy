@@ -35,10 +35,13 @@ def test_coders_none(court_listener_folder: pathlib.Path) -> None:
     dataset = loaders.LoadCourtListener().apply(
         None, source = court_listener_folder, coders = 'none')
     assert 'outcome_reversal' not in dataset.data.columns
-    with pytest.raises(KeyError, match = 'label'):
-        loaders.LoadCourtListener().apply(
-            None, source = court_listener_folder, coders = 'none',
-            label = 'outcome_reversal')
+    pending = loaders.LoadCourtListener().apply(
+        None, source = court_listener_folder, coders = 'none',
+        label = 'outcome_reversal')
+    assert pending.label == 'outcome_reversal'
+    assert not pending.has_label
+    with pytest.raises(ValueError, match = 'label'):
+        pending.require_label()
 
 
 def test_save_and_reuse(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:

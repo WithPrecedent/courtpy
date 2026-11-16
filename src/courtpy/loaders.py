@@ -47,11 +47,27 @@ Every loader takes these parameters, set in its "{name}_parameters" section:
 | `reuse` | Whether to load the saved table, if there is one, instead of collecting, parsing, and coding the cases again. Defaults to false. |
 | `label`, `task`, `groups` | As in `amos`: they default to those in the "general" section. |
 
+Other modules add reference loaders (see `ReferenceLoader`), which load a
+table that describes something other than cases. Each "load_" technique
+loads the files that courtpy keeps (or a file named as its "source"), and
+each "download_" technique downloads the files first, again if "refresh" is
+true:
+
+| Technique | Table | Module |
+| --- | --- | --- |
+| `load_roster`, `download_biographies` | A roster of judges. | `courtpy.judges` |
+| `load_scdb`, `download_scdb` | The Supreme Court Database's cases or votes. | `courtpy.scdb` |
+| `load_idb`, `download_idb` | The Integrated Database's appeals. | `courtpy.fjc_idb` |
+| `load_politics`, `download_politics` | The political context of each year. | `courtpy.politics` |
+| `download_jcs` | The Judicial Common Space scores. | `courtpy.jcs` |
+
 Contents:
     CaseLoader: base class for techniques that load court cases.
     LoadCases: loads a table of cases saved by `courtpy.save_cases`.
     LoadCourtListener: collects, parses, and codes CourtListener cases.
     LoadLexisNexis: divides, parses, and codes Lexis-Nexis cases.
+    ReferenceLoader: base class for techniques that load a table of
+        reference data, such as `load_scdb` and `download_biographies`.
 
 """
 
@@ -89,9 +105,10 @@ class CaseLoader(amos.Loader, abc.ABC):
     loader's "coders", saves it if "save" is set, and makes it the dataset
     that the rest of the workflow works on, with the label, task, and groups
     from the loader's parameters (which default to the "general" section of
-    the settings). The label is checked after the coders run, so it can be a
-    column that a coder makes. The dataset's history records the loader and
-    then each coder.
+    the settings). The label can be a column that a coder makes. If no coder
+    makes it, it is pending, as in `amos`: a later technique (such as
+    "derive_columns") can still make it, and using it before then raises an
+    error. The dataset's history records the loader and then each coder.
 
     If "reuse" is true and the table was saved before (see "save"), the saved
     table is loaded instead, and nothing is collected, parsed, or coded again.
@@ -263,7 +280,7 @@ class LoadCourtListener(CaseLoader):
     | `overwrite` | Whether to download cases that were already saved. |
     | `dockets` | For "api", whether to download each case's docket too. |
     | `bulk_folder`, `bulk_date`, `stream` | For "bulk", where to keep the bulk files, which date's files to use, and whether to read them without saving them. |
-    | `rulebooks` | Rules to parse with. Defaults to "federal". |
+    | `rulebooks` | Rules to parse with (such as "civil, criminal"), after "header" and "general", which are always applied. Defaults to "federal". |
     | `keep_text` | Whether to keep the text of the opinions in the table. |
     | `limit` | Most cases to parse, for trying out rules. |
     | `workers` | Number of processes to parse with. |
@@ -377,7 +394,7 @@ class LoadLexisNexis(CaseLoader):
     | Parameter | Meaning |
     | --- | --- |
     | `batches` | Lexis-Nexis downloads of many cases to divide first. |
-    | `rulebooks` | Rules to parse with. Defaults to "federal". |
+    | `rulebooks` | Rules to parse with (such as "civil, criminal"), after "header" and "general", which are always applied. Defaults to "federal". |
     | `keep_text` | Whether to keep the text of the opinions in the table. |
     | `limit` | Most cases to parse, for trying out rules. |
     | `workers` | Number of processes to parse with. |
@@ -426,6 +443,87 @@ class LoadLexisNexis(CaseLoader):
         return _parse(
             folder, 'lexis_nexis', rulebooks = rulebooks,
             keep_text = keep_text, limit = limit, workers = workers)
+
+
+@dataclasses.dataclass
+class ReferenceLoader(amos.Loader, abc.ABC):
+    """Base class for techniques that load a table of reference data.
+
+    Reference data describes something other than parsed cases: the judges,
+    the Supreme Court Database, the Integrated Database, or the political
+    context of each year. Unlike a `CaseLoader`, a reference loader needs no
+    "source". Without one, it loads the files that courtpy keeps outside of
+    projects (in `courtpy.utilities.data_folder()`), which are downloaded
+    first if they are missing, and the dataset's history records the source
+    as "current". A relative "source" is looked for in the current folder and
+    then in the clerk's input folder.
+
+    Like every loader, it starts a new dataset, so it usually begins a study
+    whose rows are what the table describes (such as each justice's vote in
+    each case). To add a table's columns to parsed cases, use a merger (such
+    as `merge_scdb`) instead.
+
+    Attributes:
+        default_source: the source that is recorded when "source" is not
+            set.
+
+    """
+
+    default_source: ClassVar[str] = 'current'
+
+    """ Public Methods """
+
+    def apply(self, item: amos.Dataset, **kwargs: Any) -> amos.Dataset:
+        """Loads the table into a dataset that continues `item`.
+
+        Args:
+            item: the dataset so far, whose seed and history are kept.
+            **kwargs: "source", "label", "task", and "groups", and parameters
+                for `load`.
+
+        Returns:
+            The dataset of the loaded table.
+
+        """
+        kwargs['source'] = kwargs.get('source') or self.default_source
+        return super().apply(item, **kwargs)
+
+    """ Private Methods """
+
+    def _choose(self, value: Any) -> bool | pathlib.Path | None:
+        """Returns a setting that names a file or says whether to use one.
+
+        Args:
+            value: `None`, a `bool`, text that `utilities.to_bool` reads
+                (such as "false"), or the path of a file.
+
+        Returns:
+            `None`, the boolean, or the path, found with the clerk (see
+                `utilities.locate`).
+
+        """
+        if value is None or isinstance(value, bool):
+            return value
+        try:
+            return utilities.to_bool(value)
+        except ValueError:
+            return utilities.locate(value, self._get_clerk())
+
+    def _locate(self, source: Any) -> pathlib.Path | None:
+        """Returns the folder or file that a source names.
+
+        Args:
+            source: the "source" parameter.
+
+        Returns:
+            `None` if `source` is missing or `default_source` (so the current
+                files are used), and otherwise the path, found with the
+                clerk (see `utilities.locate`).
+
+        """
+        if source is None or str(source) == self.default_source:
+            return None
+        return utilities.locate(source, self._get_clerk())
 
 
 """ Private Functions """

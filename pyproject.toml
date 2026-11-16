@@ -4,17 +4,18 @@
 name = "courtpy"
 description = "Accessible tools for collecting, parsing, and analyzing court opinions"
 authors = [{name = "Corey Rayburn Yung", email = "coreyrayburnyung@gmail.com"}]
-license = {text = "Apache Software License 2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.3.1"
+# The version is set by `__version__` in "src/courtpy/__init__.py".
+dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Education",
     "Intended Audience :: Legal Industry",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -32,9 +33,11 @@ keywords = [
     "lexis",
     "text parsing"]
 dependencies = [
-    "amos>=0.4.0",
+    "amos>=0.8.1",
     "chrisjen>=0.3.0",
+    "fjc-biographies>=0.1.0",
     "fjc-idb>=0.0.3",
+    "judicial-common-space>=0.1.0",
     "keyring>=24",
     "nagata>=0.2.0",
     "pandas>=3.0",
@@ -84,12 +87,17 @@ tests = [
     "pytest-xdist"]
 
 [build-system]
-requires = ["hatchling"]
+# Version 1.27 is the first to support SPDX license expressions (PEP 639).
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/courtpy/__init__.py"
+
 [tool.hatch.build.targets.sdist]
-# The source distribution has the package, its tests, and its documents, but
-# not the reference data (about 30 MB) or the repository's tooling.
+# The source distribution has the package (with its instructions folder of
+# rules and tables), its tests, and its documents, but not the repository's
+# tooling.
 include = [
     "/src/courtpy",
     "/tests",
@@ -104,8 +112,11 @@ packages = ["src/courtpy"]
 [tool.coverage.report]
 skip_empty = true
 show_missing = true
-exclude_lines = [
-  "if TYPE_CHECKING:"]
+# Adds to (instead of replacing) the default exclusions, such as
+# "pragma: no cover".
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:"]
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -133,8 +144,10 @@ module = [
     "bobbie.*",
     "camina.*",
     "chrisjen.*",
+    "fjc_biographies.*",
     "fjc_idb.*",
     "holden.*",
+    "judicial_common_space.*",
     "keyring.*",
     "miller.*",
     "nagata.*",
@@ -271,3 +284,8 @@ ignore-decorators = ["typing.overload"]
 
 [tool.uv]
 package = true
+
+[tool.cruft]
+# Paths that `cruft update` leaves alone because they belong to this project
+# instead of the `snickerdoodle` template.
+skip = ["CHANGELOG.md", "src", "tests", "uv.lock"]

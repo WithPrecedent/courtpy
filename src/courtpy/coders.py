@@ -1,13 +1,14 @@
 """Techniques that code variables from parsed cases.
 
-`code_parties`, `code_case_type`, and `code_outcome` are `amos.Munger`
-techniques, which change and add columns without adding or removing rows, and
-`drop_text` is an `amos.Cleaner`, which removes columns. Each is added to the
-`amos` (and `chrisjen`) library as soon as courtpy is imported, and it can be
-named in the settings of any `amos` worker. courtpy's loaders (see `courtpy.loaders`) also
-run the coders named in their "coders" parameter (by default, `code_parties`,
-`code_case_type`, and `code_outcome`, in that order) right after parsing, so
-that a label such as "outcome_reversal" exists when the data is loaded.
+`code_parties`, `code_case_type`, `code_outcome`, and `tidy_cases` are
+`amos.Munger` techniques, which change and add columns without adding or
+removing rows, and `drop_text` is an `amos.Cleaner`, which removes columns.
+Each is added to the `amos` (and `chrisjen`) library as soon as courtpy is
+imported, and it can be named in the settings of any `amos` worker.
+courtpy's loaders (see `courtpy.loaders`) also run the coders named in
+their "coders" parameter (by default, `code_parties`, `code_case_type`, and
+`code_outcome`, in that order) right after parsing, so that a label such as
+"outcome_reversal" exists when the data is loaded.
 
 The coders use the columns made by the federal rules (such as
 "party1_appellant" and "disposition_reverse"). With other rules, make columns
@@ -19,6 +20,8 @@ Contents:
         which side won.
     CodeParties: completes the roles of the parties.
     DropText: removes columns that models cannot use, such as text and lists.
+    TidyCases: gives columns of booleans or whole numbers with missing values
+        types that allow them.
     code: applies coders (or other `amos` techniques) to parsed cases.
 
 """
@@ -26,14 +29,14 @@ Contents:
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
 import amos
 import chrisjen
 import pandas as pd
 
-from . import options, utilities
+from . import cases, options, utilities
 
 _NONE: frozenset[str] = frozenset({'', 'none', 'false', 'no', '0'})
 _OPPOSITES: tuple[tuple[str, str], ...] = (
@@ -314,6 +317,35 @@ class DropText(amos.Cleaner):
             item, **{'label': item.label, 'groups': item.groups, **kwargs})
 
 
+@dataclasses.dataclass
+class TidyCases(amos.Munger):
+    """Gives columns of booleans or whole numbers with missing values a type.
+
+    `pandas` stores a column of booleans with missing values (such as
+    "published", which is unknown for some cases) as plain objects, and a
+    column of whole numbers with missing values (such as "year") as decimals.
+    Such columns become the "boolean" and "Int64" types, which allow missing
+    values (see `courtpy.cases.tidy`). Tables that courtpy parses or loads
+    are tidied already, so it is for tables made or changed in other ways.
+
+    """
+
+    """ Public Methods """
+
+    def munge(self, data: pd.DataFrame, **kwargs: Any) -> pd.DataFrame:
+        """Gives the columns of booleans and whole numbers their types.
+
+        Args:
+            data: the cases.
+            **kwargs: not used.
+
+        Returns:
+            The cases, with those columns changed.
+
+        """
+        return cases.tidy(data)
+
+
 def code(
     data: pd.DataFrame | amos.Dataset,
     coders: str | Sequence[str] | None = options._DEFAULT_CODERS,
@@ -341,7 +373,7 @@ def code(
             'type[amos.Operation]',
             chrisjen.library.borrow(name, genre = 'operation'))
         settings = dict((parameters or {}).get(name, {}))
-        technique = kind(parameters = cast('dict[Hashable, Any]', settings))
+        technique = kind(parameters = settings)
         technique.apply(dataset)
     return dataset
 

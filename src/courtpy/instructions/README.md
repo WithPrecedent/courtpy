@@ -9,11 +9,20 @@ them to courtpy (`rulebooks = my_rules.csv` in a settings file, or
 | File | What it does |
 | --- | --- |
 | `lexis_nexis.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
-| `federal/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. |
-| `federal/opinion.csv` | Finds variables in the text of the opinions: the legal issues discussed (civil, criminal, constitutional, procedural, and standards of review), the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, and citations to cases, statutes, regulations, and other sources. |
-| `judges.csv` | Not for opinions: it codes the careers of judges for a roster of them (see `courtpy.judges.build_roster`), as a prosecutor, public defender, law clerk, Supreme Court clerk, lawyer of a solicitor general's office, or law professor. Its rules search the section `career`, which has each position that a judge held (as the Federal Judicial Center reports it) on its own line. |
+| `federal/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. Always applied. |
+| `federal/general.csv` | Finds the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, procedure (such as pro se, mandamus, and mootness), and standards of review. Always applied. |
+| `federal/citations.csv` | Finds citations to cases, statutes, regulations, the Constitution, legislative materials, and other sources (`citations_...`). |
+| `federal/civil.csv` | Finds the civil issues discussed (`civil_...`). |
+| `federal/constitutional.csv` | Finds the constitutional issues discussed (`constitutional_...`). |
+| `federal/criminal.csv` | Finds the criminal issues discussed (`criminal_...`). |
+| `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by commas (such as "Internal Revenue Service, United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
 
-The "federal" rulebook is both `federal` files, applied in that order.
+`header` and `general` are applied to every case, whether or not they are
+named. The others can be chosen by name: `rulebooks = civil, criminal` in a
+settings file (or `courtpy.parse(folder, rulebooks = ["civil", "criminal"])`
+in Python) parses with `header`, `general`, `civil`, and `criminal`. The
+"federal" rulebook (the default) is all seven `federal` files, in the order
+above. A file named more than once is applied once.
 
 ## The columns
 
@@ -34,8 +43,9 @@ The "federal" rulebook is both `federal` files, applied in that order.
 | --- | --- | --- |
 | `flag` | TRUE if the pattern appears, and otherwise FALSE. | `opinion,criminal_firearm,flag,[Pp]ossession of (a )?[Ff]irearm` |
 | `count` | The number of times the pattern appears. | `opinion,habeas_mentions,count,habeas` |
-| `matches` | A list of every match. | `opinion,references_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+` |
+| `matches` | A list of every match. | `opinion,citations_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+` |
 | `label` | The rule's `value` if the pattern appears. The first rule for a variable that matches is used. | `court,court_num,label,FIRST CIRCUIT,1` |
+| `labels` | The `value` of every rule for the variable whose pattern appears, once each, in the order of the rules and separated by commas. A value cannot have a comma. | `opinion,agencies,labels,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
 | `names` | A list of names, found by splitting the text wherever the pattern matches. The pattern should match what comes between names: titles, filler words, and punctuation. | `judges,panel_judges,names,\b(?:BEFORE\|CIRCUIT\|JUDGES?\|AND)\b\|[,;:]` |
 | `section` | A new section of text to search: the first match. | `header,counsel,section,\nCOUNSEL\:.*?(?=\n\n)` |
 | `excerpts` | A new section of text to search: every match, one per line. | `header,dates,excerpts,...` |
@@ -55,6 +65,14 @@ The "federal" rulebook is both `federal` files, applied in that order.
 * **Names are cleaned.** A `names` rule makes the text upper-case and removes
   periods and apostrophes before splitting it, so write its pattern in
   capital letters.
+* **Rules that start with letters are fast.** Python finds a pattern that
+  begins with letters by searching for them, which is many times faster
+  than trying the pattern at every character. A pattern that begins with
+  `\b`, a group, or a class, or that ignores case (`ignorecase` TRUE), loses
+  that. So `agencies.csv` matches with case, writing a name in its
+  capitalized form and in capitals (`Federal\s+Trade\s+Commission|FEDERAL\s+TRADE\s+COMMISSION`),
+  and puts the check that an abbreviation is a whole word after its letters
+  (`NLRB\b(?<!\wNLRB)` rather than `\bNLRB\b`).
 * **Missing sections are not errors.** If a case has no section for a rule's
   target (such as `future` in a CourtListener case), a flag is FALSE, a count
   is 0, a list is empty, and a label or section is blank.

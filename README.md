@@ -3,11 +3,11 @@
 | | |
 | --- | --- |
 | Version | [![PyPI Latest Release](https://img.shields.io/pypi/v/courtpy.svg?style=for-the-badge&color=cornflowerblue&label=PyPI&logo=PyPI&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Latest Release](https://img.shields.io/github/v/tag/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=GitHub&logo=github)](https://github.com/WithPrecedent/courtpy/releases) |
-| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?branch=main&style=for-the-badge&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=for-the-badge&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=for-the-badge&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
+| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?style=for-the-badge&branch=main&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Code Coverage](https://img.shields.io/codecov/c/github/WithPrecedent/courtpy?style=for-the-badge&color=cadetblue&label=Coverage&logo=codecov)](https://app.codecov.io/gh/WithPrecedent/courtpy) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=for-the-badge&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=for-the-badge&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
 | Documentation | [![Hosted By](https://img.shields.io/badge/Hosted_by-Github_Pages-blue?style=for-the-badge&color=forestgreen&logo=github)](https://WithPrecedent.github.io/courtpy) |
-| Tools | [![Documentation](https://img.shields.io/badge/MkDocs-magenta?style=for-the-badge&color=deepskyblue&logo=markdown&labelColor=gray)](https://squidfunk.github.io/mkdocs-material/) [![Linter](https://img.shields.io/endpoint?style=for-the-badge&url=https://raw.githubusercontent.com/charliermarsh/Ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/Ruff) [![Dependency Manager](https://img.shields.io/badge/uv-mediumpurple?style=for-the-badge&logo=uv&labelColor=gray)](https://docs.astral.sh/uv/) [![Pre-commit](https://img.shields.io/badge/pre--commit-darkolivegreen?style=for-the-badge&logo=pre-commit&logoColor=white&labelColor=gray)](https://github.com/TezRomacH/python-package-template/blob/master/.pre-commit-config.yaml) [![CI](https://img.shields.io/badge/GitHub_Actions-forestgreen?style=for-the-badge&logo=githubactions&labelColor=gray&logoColor=white)](https://github.com/features/actions) [![Editor Settings](https://img.shields.io/badge/Editor_Config-paleturquoise?style=for-the-badge&logo=editorconfig&labelColor=gray)](https://editorconfig.org/) [![Repository Template](https://img.shields.io/badge/snickerdoodle-bisque?style=for-the-badge&logo=cookiecutter&labelColor=gray)](https://www.github.com/WithPrecedent/snickerdoodle) [![Dependency Maintainer](https://img.shields.io/badge/dependabot-forestgreen?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=gray)](https://github.com/dependabot) |
-| Compatibility | [![Compatible Python Versions](https://img.shields.io/pypi/pyversions/courtpy?style=for-the-badge&color=cornflowerblue&label=Python&logo=python&logoColor=yellow)](https://pypi.python.org/pypi/courtpy/) [![Linux](https://img.shields.io/badge/Linux-lightseagreen?style=for-the-badge&logo=linux&labelColor=gray&logoColor=white)](https://www.linux.org/) [![MacOS](https://img.shields.io/badge/MacOS-antiquewhite?style=for-the-badge&logo=apple&labelColor=gray)](https://www.apple.com/macos/)  [![Windows](https://img.shields.io/badge/Windows-blue?style=for-the-badge)](https://www.microsoft.com/en-us/windows?r=1) |
-| Stats | [![PyPI Download Rate (per month)](https://img.shields.io/pypi/dm/courtpy?style=for-the-badge&color=cornflowerblue&label=Downloads%20💾&logo=pypi&logoColor=yellow)](https://pypi.org/project/courtpy) [![GitHub Stars](https://img.shields.io/github/stars/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Stars%20⭐&logo=github)](https://github.com/WithPrecedent/courtpy/stargazers) [![GitHub Contributors](https://img.shields.io/github/contributors/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Contributors%20🙋&logo=github)](https://github.com/WithPrecedent/courtpy/graphs/contributors) [![GitHub Issues](https://img.shields.io/github/issues/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Issues%20📘&logo=github)](https://github.com/WithPrecedent/courtpy/graphs/contributors) [![GitHub Forks](https://img.shields.io/github/forks/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Forks%20🍴&logo=github)](https://github.com/WithPrecedent/courtpy/forks) |
+| Tools | [![Documentation](https://img.shields.io/badge/MkDocs-magenta?style=for-the-badge&color=deepskyblue&logo=markdown&labelColor=gray)](https://squidfunk.github.io/mkdocs-material/) [![Linter](https://img.shields.io/endpoint?style=for-the-badge&url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Type Checker](https://img.shields.io/badge/mypy-steelblue?style=for-the-badge&logo=python&logoColor=white&labelColor=gray)](https://mypy-lang.org/) [![Dependency Manager](https://img.shields.io/badge/uv-mediumpurple?style=for-the-badge&logo=uv&labelColor=gray)](https://docs.astral.sh/uv/) [![Pre-commit](https://img.shields.io/badge/pre--commit-darkolivegreen?style=for-the-badge&logo=pre-commit&logoColor=white&labelColor=gray)](https://pre-commit.com/) [![CI](https://img.shields.io/badge/GitHub_Actions-forestgreen?style=for-the-badge&logo=githubactions&labelColor=gray&logoColor=white)](https://github.com/features/actions) [![Editor Settings](https://img.shields.io/badge/Editor_Config-paleturquoise?style=for-the-badge&logo=editorconfig&labelColor=gray)](https://editorconfig.org/) [![Repository Template](https://img.shields.io/badge/snickerdoodle-bisque?style=for-the-badge&logo=cookiecutter&labelColor=gray)](https://www.github.com/WithPrecedent/snickerdoodle) [![Dependency Maintainer](https://img.shields.io/badge/dependabot-forestgreen?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=gray)](https://github.com/dependabot) |
+| Compatibility | [![Compatible Python Versions](https://img.shields.io/pypi/pyversions/courtpy?style=for-the-badge&color=cornflowerblue&label=Python&logo=python&logoColor=yellow)](https://pypi.org/project/courtpy/) [![Linux](https://img.shields.io/badge/Linux-lightseagreen?style=for-the-badge&logo=linux&labelColor=gray&logoColor=white)](https://www.linux.org/) [![MacOS](https://img.shields.io/badge/MacOS-antiquewhite?style=for-the-badge&logo=apple&labelColor=gray)](https://www.apple.com/macos/) [![Windows](https://img.shields.io/badge/Windows-blue?style=for-the-badge)](https://www.microsoft.com/en-us/windows?r=1) |
+| Stats | [![PyPI Download Rate (per month)](https://img.shields.io/pypi/dm/courtpy?style=for-the-badge&color=cornflowerblue&label=Downloads%20💾&logo=pypi&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Stars](https://img.shields.io/github/stars/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Stars%20⭐&logo=github)](https://github.com/WithPrecedent/courtpy/stargazers) [![GitHub Contributors](https://img.shields.io/github/contributors/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Contributors%20🙋&logo=github)](https://github.com/WithPrecedent/courtpy/graphs/contributors) [![GitHub Issues](https://img.shields.io/github/issues/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Issues%20📘&logo=github)](https://github.com/WithPrecedent/courtpy/issues) [![GitHub Forks](https://img.shields.io/github/forks/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Forks%20🍴&logo=github)](https://github.com/WithPrecedent/courtpy/forks) |
 | | |
 
 -----
@@ -30,7 +30,9 @@ new fields, and wrapping custom tools.
   their roles, the court, the judges, the disposition, the issues discussed,
   the citations, and more.
 * **Study** the judges on each case, with integration of the Federal Judicial Center's
-  biographical data and Judicial Common Space Scores. Data about the overall
+  biographical data and Judicial Common Space Scores (from
+  [fjc-biographies](https://github.com/WithPrecedent/fjc_biographies) and
+  [judicial-common-space](https://github.com/WithPrecedent/judicial_common_space)). Data about the overall
   political and judicial context can also be easily added, including Martin-Quinn scores, NOMINATE scores of Congress, the Supreme Court Database, and the Federal Judicial Center's Integrated Database of appeals.
 * **Analyze** the data with [amos](https://github.com/WithPrecedent/amos) (which is built into `courtpy`),
   which compares models, preprocessing, and statistical methods, and records
@@ -168,8 +170,9 @@ variables, including:
 | `panel_judges`, `panel_size`, `author`, `concurring`, `dissenting` | The judges. |
 | `disposition_reverse`, `decision_reverse`, `opinion_reverse`, ... | The disposition: from the header, from the decision that the opinion states ("AFFIRMED."), and from the opinion's words anywhere. |
 | `agency` | The federal agency involved, if any. |
-| `civil_...`, `criminal_...`, `general_...`, `procedure_...`, `standard_...` | Issues discussed in the opinion (such as `criminal_firearm`, `civil_titlevii`, and `standard_de_novo`). |
-| `references_case`, `references_statute`, ... | Citations in the opinion. |
+| `agencies` | Every federal agency that the case names, separated by commas (such as "Internal Revenue Service, United States Tax Court"). |
+| `civil_...`, `constitutional_...`, `criminal_...`, `procedure_...`, `standard_...` | Issues discussed in the opinion (such as `criminal_firearm`, `civil_titlevii`, and `standard_de_novo`). |
+| `citations_case`, `citations_statute`, ... | Citations in the opinion. |
 | `published`, `year`, `date_filed`, `word_count` | Other information. |
 
 The coders (which are `amos` techniques) add `type_criminal`, each party's
@@ -182,13 +185,16 @@ the outcomes: `outcome_reversal`, `outcome_party1_won`,
 The rules find the judges' names as an opinion writes them ("LYNCH"). To
 study the judges, make a roster once from the Federal Judicial Center's
 [biographical directory](https://www.fjc.gov/history/judges/biographical-directory-article-iii-federal-judges-export)
-(three small files, which `courtpy` downloads), and more coders can use it:
+(three small files, which [fjc-biographies](https://github.com/WithPrecedent/fjc_biographies)
+downloads and parses), and more coders can use it. `jcs = True` adds each
+judge's Judicial Common Space score, computed by
+[judicial-common-space](https://github.com/WithPrecedent/judicial_common_space):
 
 ```python
-courtpy.judges.Roster.from_fjc().save()
+courtpy.judges.Roster.from_fjc(jcs = True).save()
 dataset = courtpy.code(table, [
     "code_parties", "code_case_type", "code_outcome",
-    "code_judges", "code_politics", "judge_votes"])
+    "code_panels", "add_politics", "reshape_by_votes"])
 ```
 
 Cases, judges, years, and other researchers' data are tables whose rows are
@@ -199,16 +205,23 @@ adding or losing a row, and records how many rows it matched.
 
 | Coder | Adds |
 | --- | --- |
-| `merge_judges` | What the roster says about the judge that each row names, such as the author of each opinion (`author_party`, `author_woman`, `author_age`, ...). |
-| `code_judges` | The judges of each panel who were found in the roster (`panel_names` and `panel_found`) and the panel's composition, such as `panel_party` (the mean party of the presidents who appointed its judges, from -1 for Democrats to 1 for Republicans), `panel_woman`, `panel_age`, and `panel_prosecutor`. |
-| `judge_votes` | A table with one row for each judge on each case, with the judge's attributes (`judge_party`, ...), the other judges' (`colleagues_party`, ...), and the judge's vote (`vote_reversal`, the outcome or its opposite for a judge who dissented). |
-| `code_politics` | The party of the president in the case's year (`politics_president_party`) and, from a table that `courtpy.politics.build_table` makes, the Supreme Court's [Martin-Quinn scores](https://mqscores.wustl.edu/measures.php) and the median [NOMINATE](https://voteview.com/data) scores of the Senate and House. |
-| `code_scdb` | For cases of the Supreme Court, the coding of the [Supreme Court Database](https://scdb.la.psu.edu/data/), such as `scdb_issueArea`, `scdb_decisionDirection`, and `scdb_partyWinning`. |
-| `code_idb` | For cases of the courts of appeals, the record of the appeal in the Federal Judicial Center's [Integrated Database](https://www.fjc.gov/research/idb), which [fjc-idb](https://github.com/WithPrecedent/fjc_idb) reads, such as `idb_appeal_type`, `idb_judgment_date`, `idb_pro_se_party`, and `idb_district_judge` (and, if asked, the district court's record of the case appealed). |
+| `merge_biographies` | What the roster says about the judge that each row names, such as the author of each opinion (`author_party`, `author_woman`, `author_age`, ...). |
+| `code_panels` | The judges of each panel who were found in the roster (`panel_names` and `panel_found`, and each judge's Federal Judicial Center name and number in `judge1` and `judge1_nid`, `judge2` and `judge2_nid`, and so on) and the panel's composition, such as `panel_party` (the mean party of the presidents who appointed its judges, from -1 for Democrats to 1 for Republicans), `panel_woman`, `panel_age`, and `panel_prosecutor`. |
+| `reshape_by_votes` | A table with one row for each judge on each case, with the judge's attributes (`judge_party`, ...), the other judges' (`colleagues_party`, ...), and the judge's vote (`vote_reversal`, the outcome or its opposite for a judge who dissented). |
+| `reshape_by_panel` | Undoes `reshape_by_votes`: the table of votes becomes a table of cases again. |
+| `reshape_by_judge` | A table with one row for each judge, with how many cases the judge decided (`cases`), the judge's attributes, and the shares of the judge's votes (`vote_reversal`, `judge_dissented`, ...). |
+| `add_politics` | The party of the president in the case's year (`politics_president_party`) and, from a table that `courtpy.politics.build_table` makes, the Supreme Court's [Martin-Quinn scores](https://mqscores.wustl.edu/measures.php) and the median [NOMINATE](https://voteview.com/data) scores of the Senate and House. |
+| `merge_scdb` | For cases of the Supreme Court, the coding of the [Supreme Court Database](https://scdb.la.psu.edu/data/), such as `scdb_issueArea`, `scdb_decisionDirection`, and `scdb_partyWinning`. |
+| `merge_idb` | For cases of the courts of appeals, the record of the appeal in the Federal Judicial Center's [Integrated Database](https://www.fjc.gov/research/idb), which [fjc-idb](https://github.com/WithPrecedent/fjc_idb) reads, such as `idb_appeal_type`, `idb_judgment_date`, `idb_pro_se_party`, and `idb_district_judge` (and, if asked, the district court's record of the case appealed). |
 
 `courtpy` downloads the scores and the databases from their sources the first
-time they are needed. See
-[examples/judge_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/judge_votes.ini)
+time they are needed. To study one of these tables by itself (such as each
+justice's vote in each case), start with its loader instead: `load_roster`,
+`load_scdb`, `load_idb`, or `load_politics`, or their "download_" twins
+(`download_biographies`, `download_scdb`, `download_idb`,
+`download_politics`, and `download_jcs`), which download the latest files
+first. See
+[examples/reshape_by_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/reshape_by_votes.ini)
 for a study of judges' votes.
 
 #### Describing a whole study in one file

@@ -38,10 +38,25 @@ def test_missing_targets_give_empty_values() -> None:
         make(target = 'notice', variable = 'n', kind = 'count', pattern = 'x'),
         make(target = 'notice', variable = 'm', kind = 'matches', pattern = 'x'),
         make(target = 'notice', variable = 'l', kind = 'label', pattern = 'x', value = '1'),
+        make(target = 'notice', variable = 'ls', kind = 'labels', pattern = 'x', value = 'X'),
         make(target = 'notice', variable = 's', kind = 'section', pattern = 'x'),
         make(target = 'notice', variable = 'names', kind = 'names', pattern = ',')]
     assert apply(book, {}) == {
-        'unpublished': False, 'n': 0, 'm': [], 'l': None, 's': None, 'names': []}
+        'unpublished': False, 'n': 0, 'm': [], 'l': None, 'ls': None, 's': None, 'names': []}
+
+
+def test_labels_join_every_match_once() -> None:
+    book = [
+        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'Tax Court', value = 'Tax Court'),
+        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = r'\bIRS\b', value = 'IRS'),
+        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'Internal Revenue', value = 'IRS'),
+        make(target = 'history, opinion', variable = 'agencies', kind = 'labels', pattern = 'NLRB', value = 'NLRB')]
+    # Each value is listed once, in the order of the rules, whichever target
+    # has it.
+    found = apply(book, {'history': 'Appeal from the Tax Court', 'opinion': 'The IRS (Internal Revenue Service)'})
+    assert found == {'agencies': 'Tax Court, IRS'}
+    assert apply(book, {'opinion': 'The district court'}) == {'agencies': None}
+    assert apply(book, {'opinion': 'the nlrb'}) == {'agencies': 'NLRB'}
 
 
 def test_label_uses_first_match_and_converts_numbers() -> None:
@@ -118,7 +133,9 @@ def test_names_ignores_groups_in_pattern() -> None:
     ({'pattern': ''}, 'pattern is blank'),
     ({'target': ''}, 'target is blank'),
     ({'kind': 'split', 'variable': 'one'}, 'needs two variables'),
-    ({'ignorecase': 'maybe'}, 'is not TRUE or FALSE')])
+    ({'ignorecase': 'maybe'}, 'is not TRUE or FALSE'),
+    ({'kind': 'labels'}, 'needs a value'),
+    ({'kind': 'labels', 'value': 'Health, Education, and Welfare'}, 'without a comma')])
 def test_invalid_rules(cells: dict[str, str], message: str) -> None:
     row = {'target': 'opinion', 'variable': 'x', 'kind': 'flag', 'pattern': 'x',
            'ignorecase': 'TRUE', 'dotall': 'FALSE', **cells}
@@ -153,8 +170,12 @@ def test_load_reports_file_and_row(tmp_path: pathlib.Path) -> None:
 
 
 def test_find_instructions() -> None:
-    assert [p.name for p in rules.find_instructions('federal')] == ['header.csv', 'opinion.csv']
+    assert [p.name for p in rules.find_instructions('federal')] == [
+        'header.csv', 'general.csv', 'citations.csv', 'civil.csv',
+        'constitutional.csv', 'criminal.csv', 'agencies.csv']
     assert rules.find_instructions('lexis_nexis')[0].name == 'lexis_nexis.csv'
+    civil = rules.find_instructions('civil')
+    assert [(p.parent.name, p.name) for p in civil] == [('federal', 'civil.csv')]
     with pytest.raises(FileNotFoundError, match = 'built-in'):
         rules.find_instructions('no_such_rules')
 
@@ -167,6 +188,12 @@ def test_folder_of_rules(tmp_path: pathlib.Path) -> None:
     assert rules.Rulebook.load(tmp_path).variables == ['first', 'second']
 
 
+def test_files_named_twice_are_read_once() -> None:
+    both = rules.Rulebook.load('civil', 'federal')
+    assert len(both) == len(rules.Rulebook.load('federal'))
+    assert both.name.startswith('civil, header, general')
+
+
 def test_built_in_rulebooks_are_valid() -> None:
     federal = rules.Rulebook.load('federal')
     lexis = rules.Rulebook.load('lexis_nexis')
@@ -174,10 +201,10 @@ def test_built_in_rulebooks_are_valid() -> None:
     for variable in (
         'party1', 'party2', 'court_num', 'agency', 'panel_judges', 'authors',
         'concurring', 'dissenting', 'disposition_reverse', 'opinion_reverse',
-        'criminal_firearm', 'civil_titlevii', 'general_amend4',
-        'references_case', 'references_statute', 'cite_federal_reporter',
+        'criminal_firearm', 'civil_titlevii', 'constitutional_amend4',
+        'citations_case', 'citations_statute', 'cite_federal_reporter',
         'party1_appellant', 'party2_united_states', 'counsel_us_attorney',
-        'docket_criminal', 'notice_unpublished'):
+        'docket_criminal', 'notice_unpublished', 'agencies'):
         assert variable in federal.variables
     assert lexis.sections == [
         'header', 'opinion', 'party', 'court', 'docket_number', 'history',
@@ -314,3 +341,56 @@ def test_federal_rules_find_the_stated_decision(
     assert tuple(
         found[f'decision_{r}']
         for r in ('affirm', 'reverse', 'vacate', 'remand', 'dismiss')) == rulings
+
+
+@pytest.mark.parametrize(('text', 'expected'), [
+    ('Petition for review of an order of the National Labor Relations Board.', 'National Labor Relations Board'),
+    ('NATIONAL LABOR RELATIONS BOARD, Petitioner, v. ACME CORP.', 'National Labor Relations Board'),
+    ('The N.L.R.B. found that the NLRB had jurisdiction.', 'National Labor Relations Board'),
+    ('The SEC sued, and the Securities and Exchange Commission won.', 'Securities and Exchange Commission'),
+    ('Appeal from the United States Tax Court. The IRS assessed a deficiency.', 'Internal Revenue Service, United States Tax Court'),
+    ('The ATF agents searched the house.', 'Bureau of Alcohol Tobacco Firearms and Explosives'),
+    ('The U.S. Department of Transportation and the FAA regulate pilots.', 'Department of Transportation, Federal Aviation Administration'),
+    ('UNITED STATES DEPARTMENT OF LABOR, Respondent', 'Department of Labor'),
+    ('The Secretary of Labor sued under the Fair Labor Standards Act.', 'Department of Labor'),
+    ('the Department of State issued a passport', 'Department of State'),
+    ('The Commodity Futures Trading Commission (CFTC) brought the action.', 'Commodity Futures Trading Commission'),
+    ('The EPA issued a rule under the Clean Air Act.', 'Environmental Protection Agency'),
+    ('He served in the U.S. Army and later the Navy.', 'Department of the Army, Department of the Navy'),
+    ('The VA denied his claim for benefits.', 'Department of Veterans Affairs'),
+    ('A CMS manual governs Medicare reimbursement.', 'Health Care Financing Administration'),
+    ('The BIA affirmed, and the INS removed him.', 'Immigration and Naturalization Service'),
+    ('The General Accounting Office (GAO) reported.', 'Government Accountability Office'),
+    # Words and abbreviations that are not these agencies.
+    ('Claims under the Equal Pay Act (EPA) fail, so the EPA claim is dismissed.', None),
+    ('The ALJ relied on the Dictionary of Occupational Titles (DOT).', None),
+    ('The agreement is governed by the Federal Arbitration Act (FAA).', None),
+    ('JOHN DOE, Plaintiff-Appellant, v. JANE DOE.', None),
+    ('The Illinois Department of Transportation (IDOT) let the contract.', None),
+    ('the Pennsylvania Department of Labor and Industry denied benefits', None),
+    ('the state department of corrections transferred him', None),
+    ('Cal/OSHA cited the employer.', None),
+    ('SEC. 2. DEFINITIONS.', None),
+    ('Richmond, VA 23219. See Va. Code Ann.', None),
+    ('AETNA INS. CO. v. Smith', None),
+    ('The Salvation Army ran the shelter.', None),
+    ('The district court granted summary judgment.', None)])
+def test_federal_rules_find_agencies(text: str, expected: str | None) -> None:
+    found = rules.Rulebook.load('agencies').apply({'opinion': text})
+    assert found['agencies'] == expected
+
+
+def test_agencies_are_those_of_fjc_idb() -> None:
+    # Each agency of fjc-idb has rules, named by its code in their notes,
+    # except its codes for no agency, its second code for the Environmental
+    # Protection Agency, and "RTCO", which it does not name.
+    import fjc_idb.rules.appellate
+    book = rules.Rulebook.load('agencies')
+    codes = {
+        rule.note.split(':')[1].split('.')[0].strip()
+        for rule in book if rule.note.startswith('fjc-idb:')}
+    assert set(fjc_idb.rules.appellate.agencies) - codes == {'-8', '-9', '7', 'RTCO'}
+    values = {rule.value for rule in book}
+    assert len(values) == 104
+    assert all(',' not in value for value in values)
+    assert {rule.kind for rule in book} == {'labels'}

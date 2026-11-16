@@ -373,7 +373,9 @@ def _parser() -> argparse.ArgumentParser:
         '--source', choices = sorted(parsers.SOURCES), default = 'court_listener')
     parse.add_argument(
         '--rulebooks', nargs = '+',
-        help = 'built-in rulebooks or CSV files (default: federal)')
+        help = (
+            'built-in rulebooks (such as civil) or CSV files, applied after '
+            'header and general (default: federal)'))
     parse.add_argument(
         '--output', default = 'cases.csv',
         help = 'file to save the table to (default: cases.csv)')
@@ -391,7 +393,7 @@ def _parser() -> argparse.ArgumentParser:
         'rules', help = 'check a rulebook and list its variables')
     check.add_argument(
         'rulebooks', nargs = '+',
-        help = 'built-in rulebooks (federal, lexis_nexis) or CSV files')
+        help = 'built-in rulebooks (such as federal, civil, or lexis_nexis) or CSV files')
     check.set_defaults(command = _rules)
 
     run = commands.add_parser(

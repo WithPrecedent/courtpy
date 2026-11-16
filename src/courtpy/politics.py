@@ -6,16 +6,17 @@ sources:
 | Columns | Meaning | Source |
 | --- | --- | --- |
 | `president_party` | The party of the president: -1 for Democratic and 1 for Republican. | courtpy (see `presidents`). |
-| `supreme_court_median`, `supreme_court_min`, `supreme_court_max` | The Martin-Quinn scores of the median justice and of the most liberal and most conservative justices. Higher scores are more conservative. | The "court" file of https://mqscores.wustl.edu/measures.php (see `martin_quinn`). |
+| `supreme_court_median`, `supreme_court_min`, `supreme_court_max` | The Martin-Quinn scores of the median justice and of the most liberal and most conservative justices in the term that began in the year. Higher scores are more conservative. | The "justices" file of https://mqscores.wustl.edu/measures.php (see `martin_quinn`). |
 | `senate_median`, `house_median` | The median NOMINATE score of the members of each chamber of Congress. Higher scores are more conservative. | The file of members' ideology of https://voteview.com/data (see `nominate`). |
 
-The sources' current files are downloaded when they are first needed (see
-`download`), and kept outside of projects (in "politics" in
-`courtpy.utilities.data_folder()`). The tables are combined by their years
+The sources' current files are downloaded by the judicial-common-space
+package when they are first needed (see `download`), and kept outside of
+projects (in "politics" in `courtpy.utilities.data_folder()`), where it and
+fjc-biographies look for them too. The tables are combined by their years
 with the `merge_keys` technique of `amos`, which adds the columns of another
 table's row that has the same keys.
 
-`code_politics` (an `amos.Merger`, which is added to the `amos` library as
+`add_politics` (an `amos.Merger`, which is added to the `amos` library as
 soon as courtpy is imported) is that technique with the year of each case as
 its key: it adds the table's columns to each case, with "politics_" before
 their names. With no table, it adds only "politics_president_party", which
@@ -26,15 +27,24 @@ can be added in a spreadsheet:
 import courtpy
 
 courtpy.politics.build_table().to_csv("politics.csv", index = False)
-dataset = courtpy.code(cases, "code_politics", parameters = {
-    "code_politics": {"source": "politics.csv"}})
+dataset = courtpy.code(cases, "add_politics", parameters = {
+    "add_politics": {"source": "politics.csv"}})
 ```
 
+`load_politics` and `download_politics` (reference loaders, see
+`courtpy.loaders.ReferenceLoader`) start a study of the years themselves,
+with a saved table or one that `build_table` makes.
+
 Contents:
-    CodePolitics: adds the columns of a table of years to each case.
+    AddPolitics: adds the columns of a table of years to each case.
+    DownloadPolitics: downloads the sources of the political context and
+        loads its table.
+    LoadPolitics: loads a table of the political context of each year.
     build_table: makes a table of the political context of each year.
-    download: downloads the files of Martin-Quinn and NOMINATE scores.
-    justices: returns the Martin-Quinn score of each justice in each term.
+    download: downloads the files of Martin-Quinn and NOMINATE scores with
+        judicial-common-space.
+    justices: returns the Martin-Quinn and Judicial Common Space scores of
+        each justice in each term.
     martin_quinn: returns the Martin-Quinn scores of the Supreme Court in
         each year.
     nominate: returns the median NOMINATE scores of the Senate and the House
@@ -42,12 +52,10 @@ Contents:
     presidents: returns the party of the president in each year.
     _CHAMBERS: the columns that `nominate` makes, by the name of each chamber
         of Congress in the file of members.
-    _COURT: the columns that `martin_quinn` makes, by their names in the
-        file of the court's scores.
-    _JUSTICES: the columns of scores that `justices` makes, by their names
-        in the file of the justices' scores.
-    _PRESIDENTS: each year in which the party of the president changed, with
-        the party that took office (-1 for Democratic and 1 for Republican).
+    _COURT: the columns that `martin_quinn` makes, by the summary of the
+        justices' scores that each is.
+    _SOURCES: the files that `download` gets, by what judicial-common-space
+        calls each.
 
 """
 
@@ -59,26 +67,22 @@ from collections.abc import Iterable, Sequence
 from typing import Any
 
 import amos
+import judicial_common_space
 import pandas as pd
 
-from . import jcs, options, utilities
+from . import jcs, loaders, options, utilities
 
 _CHAMBERS: dict[str, str] = {
     'Senate': 'senate_median', 'House': 'house_median'}
 _COURT: dict[str, str] = {
-    'med': 'supreme_court_median',
+    'median': 'supreme_court_median',
     'min': 'supreme_court_min',
     'max': 'supreme_court_max'}
-_JUSTICES: dict[str, str] = {
-    'post_mn': 'martin_quinn', 'post_sd': 'martin_quinn_sd'}
-# The party is known through the term that began in the last of these years.
-_PRESIDENTS: tuple[tuple[int, int], ...] = (
-    (1933, -1), (1953, 1), (1961, -1), (1969, 1), (1977, -1), (1981, 1),
-    (1993, -1), (2001, 1), (2009, -1), (2017, 1), (2021, -1), (2025, 1))
+_SOURCES: dict[str, str] = {'justices': 'martin_quinn', 'congress': 'congress'}
 
 
 @dataclasses.dataclass
-class CodePolitics(amos.mergers.MergeKeys):
+class AddPolitics(amos.mergers.MergeKeys):
     """Adds the columns of a table of years to each case.
 
     Every column of the table (see `build_table`) is added to the cases, with
@@ -148,6 +152,136 @@ class CodePolitics(amos.mergers.MergeKeys):
             **kwargs)
 
 
+@dataclasses.dataclass
+class LoadPolitics(loaders.ReferenceLoader):
+    """Loads a table of the political context of each year.
+
+    The table starts a study of the years themselves. Its "source" is the
+    path of a saved table of years (in any format that the clerk knows).
+    Without one, the table is made from the sources' current files (see
+    `build_table`), which are downloaded first if they are missing, and
+    "supreme_court", "congress", "score", and "common_space" are passed to
+    `build_table`. To add the table's columns to parsed cases, use
+    `add_politics` instead.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        supreme_court: bool | pathlib.Path | str | None = None,
+        congress: bool | pathlib.Path | str | None = None,
+        score: str = 'nominate_dim1',
+        common_space: bool | pathlib.Path | str = False,
+        **kwargs: Any) -> Any:
+        """Returns the table of years.
+
+        Args:
+            source: the path of a saved table of years, or "current" to make
+                the table from the sources' current files.
+            supreme_court: the file of the justices' Martin-Quinn scores, or
+                "false" to leave them out (see `build_table`). Defaults to
+                `None`, for the current file.
+            congress: the file of the ideology of every member of Congress,
+                or "false" to leave it out. Defaults to `None`, for the
+                current file.
+            score: the column of the file of Congress with the score to use.
+                Defaults to "nominate_dim1".
+            common_space: the file of Judicial Common Space medians, or
+                "true" for the current file. Defaults to `False`, which
+                leaves them out.
+            **kwargs: parameters for `read`, for a saved table.
+
+        Returns:
+            The table, with a "year" column.
+
+        """
+        path = self._locate(source)
+        if path is not None:
+            return self.read(path, **kwargs)
+        common = self._choose(common_space)
+        return build_table(
+            self._choose(supreme_court),
+            self._choose(congress),
+            score = score,
+            common_space = False if common is None else common)
+
+
+@dataclasses.dataclass
+class DownloadPolitics(loaders.ReferenceLoader):
+    """Downloads the sources of the political context and loads its table.
+
+    The files of Martin-Quinn and NOMINATE scores (and, with "common_space",
+    of Judicial Common Space medians) are downloaded unless they are there
+    already, or "refresh" is true (see `download` and
+    `courtpy.jcs.download`). Then the table of years is made from them (see
+    `build_table`). Its "source" is the data folder whose "politics" (and
+    "jcs") folder keeps the files, which is
+    `courtpy.utilities.data_folder()` unless another is set.
+
+    """
+
+    """ Public Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        supreme_court: bool | str = True,
+        congress: bool | str = True,
+        score: str = 'nominate_dim1',
+        common_space: bool | str = False,
+        refresh: bool | str = False,
+        session: Any = None,
+        **kwargs: Any) -> pd.DataFrame:
+        """Downloads the sources' files and returns the table of years.
+
+        Args:
+            source: the data folder, or "current" for
+                `utilities.data_folder()`.
+            supreme_court: whether to download and add the Martin-Quinn
+                scores of the Supreme Court. Defaults to `True`.
+            congress: whether to download and add the NOMINATE scores of
+                Congress. Defaults to `True`.
+            score: the column of the file of Congress with the score to use.
+                Defaults to "nominate_dim1".
+            common_space: whether to download and add the Judicial Common
+                Space medians. Defaults to `False`.
+            refresh: whether to download the files even if they are there.
+                Defaults to `False`.
+            session: an object with a `get` method like a
+                `requests.Session`. Defaults to `None`, in which case one is
+                made.
+            **kwargs: not used.
+
+        Returns:
+            The table, with a "year" column (see `build_table`).
+
+        """
+        folder = self._locate(source)
+        overwrite = utilities.to_bool(refresh)
+        chosen = {
+            'justices': utilities.to_bool(supreme_court),
+            'congress': utilities.to_bool(congress)}
+        wanted = [kind for kind, use in chosen.items() if use]
+        paths: dict[str, Any] = download(
+            folder, kinds = wanted, overwrite = overwrite,
+            session = session) if wanted else {}
+        medians: pathlib.Path | bool = False
+        if utilities.to_bool(common_space):
+            medians = jcs.download(
+                folder, kinds = 'medians', overwrite = overwrite,
+                session = session)['medians']
+        return build_table(
+            paths.get('justices', False),
+            paths.get('congress', False),
+            score = score,
+            common_space = medians)
+
+
 def build_table(
     supreme_court: pd.DataFrame | pathlib.Path | str | bool | None = None,
     congress: pd.DataFrame | pathlib.Path | str | bool | None = None,
@@ -158,7 +292,7 @@ def build_table(
     """Makes a table of the political context of each year.
 
     Args:
-        supreme_court: the file of the Supreme Court's Martin-Quinn scores by
+        supreme_court: the file of the justices' Martin-Quinn scores in each
             term (see `martin_quinn`). Defaults to `None`, in which case the
             current file is used, which is downloaded unless it was before
             (see `download`). `False` leaves the court's scores out of the
@@ -209,65 +343,69 @@ def download(
 
     | Kind | File | Source |
     | --- | --- | --- |
-    | `supreme_court` | "court.csv": the scores of the median justice and of the most liberal and most conservative justices in each term of the Supreme Court. | https://mqscores.wustl.edu/measures.php |
-    | `justices` | "justices.csv": the score of each justice in each term. | The same page. |
+    | `justices` | "justices.csv": the Martin-Quinn score of each justice in each term. | https://mqscores.wustl.edu/measures.php |
     | `congress` | "HSall_members.csv": the ideology of every member of every Congress (about 6 megabytes). | https://voteview.com/data (its "Member Ideology" data for both chambers and all Congresses) |
 
-    The Martin-Quinn scores are released each year, in a folder named for
-    the year, so their files are found by the links on the page.
+    `judicial_common_space.sources.download` downloads them, into the
+    "politics" folder of `folder`, where it and fjc-biographies look for the
+    files too, so courtpy and those packages share them. The Martin-Quinn
+    scores are released each year, in a folder named for the year, so their
+    file is found by its link on the page. The page is behind a check for
+    automated browsers, which can refuse the download. Then save
+    "justices.csv" from the page in a browser and put it in the "politics"
+    folder (or pass its path to `justices` and `martin_quinn`).
 
     Args:
-        folder: the folder to save them in. Defaults to `None`, in which case
-            "politics" in `utilities.data_folder()` is used.
-        kinds: the files to download: any of "supreme_court", "justices", and
-            "congress". Defaults to `None`, for all of them.
+        folder: the data folder, whose "politics" folder they are saved in.
+            Defaults to `None`, in which case `utilities.data_folder()` is
+            used.
+        kinds: the files to download: "justices", "congress", or both.
+            Defaults to `None`, for both.
         overwrite: whether to download a file that is already there. The
             scores change as justices and members vote. Defaults to `False`.
         session: an object with a `get` method like a `requests.Session`.
-            Defaults to `None`, in which case a `requests.Session` is made.
+            Defaults to `None`, in which case a `requests.Session` that
+            identifies courtpy is made.
 
     Raises:
         requests.HTTPError: if a page or a file cannot be downloaded.
         ValueError: if one of `kinds` is not a file that courtpy knows, or
-            the page of Martin-Quinn scores has no link to a file.
+            the page of Martin-Quinn scores has no link to its file.
 
     Returns:
         The path of each file, by its kind.
 
     """
-    files = {**options._MQ_FILES, **options._VOTEVIEW_FILES}
-    wanted = list(files) if kinds is None else utilities.listify(kinds)
-    unknown = [kind for kind in wanted if kind not in files]
+    wanted = list(_SOURCES) if kinds is None else utilities.listify(kinds)
+    unknown = [kind for kind in wanted if kind not in _SOURCES]
     if unknown:
-        message = f'kinds must be among {list(files)}, not {unknown}'
+        message = f'kinds must be among {list(_SOURCES)}, not {unknown}'
         raise ValueError(message)
-    folder = pathlib.Path(folder).expanduser() if folder else _folder()
-    session = utilities.open_session(session)
-    paths = {}
-    for kind in wanted:
-        paths[kind] = folder / files[kind]
-        if overwrite or not paths[kind].is_file():
-            utilities.download_file(
-                _address(kind, session), paths[kind], overwrite = True,
-                session = session)
-    return paths
+    paths = judicial_common_space.sources.download(
+        [_SOURCES[kind] for kind in wanted],
+        folder or utilities.data_folder(),
+        overwrite = overwrite,
+        session = utilities.open_session(session))
+    return {kind: paths[_SOURCES[kind]] for kind in wanted}
 
 
 def justices(
     source: pd.DataFrame | pathlib.Path | str | None = None) -> pd.DataFrame:
-    """Returns the Martin-Quinn score of each justice in each term.
+    """Returns the Martin-Quinn and Common Space scores of each justice.
 
-    The justices have the numbers that the Supreme Court Database gives them,
-    so the scores can be added to its votes (see `courtpy.scdb.votes`) with
-    the `merge_keys` technique of `amos`, by "term" and "justice".
+    `judicial_common_space.politics.justices` reads the scores and puts each
+    Martin-Quinn score on the scale of the Judicial Common Space. The
+    justices have the numbers that the Supreme Court Database gives them, so
+    the scores can be added to its votes (see `courtpy.scdb.votes`) with the
+    `merge_keys` technique of `amos`, by "term" and "justice".
 
     Args:
         source: the "justices" file of the Martin-Quinn scores (from
             https://mqscores.wustl.edu/measures.php), as a path or a table.
             It has a row for each justice in each term, with the columns
-            "term", "justice", "justiceName", "post_mn", and "post_sd".
-            Defaults to `None`, in which case the current file is used,
-            which is downloaded unless it was before (see `download`).
+            "term", "justice", "justiceName", and "post_mn". Defaults to
+            `None`, in which case the current file is used, which is
+            downloaded unless it was before (see `download`).
 
     Raises:
         KeyError: if `source` lacks a column that is needed.
@@ -277,26 +415,27 @@ def justices(
             "justice" and "justiceName" (the Supreme Court Database's number
             and name for the justice, such as 117 and "ACBarrett"),
             "martin_quinn" (the mean of the estimates of the justice's
-            score), and "martin_quinn_sd" (their standard deviation).
+            score), and "jcs" (the score on the scale of the Judicial Common
+            Space).
 
     """
-    scores = _read(source, 'justices')
-    names = ['term', 'justice', 'justiceName']
-    _require(
-        scores, [*names, *_JUSTICES],
-        "the file of the justices' Martin-Quinn scores")
-    return scores[[*names, *_JUSTICES]].rename(columns = _JUSTICES)
+    scores: pd.DataFrame = judicial_common_space.politics.justices(
+        _read(source, 'justices'))
+    return scores
 
 
 def martin_quinn(
     source: pd.DataFrame | pathlib.Path | str | None = None) -> pd.DataFrame:
     """Returns the Martin-Quinn scores of the Supreme Court in each year.
 
+    The scores are summaries of the scores of the justices who served in
+    each term (see `justices`): their median and the lowest and highest of
+    them. A term in which a justice was replaced (such as 2005, when Samuel
+    Alito replaced Sandra Day O'Connor) has the scores of both.
+
     Args:
-        source: the "court" file of the Martin-Quinn scores (from
-            https://mqscores.wustl.edu/measures.php), as a path or a table.
-            It has a row for each term of the court, with the columns
-            "term", "med", "min", and "max". Defaults to `None`, in which
+        source: the "justices" file of the Martin-Quinn scores (see
+            `justices`), as a path or a table. Defaults to `None`, in which
             case the current file is used, which is downloaded unless it was
             before (see `download`).
 
@@ -306,18 +445,13 @@ def martin_quinn(
     Returns:
         A table with "year" (the year in which the term began, in October),
             "supreme_court_median", "supreme_court_min", and
-            "supreme_court_max". A term with more than one row in the file
-            (as 1937 and 2005 have, as "2005a" and "2005b", for the court
-            before and after a justice was replaced) has their means.
+            "supreme_court_max".
 
     """
-    scores = _read(source, 'supreme_court')
-    _require(scores, ['term', *_COURT], 'the file of Martin-Quinn scores')
-    year = scores['term'].astype(str).str.extract(r'(\d{4})', expand = False)
-    scores = scores.assign(year = pd.to_numeric(year, errors = 'coerce'))
-    scores = scores.dropna(subset = ['year']).astype({'year': int})
-    means = scores.groupby('year')[list(_COURT)].mean().reset_index()
-    return means.rename(columns = _COURT)
+    scores = justices(source).dropna(subset = ['term', 'martin_quinn'])
+    summaries = scores.groupby('term')['martin_quinn'].agg(list(_COURT))
+    table = summaries.rename(columns = _COURT).rename_axis('year')
+    return table.reset_index().astype({'year': int})
 
 
 def nominate(
@@ -369,16 +503,20 @@ def nominate(
     return years[['year', *_CHAMBERS.values()]]
 
 
-def presidents(start: int = 1933, end: int | None = None) -> pd.DataFrame:
+def presidents(start: int | None = None, end: int | None = None) -> (
+        pd.DataFrame):
     """Returns the party of the president in each year.
 
-    A president who takes office in a year (in January) is the president of
-    that year.
+    The parties are in `options._PRESIDENTS`, by year, where a year can be
+    added. A president who takes office in a year (in January) is the
+    president of that year.
 
     Args:
-        start: the first year. Defaults to 1933.
+        start: the first year. Defaults to `None`, in which case it is the
+            first year that courtpy knows the party of (1933).
         end: the last year. Defaults to `None`, in which case it is the last
-            year of the last term that courtpy knows the party of.
+            year that courtpy knows the party of, the last of the latest
+            president's term.
 
     Raises:
         ValueError: if `start` or `end` is a year that courtpy does not know
@@ -389,7 +527,9 @@ def presidents(start: int = 1933, end: int | None = None) -> pd.DataFrame:
             for Republican).
 
     """
-    earliest, latest = _PRESIDENTS[0][0], _PRESIDENTS[-1][0] + 3
+    parties = pd.Series(options._PRESIDENTS, dtype = 'Int64')
+    earliest, latest = int(parties.index.min()), int(parties.index.max())
+    start = earliest if start is None else start
     end = latest if end is None else end
     if start < earliest or end > latest:
         message = (
@@ -398,54 +538,12 @@ def presidents(start: int = 1933, end: int | None = None) -> pd.DataFrame:
         )
         raise ValueError(message)
     years = list(range(start, end + 1))
-    parties = [
-        next(party for first, party in reversed(_PRESIDENTS) if first <= year)
-        for year in years]
-    return pd.DataFrame({'year': years, 'president_party': parties})
+    return pd.DataFrame({
+        'year': years,
+        'president_party': parties.reindex(years).array})
 
 
 """ Private Functions """
-
-
-def _address(kind: str, session: Any) -> str:
-    """Returns the address of one of the sources' files.
-
-    Args:
-        kind: "supreme_court", "justices", or "congress" (see `download`).
-        session: an object with a `get` method like a `requests.Session`.
-
-    Raises:
-        requests.HTTPError: if the page of Martin-Quinn scores cannot be
-            downloaded.
-        ValueError: if that page has no link to the file.
-
-    Returns:
-        The address: for the Martin-Quinn scores, the link to the file on
-            their page, and for Voteview, the file in its folder.
-
-    """
-    if kind in options._VOTEVIEW_FILES:
-        return options._VOTEVIEW_URL + options._VOTEVIEW_FILES[kind]
-    name = options._MQ_FILES[kind]
-    links = utilities.page_links(options._MQ_PAGE, session = session)
-    for address, _ in links:
-        if address.rsplit('/', 1)[-1] == name:
-            return address
-    message = (
-        f'no link to {name!r} was found on {options._MQ_PAGE}: download '
-        f'the file and pass its path instead'
-    )
-    raise ValueError(message)
-
-
-def _folder() -> pathlib.Path:
-    """Returns the folder where the sources' files are kept.
-
-    Returns:
-        "politics" in `utilities.data_folder()`. It is not created.
-
-    """
-    return utilities.data_folder() / 'politics'
 
 
 def _read(
@@ -455,9 +553,9 @@ def _read(
 
     Args:
         source: a table (which is copied), the path of a CSV file, or `None`.
-        kind: the file to use if `source` is `None`: "supreme_court",
-            "justices", or "congress". It is downloaded unless it was before
-            (see `download`).
+        kind: the file to use if `source` is `None`: "justices" or
+            "congress". It is downloaded unless it was before (see
+            `download`).
 
     Returns:
         The table.

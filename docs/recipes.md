@@ -53,11 +53,11 @@ import courtpy
 courtpy.judges.Roster.from_fjc().save()
 ```
 
-Then add `code_judges` and `judge_votes` to the loader's coders. `judge_votes`
-is a shaper, which changes what a row is: the table has one row for each
+Then add `code_panels` and `reshape_by_votes` to the loader's coders.
+`reshape_by_votes` is a shaper, which changes what a row is: the table has one row for each
 judge on each case, and `vote_reversal` (whether the judge voted to reverse)
 can be the label. This is the heart of
-[examples/judge_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/judge_votes.ini):
+[examples/reshape_by_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/reshape_by_votes.ini):
 
 ```ini
 [general]
@@ -73,7 +73,7 @@ techniques = load_court_listener, filter_rows, keep_columns, drop_missing
 
 [load_court_listener_parameters]
 source = court_listener
-coders = code_parties, code_case_type, code_outcome, code_judges, code_politics, judge_votes
+coders = code_parties, code_case_type, code_outcome, code_panels, add_politics, reshape_by_votes
 
 [filter_rows_parameters]
 query = type_criminal and panel_size == 3 and panel_found == 3
@@ -101,23 +101,41 @@ metrics = roc_auc, accuracy, balanced_accuracy, f1
   are named. Here the groups are cases, so that comparison would mean nothing
   (and it needs the optional fairlearn package).
 
-To study panels instead, use `code_judges` without `judge_votes`. The table
-keeps one row for each case, the label can stay `outcome_reversal`, and the
-composition of each panel (such as `panel_party` and `panel_woman`) can be
-among the features.
+To study panels instead, use `code_panels` without `reshape_by_votes`. The
+table keeps one row for each case, the label can stay `outcome_reversal`, and
+the composition of each panel (such as `panel_party` and `panel_woman`) can
+be among the features. `reshape_by_panel` turns a table of votes back into a
+table of cases, so columns added to the votes can be studied by case.
+
+To study the judges themselves, add `reshape_by_judge` after
+`reshape_by_votes` (or in its place, with the roster as its `roster`). It
+makes one row for each judge, with how many cases the judge decided
+(`cases`), the judge's attributes, and the shares of the judge's votes, such
+as `vote_reversal` (the share to reverse) and `judge_dissented` (the share
+of the judge's cases with a dissent by the judge):
+
+```ini
+[general]
+seed = 43
+label = judge_dissented
+
+[load_court_listener_parameters]
+source = court_listener
+coders = code_parties, code_case_type, code_outcome, reshape_by_votes, reshape_by_judge
+```
 
 ## Add what is known about each opinion's author
 
-`merge_judges` is a merger: it adds the columns of the roster's row for the
-judge that each row names, and never adds or loses a row. To study whether
+`merge_biographies` is a merger: it adds the columns of the roster's row for
+the judge that each row names, and never adds or loses a row. To study whether
 the author of an opinion matters, name the column with the author's name and
 a prefix for the new columns:
 
 ```ini
 [wrangler]
-techniques = load_court_listener, merge_judges, filter_rows, keep_columns
+techniques = load_court_listener, merge_biographies, filter_rows, keep_columns
 
-[merge_judges_parameters]
+[merge_biographies_parameters]
 name = author
 prefix = author_
 indicator = author_found
@@ -134,7 +152,7 @@ found (its "matched"), which belongs in a description of the data.
 
 ## Add the politics of each year
 
-`code_politics` adds the party of the president in each case's year. For the
+`add_politics` adds the party of the president in each case's year. For the
 Supreme Court's Martin-Quinn scores and the median NOMINATE scores of the
 Senate and House too, make a table of years once (courtpy downloads the
 scores from their sources), and name it as the technique's `source`:
@@ -150,9 +168,9 @@ courtpy.politics.build_table().to_csv("data/politics.csv", index = False)
 input_folder = data
 
 [wrangler]
-techniques = load_court_listener, code_politics, drop_text
+techniques = load_court_listener, add_politics, drop_text
 
-[code_politics_parameters]
+[add_politics_parameters]
 source = politics.csv
 ```
 
@@ -162,7 +180,7 @@ added to it in a spreadsheet. See
 
 ## Use the Supreme Court Database's coding
 
-For cases of the Supreme Court, `code_scdb` adds the
+For cases of the Supreme Court, `merge_scdb` adds the
 [Supreme Court Database](https://scdb.la.psu.edu)'s coding of each case, with
 "scdb_" before the database's names for its variables. courtpy downloads the
 latest release the first time:
@@ -172,7 +190,7 @@ latest release the first time:
 label = outcome_reversal
 
 [wrangler]
-techniques = load_court_listener, code_scdb, filter_rows, keep_columns
+techniques = load_court_listener, merge_scdb, filter_rows, keep_columns
 
 [load_court_listener_parameters]
 source = court_listener
@@ -180,7 +198,7 @@ download = bulk
 courts = scotus
 start_date = 2000-01-01
 
-[code_scdb_parameters]
+[merge_scdb_parameters]
 columns = issueArea, decisionDirection, lcDispositionDirection
 indicator = in_scdb
 
@@ -195,7 +213,7 @@ See [The Supreme Court Database](advanced.md#the-supreme-court-database).
 
 ## Add the Federal Judicial Center's record of each appeal
 
-For cases of the courts of appeals, `code_idb` adds the record of each appeal
+For cases of the courts of appeals, `merge_idb` adds the record of each appeal
 in the Federal Judicial Center's
 [Integrated Database](https://www.fjc.gov/research/idb), which comes from the
 courts' dockets: what an opinion does not say, such as whether a party was
@@ -207,7 +225,7 @@ the first time:
 label = outcome_reversal
 
 [wrangler]
-techniques = load_court_listener, code_idb, filter_rows, keep_columns, drop_missing
+techniques = load_court_listener, merge_idb, filter_rows, keep_columns, drop_missing
 
 [load_court_listener_parameters]
 source = court_listener
@@ -216,7 +234,7 @@ courts = federal_circuits
 start_date = 2015-01-01
 end_date = 2019-12-31
 
-[code_idb_parameters]
+[merge_idb_parameters]
 columns = pro_se_party, notice_to_judgment, criminal_direct_appeal, civil_us_party
 indicator = in_idb
 

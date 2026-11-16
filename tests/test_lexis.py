@@ -48,9 +48,9 @@ def test_parse(lexis_folder: pathlib.Path) -> None:
     assert doe['concurrences'] == 0
     assert doe['counsel_us_attorney'] and doe['counsel_public_defender']
     assert doe['party1_united_states'] and doe['party2_appellant']
-    assert doe['criminal_firearm'] and doe['general_amend4'] and doe['standard_de_novo']
+    assert doe['criminal_firearm'] and doe['constitutional_amend4'] and doe['standard_de_novo']
     assert doe['opinion_reverse'] and not doe['disposition_reverse']
-    assert doe['references_case'] == ['400 F.3d 10']
+    assert doe['citations_case'] == ['400 F.3d 10']
     assert doe['word_count'] > 50
     assert 'opinion' not in table.columns and 'header' not in table.columns
     acme = table.loc['lexis_batch_00002']

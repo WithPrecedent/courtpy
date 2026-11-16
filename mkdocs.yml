@@ -33,7 +33,7 @@ nav:
 - Development:
   - Contributing: contributing.md
   - Code of Conduct: code_of_conduct.md
-  # - Coverage Report: coverage.md
+  - Coverage Report: coverage.md
 
 # Documentation Appearance
 
@@ -122,9 +122,9 @@ markdown_extensions:
 
 plugins:
 - autorefs
-# - coverage:
-#     page_name: coverage
-#     html_report_dir: htmlcov
+# Adds the HTML report in "htmlcov" (from `pytest --cov --cov-report=html`) as
+# the "coverage" page.
+- coverage
 - gen-files:
     scripts:
     - docs/scripts/gen_ref_nav.py

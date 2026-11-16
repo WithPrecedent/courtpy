@@ -6,6 +6,7 @@ Contents:
     download_file: downloads a file, unless it was downloaded before.
     expand_courts: turns court ids and group names into court ids.
     html_to_text: converts the HTML or XML of an opinion to plain text.
+    instructions_folder: returns courtpy's "instructions" folder.
     listify: returns a setting as a list of names.
     locate: returns a file named in settings, found as a clerk finds files.
     normalize: collapses all whitespace in text into single spaces.
@@ -37,6 +38,7 @@ from __future__ import annotations
 
 import datetime
 import html.parser
+import importlib.resources
 import logging
 import os
 import pathlib
@@ -359,6 +361,18 @@ def html_to_text(markup: str) -> str:
     lines = ''.join(extractor.parts).splitlines()
     return '\n'.join(
         ' '.join(line.split()) for line in lines if line.strip())
+
+
+def instructions_folder() -> pathlib.Path:
+    """Returns courtpy's "instructions" folder.
+
+    The folder has the built-in rulebooks (see `courtpy.rules`).
+
+    Returns:
+        The path of the folder, inside the installed package.
+
+    """
+    return pathlib.Path(str(importlib.resources.files('courtpy'))) / 'instructions'
 
 
 def listify(item: Any) -> list[str]:
