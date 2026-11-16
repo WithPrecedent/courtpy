@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 * The README shows the courtpy logo (`docs/images/logo.webp`).
+* "Keeping your API key secret" moved from the README to the Advanced User
+  Guide's "Secrets and folders" section, and the README links to it.
 * Every process of courtpy is an `amos`/`chrisjen` technique. The techniques
   are renamed for what they do, and the old names are removed (settings that
   use them must be updated):

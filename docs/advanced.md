@@ -601,11 +601,31 @@ CourtListener without saving them.
 
 ## Secrets and folders
 
-`courtpy.secrets.get_api_key` looks for the API key in, in order: the
-`COURTLISTENER_API_KEY` environment variable, the system keyring, the secrets
-file (`courtpy.secrets.secrets_path()`), and a `.env` file in the current
-folder. `set_api_key` stores the key in the keyring if there is one and in the
-secrets file otherwise (or where its `store` argument says).
+### Keeping your API key secret
+
+Your API key, if you use one, is never written in a project's files or in
+`courtpy` itself. Store it once:
+
+```sh
+courtpy key set
+```
+
+That asks for the key (without showing it) and stores it in your computer's
+keyring (Windows Credential Manager, the macOS Keychain, or the Secret Service
+on Linux), or, if there is none, in a private file in your user folder (the
+secrets file, at `courtpy.secrets.secrets_path()`). From then on, `courtpy`
+finds it whenever it is needed. `courtpy key show` says where it was found
+(with most of it hidden), and `courtpy key delete` removes it.
+
+`courtpy` looks for the key in this order: the `COURTLISTENER_API_KEY`
+environment variable, the keyring, the secrets file, and a `.env` file in the
+current folder (with a line such as `COURTLISTENER_API_KEY=your-key`; keep
+such a file out of version control). In Python, use
+`courtpy.secrets.set_api_key(...)` and `courtpy.secrets.get_api_key()`.
+`set_api_key` stores the key in the keyring if there is one and in the secrets
+file otherwise (or where its `store` argument says).
+
+### Folders
 
 | Folder | Holds | Default | Changed with |
 | --- | --- | --- | --- |

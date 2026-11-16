@@ -119,26 +119,9 @@ Courts are named by their CourtListener ids (such as `ca1`, `cadc`, `cafc`,
 and `scotus`) or by groups: `federal_appellate`, `federal_circuits`, and
 `supreme_court`.
 
-#### Keeping your API key secret
-
-Your API key, if you use one, is never written in a project's files or in `courtpy` itself.
-Store it once:
-
-```sh
-courtpy key set
-```
-
-That asks for the key (without showing it) and stores it in your computer's
-keyring (Windows Credential Manager, the macOS Keychain, or the Secret Service
-on Linux), or, if there is none, in a private file in your user folder. From
-then on, `courtpy` finds it whenever it is needed. `courtpy key show` says where
-it was found (with most of it hidden), and `courtpy key delete` removes it.
-
-`courtpy` looks for the key in this order: the `COURTLISTENER_API_KEY`
-environment variable, the keyring, the private file, and a `.env` file in the
-current folder (with a line such as `COURTLISTENER_API_KEY=your-key`; keep
-such a file out of version control). In Python, use
-`courtpy.secrets.set_api_key(...)` and `courtpy.secrets.get_api_key()`.
+Store your API key once with `courtpy key set`. See
+[Keeping your API key secret](https://WithPrecedent.github.io/courtpy/advanced/#keeping-your-api-key-secret)
+for where it is kept and how `courtpy` finds it.
 
 #### Using opinions from Lexis-Nexis
 
