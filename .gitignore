@@ -146,6 +146,8 @@ secrets.toml
 data/
 court_listener/
 lexis_nexis/
+# ...but not the rules for Lexis-Nexis cases, which are part of courtpy
+!src/courtpy/instructions/lexis_nexis/
 results/
 .courtpy/
 *.csv.bz2

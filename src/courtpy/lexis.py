@@ -6,8 +6,9 @@ files into one file for each case, which `read_case` reads for parsing.
 
 Lexis-Nexis cases have a header (with the parties, court, docket number,
 dates, history, counsel, judges, and so on) followed by the opinions. The
-rules in the "lexis_nexis" rulebook (in courtpy's "instructions" folder) find
-each part of the header, so they can be changed without changing courtpy.
+rules in the "lexis_nexis" rulebook (the "lexis_nexis" folder of courtpy's
+"instructions" folder, with a file for each kind of court) find each part of
+the header, so they can be changed without changing courtpy.
 
 Contents:
     clean: removes common clutter from Lexis-Nexis text.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import re
 from typing import Any
 
 import amos
@@ -35,6 +37,59 @@ def test_rulebooks_are_named() -> None:
     assert len(amos.parsers.Rulebook.create('lexis_nexis')) > 10
     with pytest.raises(FileNotFoundError, match = 'federal'):
         amos.parsers.Rulebook.create('no_such_rules')
+
+
+def test_rule_files_are_general_then_federal() -> None:
+    general, federal = rules._GENERAL, rules._INSTRUCTIONS / 'federal'
+    assert rules.find_rule_files('criminal') == [
+        general / 'criminal.csv', federal / 'criminal.csv']
+    assert rules.find_rule_files('citations') == [general / 'citations.csv']
+    assert rules.find_rule_files('agencies') == [federal / 'agencies.csv']
+    assert rules.find_rule_files('criminal', None) == [general / 'criminal.csv']
+    with pytest.raises(FileNotFoundError, match = 'no_such_topic'):
+        rules.find_rule_files('no_such_topic')
+    names = amos.parsers.Rulebook.create('criminal').names
+    assert 'criminal_firearm' in names and 'criminal_acca' in names
+
+
+def test_structure_files_are_by_source_and_courts() -> None:
+    path = rules.find_structure_file('lexis_nexis', 'federal_appellate')
+    assert path == rules._INSTRUCTIONS / 'lexis_nexis' / 'federal_appellate.csv'
+    with pytest.raises(FileNotFoundError, match = 'state_trial'):
+        rules.find_structure_file('lexis_nexis', 'state_trial')
+
+
+def read_rows(path: Any) -> list[dict[str, str]]:
+    """Returns the rows of a CSV file of rules.
+
+    Args:
+        path: the path of the file.
+
+    Returns:
+        The rows, as `dict`s by the names of the columns.
+
+    """
+    with path.open(encoding = 'utf-8-sig', newline = '') as file:
+        return list(csv.DictReader(file))
+
+
+def test_federal_files_do_not_repeat_general_rules() -> None:
+    for path in sorted((rules._INSTRUCTIONS / 'federal').glob('*.csv')):
+        general = rules._GENERAL / path.name
+        if general.exists():
+            names = {row['name'] for row in read_rows(general)}
+            repeated = {row['name'] for row in read_rows(path)} & names
+            assert not repeated, (path.name, repeated)
+
+
+def test_rules_that_ignore_case_do_not_list_both_cases() -> None:
+    both = re.compile(r'\[([A-Za-z])([A-Za-z])\]')
+    for path in sorted(rules._INSTRUCTIONS.glob('*/*.csv')):
+        for row in read_rows(path):
+            if 'ignorecase' not in row['flags']:
+                continue
+            for first, second in both.findall(row['pattern']):
+                assert first.lower() != second.lower(), (path, row['name'])
 
 
 def test_files_named_twice_are_read_once() -> None:

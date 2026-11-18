@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## Unreleased
+
+* The rules in the "instructions" folder are divided by jurisdiction. The
+  "general" folder has the rules that fit opinions of any jurisdiction, and
+  the "federal" folder has only the rules that fit federal opinions alone.
+  Each built-in rulebook (such as "criminal") applies its "general" file and
+  then its "federal" file, if there is one ("citations", "constitutional",
+  "general", "header", and "torts" have no federal rules). The federal files
+  no longer repeat the rules of the general files.
+* `rules.find_rule_files` returns the files of a topic in a jurisdiction, and
+  `rules.find_structure_file` returns the file that finds the sections of a
+  source's cases for a kind of court.
+* The Lexis-Nexis rules are `lexis_nexis/federal_appellate.csv` (in place of
+  `lexis_nexis.csv`), for cases of the federal courts of appeals.
+* The "torts" rulebook (`ParseTorts`, `parse_torts`) finds torts and other
+  private-law issues ("torts_..."), and the "federal" rulebook includes it.
+* Some criminal and civil variables are renamed or removed:
+  "criminal_crimmigration" is "criminal_illegal_entry",
+  "criminal_obst_just" is "criminal_obstruction", "criminal_president_crime"
+  is "criminal_president_threats", and "civil_excessive_force" is
+  "torts_excessive_force". "criminal_cigarette", "criminal_desertion",
+  "criminal_fetus_crime", "criminal_impersonate", "criminal_passports",
+  "criminal_threats", and "criminal_vehicles" are removed. New variables
+  include "criminal_plea_bargain", "constitutional_strict_scrutiny",
+  "constitutional_intermediate_scrutiny", "constitutional_rational_basis",
+  and "standard_mixed_question".
+* Rules that ignore case no longer list both cases of a letter (such as
+  `[Cc]`), and the rule for "civil_declaratory_judgment" is a valid pattern
+  again.
+
 ## 0.3.2
 
 * The README shows the courtpy logo (`docs/images/logo.webp`).

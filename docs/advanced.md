@@ -513,7 +513,7 @@ Their parameters go in a "{loader}_parameters" section of the settings:
 | `dockets` | `load_court_listener` | For "api", whether to download each case's docket too (one more request per case). |
 | `bulk_folder`, `bulk_date`, `stream` | `load_court_listener` | For "bulk", where to keep the bulk files, which date's files to use, and whether to read them from CourtListener without saving them. |
 | `batches` | `load_lexis_nexis` | Files (or folders) of many cases to divide into the source folder first. |
-| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", and "criminal") or CSV files or folders. "header" and "general" are always applied. Defaults to "federal". |
+| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", "criminal", "torts", and "agencies") or CSV files or folders. "header" and "general" are always applied. Defaults to "federal". |
 | `keep_text`, `limit`, `workers` | `load_court_listener`, `load_lexis_nexis` | Whether to keep the opinions' text, most cases to parse, and processes to parse with. |
 
 The loaders work through the project's clerk, as `amos` loaders do. A folder

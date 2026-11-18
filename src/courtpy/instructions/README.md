@@ -6,23 +6,36 @@ Each row is one rule. You can change these files, or make your own and pass
 them to courtpy (`rulebooks = my_rules.csv` in a settings file, or
 `courtpy.parse(folder, rulebooks = ["federal", "my_rules.csv"])` in Python).
 
-| File | What it does |
-| --- | --- |
-| `lexis_nexis.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
-| `federal/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. Always applied. |
-| `federal/general.csv` | Finds the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, procedure (such as pro se, mandamus, and mootness), and standards of review. Always applied. |
-| `federal/citations.csv` | Finds citations to cases, statutes, regulations, the Constitution, legislative materials, and other sources (`citations_...`). |
-| `federal/civil.csv` | Finds the civil issues discussed (`civil_...`). |
-| `federal/constitutional.csv` | Finds the constitutional issues discussed (`constitutional_...`). |
-| `federal/criminal.csv` | Finds the criminal issues discussed (`criminal_...`). |
-| `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by commas (such as "Internal Revenue Service, United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
+The rules are in three folders:
 
-`header` and `general` are applied to every case, whether or not they are
-named. The others can be chosen by name: `rulebooks = civil, criminal` in a
-settings file (or `courtpy.parse(folder, rulebooks = ["civil", "criminal"])`
-in Python) parses with `header`, `general`, `civil`, and `criminal`. The
-"federal" rulebook (the default) is all seven `federal` files, in the order
-above. A file named more than once is applied once.
+* `general` has the rules that fit opinions of any jurisdiction.
+* `federal` has the rules that fit only federal opinions. A file here adds
+  to the `general` file of the same name and does not repeat its rules. A
+  topic with no federal rules (such as citations) has no file here.
+* `lexis_nexis` has the rules that divide a Lexis-Nexis case into its parts,
+  with a file for each kind of court (`federal_appellate.csv`, for the
+  federal courts of appeals).
+
+| Topic | Files | What it does |
+| --- | --- | --- |
+| `lexis_nexis` | `lexis_nexis/federal_appellate.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
+| `header` | `general/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. Always applied. |
+| `general` | `general/general.csv` | Finds the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, procedure (such as pro se, mandamus, and mootness), and standards of review. Always applied. |
+| `citations` | `general/citations.csv` | Finds citations to cases, statutes, regulations, the Constitution, legislative materials, and other sources (`citations_...`). |
+| `civil` | `general/civil.csv`, `federal/civil.csv` | Finds the civil issues discussed (`civil_...`). |
+| `constitutional` | `general/constitutional.csv` | Finds the constitutional issues discussed (`constitutional_...`). |
+| `criminal` | `general/criminal.csv`, `federal/criminal.csv` | Finds the criminal issues discussed (`criminal_...`). |
+| `torts` | `general/torts.csv` | Finds torts and other private-law issues discussed (`torts_...`). |
+| `agencies` | `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by commas (such as "Internal Revenue Service, United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
+
+Each topic's rules are its `general` file and then its `federal` file, in
+that order. `header` and `general` are applied to every case, whether or not
+they are named. The others can be chosen by name: `rulebooks = civil,
+criminal` in a settings file (or `courtpy.parse(folder, rulebooks = ["civil",
+"criminal"])` in Python) parses with `header`, `general`, `civil`, and
+`criminal`. The "federal" rulebook (the default) is every topic but
+`lexis_nexis`, in the order above. A file named more than once is applied
+once.
 
 ## The columns
 
@@ -112,7 +125,7 @@ These sections can be targets in the `federal` rules (and your own):
 | Section | Lexis-Nexis | CourtListener |
 | --- | --- | --- |
 | `party` | The caption. | The full case name. |
-| `party1`, `party2` | Made by the `split` rule in `federal/header.csv`. | The same. |
+| `party1`, `party2` | Made by the `split` rule in `general/header.csv`. | The same. |
 | `court` | The court's line in the header. | The court's full name. |
 | `docket_number` | The docket line. | The docket number (if dockets were downloaded). |
 | `citation` | The citation line. | The case's citations. |

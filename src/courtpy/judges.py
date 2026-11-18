@@ -1795,7 +1795,7 @@ def _number_courts(courts: Iterable[str]) -> dict[str, int]:
     """Returns the numbers that the federal rules give courts.
 
     The numbers come from the rules that make "court_num" for cases (in
-    "federal/header.csv"), so a judge's court and a case's court always have
+    "general/header.csv"), so a judge's court and a case's court always have
     the same number.
 
     Args:
