@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import io
 import pathlib
+from typing import Any
 
+import pandas as pd
 import pytest
 
 import courtpy
@@ -58,3 +60,43 @@ def test_key_commands(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFix
 def test_download_needs_a_key(capsys: pytest.CaptureFixture[str]) -> None:
     assert cli.main(['-q', 'download', 'api', '--courts', 'ca1']) == 1
     assert 'no CourtListener API key' in capsys.readouterr().err
+
+
+def test_judges(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    asked: dict[str, Any] = {}
+
+    def from_fjc(**kwargs: Any) -> courtpy.judges.Roster:
+        asked.update(kwargs)
+        return courtpy.judges.Roster(pd.DataFrame({
+            'nid': [1, 1, 2], 'judge': ['A', 'A', 'B'], 'last_name': ['A', 'A', 'B'],
+            'first_name': ['X', 'X', 'Y'], 'court_num': [1, 2, 1], 'circuit_num': [1, 2, 1],
+            'start_year': [1990, 2000, 1995], 'end_year': [2000, 2010, 2005]}))
+
+    monkeypatch.setattr(courtpy.judges.Roster, 'from_fjc', from_fjc)
+    output = tmp_path / 'roster.csv'
+    assert cli.main(['-q', 'judges', '--no-jcs', '--output', str(output)]) == 0
+    assert asked == {'update': False, 'jcs': False, 'martin_quinn': False, 'rulebook': 'judges'}
+    assert output.is_file()
+    assert 'A roster of 2 judges was saved' in capsys.readouterr().out
+
+
+def test_study_commands(capsys: pytest.CaptureFixture[str]) -> None:
+    # A study adds a command of its own and changes a default of courtpy's.
+
+    def greet(arguments: Any) -> int:
+        print(f'hello {arguments.name} with {arguments.rulebook}')
+        return 0
+
+    def add_commands(commands: Any) -> None:
+        hello = commands.add_parser('hello')
+        hello.add_argument('name')
+        hello.set_defaults(command = greet, rulebook = 'careers.csv')
+        commands.choices['judges'].set_defaults(rulebook = 'careers.csv')
+
+    assert cli.main(['hello', 'court'], prog = 'study', add_commands = add_commands) == 0
+    assert capsys.readouterr().out == 'hello court with careers.csv\n'
+    assert cli.main(['rules', 'no_such_rules'], prog = 'study', add_commands = add_commands) == 1
+    assert capsys.readouterr().err.startswith('study: ')
+    with pytest.raises(SystemExit):
+        cli.main(['--help'], prog = 'study', add_commands = add_commands)
+    assert 'hello' in capsys.readouterr().out

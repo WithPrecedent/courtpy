@@ -157,8 +157,9 @@ variables, including:
 | `panel_judges`, `panel_size`, `author`, `concurring`, `dissenting` | The judges. |
 | `disposition_reverse`, `decision_reverse`, `opinion_reverse`, ... | The disposition: from the header, from the decision that the opinion states ("AFFIRMED."), and from the opinion's words anywhere. |
 | `agency` | The federal agency involved, if any. |
-| `agencies` | Every federal agency that the case names, separated by commas (such as "Internal Revenue Service, United States Tax Court"). |
+| `agencies` | Every federal agency that the case names, separated by "; " (such as "Internal Revenue Service; United States Tax Court"). |
 | `civil_...`, `constitutional_...`, `criminal_...`, `procedure_...`, `standard_...` | Issues discussed in the opinion (such as `criminal_firearm`, `civil_titlevii`, and `standard_de_novo`). |
+| `review_district`, `review_agency`, `review_immigration`, `district_judges` | The kind of review, and the district judge of an appeal from a district court. |
 | `citations_case`, `citations_statute`, ... | Citations in the opinion. |
 | `published`, `year`, `date_filed`, `word_count` | Other information. |
 
@@ -278,14 +279,17 @@ works.
 | `courtpy key set`, `show`, `delete` | Manages your CourtListener API key. |
 | `courtpy download bulk --courts ca1 --start 2019-01-01 --end 2019-12-31` | Extracts cases from the bulk data. |
 | `courtpy download api --courts ca1 --start 2026-09-01` | Downloads cases with the API. |
+| `courtpy download bulk --help` | Lists the options of one way to download. |
 | `courtpy split FILES --folder lexis_nexis` | Divides Lexis-Nexis files of many cases. |
 | `courtpy parse FOLDER --output cases.csv` | Parses and codes saved cases into a table. |
 | `courtpy rules my_rules.csv` | Checks a file of rules and lists the variables it makes. |
 | `courtpy run study.ini --export` | Runs a whole study. |
+| `courtpy judges` | Makes the roster of judges from the Federal Judicial Center's files. |
 
 Add `--help` to any command for its options. See the
 [documentation](https://WithPrecedent.github.io/courtpy) for a tutorial, the
-advanced user guide, a guide to writing rules, and recipes.
+advanced user guide, a guide to writing rules, a guide to building a study on
+courtpy, a catalog of its techniques and variables, and recipes.
 
 ## Contributing
 

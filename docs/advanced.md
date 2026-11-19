@@ -14,23 +14,30 @@ Lexis-Nexis   ──lexis.split──────────────▶ (JS
 In a project, a loader (such as `load_court_listener`) does every step before
 `amos.Dataset` as the first technique of the wrangler.
 
-| Module | Contents |
-| --- | --- |
-| `courtpy.bulk` | `BulkData`, which extracts cases from CourtListener's bulk data. |
-| `courtpy.courtlistener` | `CourtListener`, a client for the REST API, and `read_case`, which reads a saved CourtListener case. |
-| `courtpy.lexis` | `split` and `read_case` for Lexis-Nexis text files. |
-| `courtpy.rules` | courtpy's rulebooks (such as `ParseFederal`), which are `amos` rulebooks (`amos.parsers.ParseAll`) of the CSV files of rules. |
-| `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table. |
-| `courtpy.coders` | The coders, which are `amos` techniques (including `tidy_cases`, which gives columns with missing values the right types), and `code`, which applies them. |
-| `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `merge_biographies`, `code_panels`, `reshape_by_votes`, `reshape_by_panel`, `reshape_by_judge`, `load_roster`, and `download_biographies` techniques. |
-| `courtpy.politics` | `build_table`, which makes a table of each year's political context from the sources' current files, `justices`, which returns each justice's Martin-Quinn and Judicial Common Space scores, and the `add_politics`, `load_politics`, and `download_politics` techniques. |
-| `courtpy.jcs` | `medians`, which loads the Judicial Common Space medians of each year, and `download`, which downloads the published scores with judicial-common-space, and the `download_jcs` technique. |
-| `courtpy.scdb` | `cases` and `votes`, which load the Supreme Court Database, and the `merge_scdb`, `load_scdb`, and `download_scdb` techniques. |
-| `courtpy.fjc_idb` | `appeals` and `download`, which load and download the Federal Judicial Center's Integrated Database with fjc-idb, and the `merge_idb`, `load_idb`, and `download_idb` techniques. |
-| `courtpy.loaders` | The loaders, which are `amos` techniques that collect, parse, and code cases in a project, and `ReferenceLoader`, the base of the techniques that load other tables (see [Reference tables](#reference-tables)). |
-| `courtpy.cases` | `Case`, and `save_cases` and `load_cases` for case tables. |
-| `courtpy.secrets` | Storing and finding the CourtListener API key. |
-| `courtpy.options` | Defaults that a project can change before they are used. |
+courtpy's modules are in four folders, as `amos` keeps its modules in a
+folder for each stage: `sources` (where cases come from), `wrangler`
+(courtpy's steps of the `amos` wrangler), `references` (tables that
+describe something other than cases), and `core` (what the others share).
+Each module can also be imported from `courtpy` itself (such as
+`courtpy.judges` for `courtpy.references.judges`).
+
+| Folder | Module | Contents |
+| --- | --- | --- |
+| sources | `courtpy.bulk` | `BulkData`, which extracts cases from CourtListener's bulk data. |
+| sources | `courtpy.courtlistener` | `CourtListener`, a client for the REST API, and `read_case`, which reads a saved CourtListener case. |
+| sources | `courtpy.lexis` | `split` and `read_case` for Lexis-Nexis text files. |
+| wrangler | `courtpy.rules` | courtpy's rulebooks (`RULEBOOKS`, such as "federal"), which are `amos` rulebooks (`amos.parsers.ParseAll`) of the CSV files of rules, and `register_rulebooks`, which makes rulebooks of a study's own folders of rules. |
+| wrangler | `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table. |
+| wrangler | `courtpy.coders` | The coders, which are `amos` techniques (including `tidy_cases`, which gives columns with missing values the right types), and `code`, which applies them. |
+| wrangler | `courtpy.loaders` | The loaders, which are `amos` techniques that collect, parse, and code cases in a project, and `ReferenceLoader`, the base of the techniques that load other tables (see [Reference tables](#reference-tables)). |
+| references | `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `merge_biographies`, `code_panels`, `reshape_by_votes`, `reshape_by_panel`, `reshape_by_judge`, `load_roster`, and `download_biographies` techniques. |
+| references | `courtpy.politics` | `build_table`, which makes a table of each year's political context from the sources' current files, `justices`, which returns each justice's Martin-Quinn and Judicial Common Space scores, and the `add_politics`, `load_politics`, and `download_politics` techniques. |
+| references | `courtpy.jcs` | `medians`, which loads the Judicial Common Space medians of each year, and `download`, which downloads the published scores with judicial-common-space, and the `download_jcs` technique. |
+| references | `courtpy.scdb` | `cases` and `votes`, which load the Supreme Court Database, and the `merge_scdb`, `load_scdb`, and `download_scdb` techniques. |
+| references | `courtpy.fjc_idb` | `appeals` and `download`, which load and download the Federal Judicial Center's Integrated Database with fjc-idb, and the `merge_idb`, `load_idb`, and `download_idb` techniques. |
+| core | `courtpy.cases` | `Case`, `save_cases` and `load_cases` for case tables, and helpers for their columns (`split_cell`, `column_as_flags`, `flags_as_numbers`, `select_whole_cases`, and `require_columns`). |
+| core | `courtpy.secrets` | Storing and finding the CourtListener API key. |
+| core | `courtpy.options` | Defaults that a project can change before they are used. |
 
 ## Saved cases
 
@@ -84,8 +91,8 @@ types, which allow missing values.
 
 `save_cases` saves a table as a CSV file (with lists written as text, separated
 by "; ", and the names of those columns saved beside the file) or as a parquet
-file (with the optional pyarrow package, which keeps lists and types as they
-are), and `load_cases` loads it again.
+file (which keeps lists and types as they are), and `load_cases` loads it
+again.
 
 ## Coders
 
@@ -458,8 +465,8 @@ was appealed (in columns that begin with "idb_district_", which fjc-idb's
 criminal defendants, which are about 400 MB a year.
 
 Reading the yearly files takes a few seconds a year. To read them once, save
-the table and name the file as the `source` (a parquet file, as here, needs
-`pip install courtpy[parquet]`):
+the table and name the file as the `source` (a parquet file, as here, keeps
+the types of its columns):
 
 ```python
 import courtpy
@@ -489,7 +496,10 @@ the same folder.
 
 `amos` loads a project's data with loaders, the first techniques of the
 wrangler, so a project with a loader needs no `item`. courtpy's loaders are a
-genre of `amos` loaders, `CaseLoader`:
+genre of `amos` loaders, `CaseLoader`. `load_court_listener` and
+`load_lexis_nexis` are `SourceLoader`s, which download cases (if asked) and
+parse a folder of them; a study can add its own sources, ways to download,
+and loaders (see [Building a Study](studies.md#sources-of-your-own)):
 
 | Loader | Source | Does |
 | --- | --- | --- |
@@ -506,7 +516,7 @@ Their parameters go in a "{loader}_parameters" section of the settings:
 | `save` | all | File to save the coded table to (".csv" or ".parquet"). |
 | `reuse` | all | Whether to load the saved table, if there is one, instead of collecting, parsing, and coding again. |
 | `label`, `task`, `groups` | all | As in `amos`. They default to those in the "general" section. |
-| `download` | `load_court_listener` | "bulk" to extract cases from the bulk data, "api" to download them with the API, or "none" (the default) to use the cases already in the folder. |
+| `download` | `load_court_listener` | "bulk" to extract cases from the bulk data, "api" to download them with the API, a way that a study adds, or "none" (the default) to use the cases already in the folder. Any parameter that the loader does not know is an option of the way to download. |
 | `courts` | `load_court_listener` | CourtListener court ids (such as "ca1, ca2") or groups (`federal_appellate`, `federal_circuits`, or `supreme_court`). |
 | `start_date`, `end_date` | `load_court_listener` | Dates filed (YYYY-MM-DD). |
 | `max_cases`, `overwrite` | `load_court_listener` | Most cases to download, and whether to download cases saved before. |
@@ -590,8 +600,14 @@ CourtListener publishes its whole database every three months, at
 opinion clusters (about 2.5 GB), citations, and opinions (about 55 GB). It keeps
 only the cases of the courts and dates asked for, so it needs little memory,
 but reading the opinions file takes hours. The dockets file is read a second
-time after the opinion clusters, to save each case with its whole docket. Extract every court and year you may
-need at once.
+time after the opinion clusters, to save each case with its whole docket.
+Extract every court and year you may need at once.
+
+The files are read with amos's `read_chunks`, which decompresses and parses
+them on every core and drops the rows of other courts and cases before they
+become Python objects. `BulkData.chunks` yields those chunks as tables, with
+the columns and values to keep, for studies that need other parts of the
+bulk data.
 
 By default, the files are downloaded (resuming an interrupted download) and
 kept in "bulk" in courtpy's data folder, outside of any project, so they can
@@ -630,7 +646,7 @@ file otherwise (or where its `store` argument says).
 | Folder | Holds | Default | Changed with |
 | --- | --- | --- | --- |
 | Configuration | The secrets file. | "courtpy" in `%APPDATA%` (Windows) or `~/.config` | `COURTPY_CONFIG_DIR` |
-| Data | Bulk data files, the roster of judges and the files it is made from, and the files of Martin-Quinn scores, NOMINATE scores, Judicial Common Space scores, and the Supreme Court Database. | From courtpy's repository, "data/courts" two folders above it (`courtpy.options._DATA_FOLDER`, beside the folder of code projects, where fjc-idb keeps its files too). From an installed package, "courtpy" in `%LOCALAPPDATA%` (Windows) or `~/.local/share` | `COURTPY_DATA_DIR` |
+| Data | Bulk data files, the roster of judges and the files it is made from, and the files of Martin-Quinn scores, NOMINATE scores, Judicial Common Space scores, and the Supreme Court Database. | "courts" in the data folder of the `amos` workspace (`courtpy.options._DATA_SUBFOLDER`), where every `amos` project keeps its data: with projects in "projects/code", it is "projects/data/courts". The workspace is the folder named by `AMOS_WORKSPACE`, or else the folder that holds the nearest "code" folder above the current folder | `COURTPY_DATA_DIR` |
 
 ## Options
 

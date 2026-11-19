@@ -26,7 +26,8 @@ The rules are in three folders:
 | `constitutional` | `general/constitutional.csv` | Finds the constitutional issues discussed (`constitutional_...`). |
 | `criminal` | `general/criminal.csv`, `federal/criminal.csv` | Finds the criminal issues discussed (`criminal_...`). |
 | `torts` | `general/torts.csv` | Finds torts and other private-law issues discussed (`torts_...`). |
-| `agencies` | `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by commas (such as "Internal Revenue Service, United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
+| `review` | `federal/review.csv` | Finds what kind of review an appeal is: from a federal district court (`review_district`), of an agency (`review_agency`), or of the Board of Immigration Appeals or an immigration judge (`review_immigration`). For an appeal from a district court, it finds the district judge as the opening names them (`district_text`) and their name (`district_judges`). |
+| `agencies` | `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by "; " (such as "Internal Revenue Service; United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
 
 Each topic's rules are its `general` file and then its `federal` file, in
 that order. `header` and `general` are applied to every case, whether or not
@@ -53,7 +54,7 @@ and the kinds `flag`, `count`, `label`, `labels`, `section`, `excerpts`, and
 | `pattern` | A [regular expression](https://docs.python.org/3/howto/regex.html) to search for. Plain words work too. |
 | `value` | For a `category` or `categories` rule, the value to record. Otherwise leave it blank. |
 | `flags` | Any of `ignorecase` (to ignore the difference between capital and lower-case letters), `dotall` (for `.` in the pattern to also match line breaks), `multiline`, and `verbose`, separated by commas. Optional. |
-| `separator` | What goes between several values in one cell, for `categories`, `matches`, and `names` rules. Optional: a comma and a space if blank. courtpy's `names` and `matches` rules use "; ". |
+| `separator` | What goes between several values in one cell, for `categories`, `matches`, and `names` rules. Optional: a comma and a space if blank. Every courtpy rule that makes several values uses "; ", since names and agencies can have commas in them. |
 | `note` | Anything you want to say about the rule. courtpy ignores it. |
 
 ## The kinds of rules
@@ -65,7 +66,7 @@ and the kinds `flag`, `count`, `label`, `labels`, `section`, `excerpts`, and
 | `matches` | Every match, separated by the `separator`. | `opinion,citations_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+,,,; ` |
 | `match` | The first match. A later rule can search it as a new section of text. | `header,counsel,match,\nCOUNSEL\:.*?(?=\n\n)` |
 | `category` | The rule's `value` if the pattern appears. The first rule for a name that matches is used. | `court,court_num,category,FIRST CIRCUIT,1` |
-| `categories` | The `value` of every rule for the name whose pattern appears, once each, in the order of the rules and separated by the `separator` (such as "Internal Revenue Service, United States Tax Court"). A value cannot have the separator. | `opinion,agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
+| `categories` | The `value` of every rule for the name whose pattern appears, once each, in the order of the rules and separated by the `separator` (such as "Internal Revenue Service; United States Tax Court"). A value cannot have the separator. | `opinion,agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
 | `names` | The names in the text, found by splitting it wherever the pattern matches, and separated by the `separator`. The pattern should match what comes between names: titles, filler words, and punctuation. | `judges,panel_judges,names,\b(?:BEFORE\|CIRCUIT\|JUDGES?\|AND)\b\|[,;:],,,; ` |
 | `split` | New sections, named in `name`: the text before and after the first match. | `party,"party1, party2",split,\Wv\.\W` |
 | `replace` | The text with every match replaced by the `value` (a blank `value` removes the matches). Without a `name`, it changes the section for the rules below it. | `party1,,replace,\bET AL\b` |
@@ -87,8 +88,8 @@ labeled part of a text); see its `amos.parsers` module.
   periods and apostrophes before splitting it, so write its pattern in
   capital letters.
 * **Several values are text.** The names, matches, and categories of a case
-  are one cell of text, with "; " (or, for `agencies`, ", ") between them,
-  such as "LYNCH; HOWARD; THOMPSON". The `split_values` technique turns them
+  are one cell of text, with "; " between them, such as
+  "LYNCH; HOWARD; THOMPSON". The `split_values` technique turns them
   into lists or into a column for each value, and `amos`'s `lists_to_rows`
   into a row for each value.
 * **Rules that start with letters are fast.** Python finds a pattern that
@@ -151,3 +152,15 @@ rules (below them) can search too:
 | `caption1`, `caption2` | The caption before and after "v.", in the order of `party1` and `party2`. |
 | `panel_text` | The panel as the opinion's opening names it ("Before SMITH, JONES, and BROWN, Circuit Judges"). Otherwise, the `judges` section. |
 | `decision` | The decision as the opinion states it. |
+
+## Rules of your own
+
+A file of your own can be named by its path wherever a rulebook can be
+named. To name it like a built-in rulebook instead (`rulebooks = federal,
+review`), make each file in a folder a rulebook with
+`courtpy.rules.register_rulebooks(folder)` when your study's package is
+imported. Each file is a rulebook named for its stem, and each rulebook is
+also a technique (such as `parse_review`). With several folders, each topic
+applies the file of the same name in each folder, in order, as courtpy
+applies its `general` and then its `federal` files. See
+[Building a Study](https://WithPrecedent.github.io/courtpy/studies/).

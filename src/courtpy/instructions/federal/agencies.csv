@@ -1,253 +1,253 @@
 column,name,kind,pattern,value,flags,separator,note
-"party, history, opinion",agencies,categories,(?:Agency\s+for\s+International\s+Development|AGENCY\s+FOR\s+INTERNATIONAL\s+DEVELOPMENT),Agency for International Development,,,fjc-idb: AID
-"party, history, opinion",agencies,categories,USAID\b(?<!\wUSAID),Agency for International Development,,,
-"party, history, opinion",agencies,categories,(?:Alcohol\s+(?:and|&)\s+Tobacco\s+Tax\s+(?:and|&)\s+Trade\s+Bureau|ALCOHOL\s+(?:AND|&)\s+TOBACCO\s+TAX\s+(?:AND|&)\s+TRADE\s+BUREAU),Alcohol and Tobacco Tax and Trade Bureau,,,fjc-idb: TTB
-"party, history, opinion",agencies,categories,TTB\b(?<!\wTTB),Alcohol and Tobacco Tax and Trade Bureau,,,
-"party, history, opinion",agencies,categories,(?:Benefits\s+Review\s+Board|BENEFITS\s+REVIEW\s+BOARD),Benefits Review Board,,,fjc-idb: BRB
-"party, history, opinion",agencies,categories,BRB\b(?<!\wBRB),Benefits Review Board,,,
-"party, history, opinion",agencies,categories,(?:Board\s+of\s+Contract\s+Appeals|BOARD\s+OF\s+CONTRACT\s+APPEALS),Board of Contract Appeals,,,"fjc-idb: BCA. Any board of contract appeals, such as the Armed Services (ASBCA) and Civilian (CBCA) boards"
-"party, history, opinion",agencies,categories,ASBCA\b(?<!\wASBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,CBCA\b(?<!\wCBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,GSBCA\b(?<!\wGSBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,PSBCA\b(?<!\wPSBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,VABCA\b(?<!\wVABCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,DOTBCA\b(?<!\wDOTBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,IBCA\b(?<!\wIBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,EBBCA\b(?<!\wEBBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,ENGBCA\b(?<!\wENGBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,HUDBCA\b(?<!\wHUDBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,DOEBCA\b(?<!\wDOEBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,LBCA\b(?<!\wLBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,AGBCA\b(?<!\wAGBCA),Board of Contract Appeals,,,
-"party, history, opinion",agencies,categories,(?:Bonneville\s+Power\s+Administration|BONNEVILLE\s+POWER\s+ADMINISTRATION),Bonneville Power Administration,,,fjc-idb: BPA. BPA is also bisphenol A
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Bb]isphenol|[BB]ISPHENOL))(?s:.)*?(?:BPA\b(?<!\wBPA)),Bonneville Power Administration,,,
-"party, history, opinion",agencies,categories,"(?:Bureau\s+of\s+Alcohol,?\s+Tobacco,?\s+(?:and\s+)?Firearms(?:,?\s+and\s+Explosives)?|BUREAU\s+OF\s+ALCOHOL,?\s+TOBACCO,?\s+(?:AND\s+)?FIREARMS(?:,?\s+AND\s+EXPLOSIVES)?)",Bureau of Alcohol Tobacco Firearms and Explosives,,,"fjc-idb: BATF. Commonly ATF; the value has no commas, which separate agencies"
-"party, history, opinion",agencies,categories,ATF\b(?<!\wATF),Bureau of Alcohol Tobacco Firearms and Explosives,,,
-"party, history, opinion",agencies,categories,ATFE\b(?<!\wATFE),Bureau of Alcohol Tobacco Firearms and Explosives,,,
-"party, history, opinion",agencies,categories,BATF\b(?<!\wBATF),Bureau of Alcohol Tobacco Firearms and Explosives,,,
-"party, history, opinion",agencies,categories,BATFE\b(?<!\wBATFE),Bureau of Alcohol Tobacco Firearms and Explosives,,,
-"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Land\s+Management|BUREAU\s+OF\s+LAND\s+MANAGEMENT),Bureau of Land Management,,,fjc-idb: IBLM. BLM is also Black Lives Matter
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Black\s+Lives\s+Matter|BLACK\s+LIVES\s+MATTER))(?s:.)*?(?:BLM\b(?<!\wBLM)),Bureau of Land Management,,,
-"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Prisons|BUREAU\s+OF\s+PRISONS),Bureau of Prisons,,,fjc-idb: BOP. BOP is also a blowout preventer
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Bb]lowout\s+[Pp]reventer|[BB]LOWOUT\s+[PP]REVENTER))(?s:.)*?(?:BOP\b(?<!\wBOP)),Bureau of Prisons,,,
-"party, history, opinion",agencies,categories,(?:Civil\s+Aeronautics\s+(?:Board|Authority)|CIVIL\s+AERONAUTICS\s+(?:BOARD|AUTHORITY)),Civil Aeronautics Board,,,fjc-idb: CAB
-"party, history, opinion",agencies,categories,CAB\b(?<!\wCAB),Civil Aeronautics Board,,,
-"party, history, opinion",agencies,categories,(?:(?:(?:United\s+States|U\.\s?S\.)|Federal)\s+Civil\s+Service\s+Commission|(?:(?:UNITED\s+STATES|U\.\s?S\.)|FEDERAL)\s+CIVIL\s+SERVICE\s+COMMISSION),Civil Service Commission,,,"fjc-idb: CSC. Only the federal commission (abolished in 1978); states and cities have their own, and CSC is also a company"
-"party, history, opinion",agencies,categories,(?:Combatant\s+Status\s+Review\s+Tribunals?|COMBATANT\s+STATUS\s+REVIEW\s+TRIBUNALS?),Combatant Status Review Tribunal,,,fjc-idb: CSRT
-"party, history, opinion",agencies,categories,CSRT\b(?<!\wCSRT),Combatant Status Review Tribunal,,,
-"party, history, opinion",agencies,categories,CSRTs\b(?<!\wCSRTs),Combatant Status Review Tribunal,,,
-"party, history, opinion",agencies,categories,(?:Commodity\s+Futures?\s+Trading\s+Commission|COMMODITY\s+FUTURES?\s+TRADING\s+COMMISSION),Commodity Futures Trading Commission,,,fjc-idb: CFTR. fjc-idb calls it the Commodity Future Trading Commission (CFTR)
-"party, history, opinion",agencies,categories,CFTC\b(?<!\wCFTC),Commodity Futures Trading Commission,,,
-"party, history, opinion",agencies,categories,(?:Congressional\s+Budget\s+Office|CONGRESSIONAL\s+BUDGET\s+OFFICE),Congressional Budget Office,,,fjc-idb: CBO
-"party, history, opinion",agencies,categories,CBO\b(?<!\wCBO),Congressional Budget Office,,,
-"party, history, opinion",agencies,categories,(?:Consumer\s+Financial\s+Protection\s+Bureau|CONSUMER\s+FINANCIAL\s+PROTECTION\s+BUREAU),Consumer Financial Protection Bureau,,,fjc-idb: CFPB
-"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Consumer\s+Financial\s+Protection|BUREAU\s+OF\s+CONSUMER\s+FINANCIAL\s+PROTECTION),Consumer Financial Protection Bureau,,,
-"party, history, opinion",agencies,categories,CFPB\b(?<!\wCFPB),Consumer Financial Protection Bureau,,,
-"party, history, opinion",agencies,categories,(?:Consumer\s+Products?\s+Safety\s+Commission|CONSUMER\s+PRODUCTS?\s+SAFETY\s+COMMISSION),Consumer Product Safety Commission,,,fjc-idb: CPSC
-"party, history, opinion",agencies,categories,CPSC\b(?<!\wCPSC),Consumer Product Safety Commission,,,
-"party, history, opinion",agencies,categories,(?:Copyright\s+Royalty\s+Tribunal|COPYRIGHT\s+ROYALTY\s+TRIBUNAL),Copyright Royalty Tribunal,,,fjc-idb: CRT. CRT is also a cathode ray tube and critical race theory
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Cc]athode\s+[Rr]ay|[Cc]ritical\s+[Rr]ace|[CC]ATHODE\s+[RR]AY|[CC]RITICAL\s+[RR]ACE))(?s:.)*?(?:CRT\b(?<!\wCRT)),Copyright Royalty Tribunal,,,
-"party, history, opinion",agencies,categories,(?:Court\s+of\s+Military\s+Commission\s+Review|COURT\s+OF\s+MILITARY\s+COMMISSION\s+REVIEW),Court of Military Commission Review,,,fjc-idb: CMCR
-"party, history, opinion",agencies,categories,CMCR\b(?<!\wCMCR),Court of Military Commission Review,,,
-"party, history, opinion",agencies,categories,USCMCR\b(?<!\wUSCMCR),Court of Military Commission Review,,,
-"party, history, opinion",agencies,categories,(?:Defense\s+Nuclear\s+Facilities\s+Safety\s+Board|DEFENSE\s+NUCLEAR\s+FACILITIES\s+SAFETY\s+BOARD),Defense Nuclear Facilities Safety Board,,,fjc-idb: DNFS
-"party, history, opinion",agencies,categories,DNFSB\b(?<!\wDNFSB),Defense Nuclear Facilities Safety Board,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Agriculture|Agriculture\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?AGRICULTURE|AGRICULTURE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Agriculture,,,fjc-idb: AGRI
-"party, history, opinion",agencies,categories,USDA\b(?<!\wUSDA),Department of Agriculture,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Commerce|Commerce\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?COMMERCE|COMMERCE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Commerce,,,fjc-idb: COMM. DOC alone is usually a department of corrections
-"party, history, opinion",agencies,categories,USDOC\b(?<!\wUSDOC),Department of Commerce,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Defense|Defense\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?DEFENSE|DEFENSE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Defense,,,fjc-idb: DOD
-"party, history, opinion",agencies,categories,DOD\b(?<!\wDOD),Department of Defense,,,
-"party, history, opinion",agencies,categories,DoD\b(?<!\wDoD),Department of Defense,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Education|Education\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?EDUCATION|EDUCATION\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Education,,,fjc-idb: EDUC. No abbreviation is common and unambiguous
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Energy|Energy\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?ENERGY|ENERGY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Energy,,,fjc-idb: DOE. DOE alone is also a John Doe and the New York City Department of Education
-"party, history, opinion",agencies,categories,USDOE\b(?<!\wUSDOE),Department of Energy,,,
-"party, history, opinion",agencies,categories,U\.S\.\ DOE\b(?<!\wU\.S\.\ DOE),Department of Energy,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Health\s+(?:and|&)\s+Human\s+Services|Health\s+(?:and|&)\s+Human\s+Services\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES|HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Health and Human Services,,,fjc-idb: HHS
-"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Health\s+(?:and|&)\s+Human\s+Services|SECRETARY\s+OF\s+HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES),Department of Health and Human Services,,,
-"party, history, opinion",agencies,categories,HHS\b(?<!\wHHS),Department of Health and Human Services,,,
-"party, history, opinion",agencies,categories,DHHS\b(?<!\wDHHS),Department of Health and Human Services,,,
-"party, history, opinion",agencies,categories,"(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Health,?\s+Education,?\s+(?:and\s+)?Welfare|Health,?\s+Education,?\s+(?:and\s+)?Welfare\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE|HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z])",Department of Health Education and Welfare,,,"fjc-idb: HEW. The value has no commas, which separate agencies"
-"party, history, opinion",agencies,categories,"(?:Secretary\s+of\s+Health,?\s+Education,?\s+(?:and\s+)?Welfare|SECRETARY\s+OF\s+HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE)",Department of Health Education and Welfare,,,
-"party, history, opinion",agencies,categories,HEW\b(?<!\wHEW),Department of Health Education and Welfare,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Homeland\s+Security|Homeland\s+Security\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HOMELAND\s+SECURITY|HOMELAND\s+SECURITY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Homeland Security,,,fjc-idb: DHS. DHS is also a state department of human services
-"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Homeland\s+Security|SECRETARY\s+OF\s+HOMELAND\s+SECURITY),Department of Homeland Security,,,
-"party, history, opinion",agencies,categories,USDHS\b(?<!\wUSDHS),Department of Homeland Security,,,
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Human\s+Services|HUMAN\s+SERVICES))(?s:.)*?(?:DHS\b(?<!\wDHS)),Department of Homeland Security,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Housing\s+(?:and|&)\s+Urban\s+Development|Housing\s+(?:and|&)\s+Urban\s+Development\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT|HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Housing and Urban Development,,,fjc-idb: HUD
-"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Housing\s+(?:and|&)\s+Urban\s+Development|SECRETARY\s+OF\s+HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT),Department of Housing and Urban Development,,,
-"party, history, opinion",agencies,categories,HUD\b(?<!\wHUD),Department of Housing and Urban Development,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Justice|Justice\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?JUSTICE|JUSTICE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Justice,,,fjc-idb: DOJ
-"party, history, opinion",agencies,categories,DOJ\b(?<!\wDOJ),Department of Justice,,,
-"party, history, opinion",agencies,categories,USDOJ\b(?<!\wUSDOJ),Department of Justice,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Labor|Labor\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?LABOR|LABOR\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Labor,,,"fjc-idb: LABR. fjc-idb excepts OSHA, which has its own value"
-"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Labor|SECRETARY\s+OF\s+LABOR)(?!\s+(?:and|AND|&)\s),Department of Labor,,,
-"party, history, opinion",agencies,categories,DOL\b(?<!\wDOL),Department of Labor,,,
-"party, history, opinion",agencies,categories,USDOL\b(?<!\wUSDOL),Department of Labor,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Science\s+(?:and|&)\s+Technology|Science\s+(?:and|&)\s+Technology\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?SCIENCE\s+(?:AND|&)\s+TECHNOLOGY|SCIENCE\s+(?:AND|&)\s+TECHNOLOGY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Science and Technology,,,fjc-idb: DOST
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?State|State\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?STATE|STATE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z])(?!\s+of\b),Department of State,,,"fjc-idb: STAT. Matched with case, since a state department of corrections is not the State Department"
-"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Army\b|(?:UNITED\s+STATES|U\.\s?S\.)\s+ARMY\b),Department of the Army,,,fjc-idb: ARMY
-"party, history, opinion",agencies,categories,(?:Dep(?:artment|['’]t|t\.?)\s+of\s+the\s+Army|DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+THE\s+ARMY),Department of the Army,,,
-"party, history, opinion",agencies,categories,(?:Army\s+Corps\s+of\s+Engineers|ARMY\s+CORPS\s+OF\s+ENGINEERS),Department of the Army,,,
-"party, history, opinion",agencies,categories,Army(?<=\b[Tt]he\sArmy)\b,Department of the Army,,,
-"party, history, opinion",agencies,categories,ARMY(?<=\b[Tt]he\sARMY)\b,Department of the Army,,,
-"party, history, opinion",agencies,categories,USACE\b(?<!\wUSACE),Department of the Army,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Interior|Interior\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?INTERIOR|INTERIOR\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of the Interior,,,fjc-idb: DOI. DOI is also a date of injury
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Dd]ate\s+of\s+[Ii]njury|[DD]ATE\s+OF\s+[II]NJURY))(?s:.)*?(?:DOI\b(?<!\wDOI)),Department of the Interior,,,
-"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Navy\b|(?:UNITED\s+STATES|U\.\s?S\.)\s+NAVY\b),Department of the Navy,,,fjc-idb: NAVY
-"party, history, opinion",agencies,categories,(?:Dep(?:artment|['’]t|t\.?)\s+of\s+the\s+Navy|DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+THE\s+NAVY),Department of the Navy,,,
-"party, history, opinion",agencies,categories,Navy(?<=\b[Tt]he\sNavy)\b,Department of the Navy,,,
-"party, history, opinion",agencies,categories,NAVY(?<=\b[Tt]he\sNAVY)\b,Department of the Navy,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Treasury|Treasury\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?TREASURY|TREASURY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of the Treasury,,,"fjc-idb: TREA. fjc-idb excepts the IRS, which has its own value"
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Transportation|Transportation\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?TRANSPORTATION|TRANSPORTATION\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Transportation,,,fjc-idb: TRAN. DOT is also the Dictionary of Occupational Titles
-"party, history, opinion",agencies,categories,USDOT\b(?<!\wUSDOT),Department of Transportation,,,
-"party, history, opinion",agencies,categories,U\.S\.\ DOT\b(?<!\wU\.S\.\ DOT),Department of Transportation,,,
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Dictionary\s+of\s+Occupational\s+Titles|Occupational\s+Titles|DICTIONARY\s+OF\s+OCCUPATIONAL\s+TITLES|OCCUPATIONAL\s+TITLES))(?s:.)*?(?:DOT\b(?<!\wDOT)),Department of Transportation,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Veterans[\'’]?\s+Affairs|Veterans[\'’]?\s+Affairs\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?VETERANS[\'’]?\s+AFFAIRS|VETERANS[\'’]?\s+AFFAIRS\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Veterans Affairs,,,fjc-idb: DVA. VA in a citation or an address is Virginia
-"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Veterans[\'’]?\s+Affairs|SECRETARY\s+OF\s+VETERANS[\'’]?\s+AFFAIRS),Department of Veterans Affairs,,,
-"party, history, opinion",agencies,categories,DVA\b(?<!\wDVA),Department of Veterans Affairs,,,
-"party, history, opinion",agencies,categories,"VA\b(?<!\wVA)(?<!,\sVA)(?!\.)",Department of Veterans Affairs,,,
-"party, history, opinion",agencies,categories,(?:Drug\s+Enforcement\s+(?:Administration|Agency)|DRUG\s+ENFORCEMENT\s+(?:ADMINISTRATION|AGENCY)),Drug Enforcement Administration,,,fjc-idb: DEA. fjc-idb calls it the Drug Enforcement Agency
-"party, history, opinion",agencies,categories,DEA\b(?<!\wDEA),Drug Enforcement Administration,,,
-"party, history, opinion",agencies,categories,(?:Economic\s+Regulatory\s+Administration|ECONOMIC\s+REGULATORY\s+ADMINISTRATION),Economic Regulatory Administration,,,fjc-idb: ERA. ERA is also the Equal Rights Amendment and the word era
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Environmental\s+Protection\s+Agency|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+ENVIRONMENTAL\s+PROTECTION\s+AGENCY),Environmental Protection Agency,,,fjc-idb: EPA. EPA is also the Equal Pay Act and some states' agencies
-"party, history, opinion",agencies,categories,USEPA\b(?<!\wUSEPA),Environmental Protection Agency,,,
-"party, history, opinion",agencies,categories,U\.S\.\ EPA\b(?<!\wU\.S\.\ EPA),Environmental Protection Agency,,,
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Equal\s+Pay\s+Act|EQUAL\s+PAY\s+ACT))(?s:.)*?(?:EPA\b(?<!\wEPA)(?<!Ohio\sEPA)(?<!Illinois\sEPA)),Environmental Protection Agency,,,
-"party, history, opinion",agencies,categories,(?:Equal\s+Employment\s+Opportunity\s+Commission|EQUAL\s+EMPLOYMENT\s+OPPORTUNITY\s+COMMISSION),Equal Employment Opportunity Commission,,,fjc-idb: EEOC
-"party, history, opinion",agencies,categories,EEOC\b(?<!\wEEOC),Equal Employment Opportunity Commission,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Aviation\s+(?:Administration|Agency)|FEDERAL\s+AVIATION\s+(?:ADMINISTRATION|AGENCY)),Federal Aviation Administration,,,fjc-idb: FAA. FAA is also the Federal Arbitration Act
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Federal\s+Arbitration\s+Act|FEDERAL\s+ARBITRATION\s+ACT))(?s:.)*?(?:FAA\b(?<!\wFAA)),Federal Aviation Administration,,,
-"party, history, opinion",agencies,categories,(?:(?:(?:United\s+States|U\.\s?S\.)|Federal)\s+Coal\s+Commission|(?:(?:UNITED\s+STATES|U\.\s?S\.)|FEDERAL)\s+COAL\s+COMMISSION),Federal Coal Commission,,,fjc-idb: COAL
-"party, history, opinion",agencies,categories,(?:Federal\s+Coal\s+Mine\s+Safety\s+Board|FEDERAL\s+COAL\s+MINE\s+SAFETY\s+BOARD),Federal Coal Mine Safety Board,,,fjc-idb: FCMS
-"party, history, opinion",agencies,categories,(?:Federal\s+Communications?\s+Commission|FEDERAL\s+COMMUNICATIONS?\s+COMMISSION),Federal Communications Commission,,,fjc-idb: FCC. fjc-idb calls it the Federal Communication Commission
-"party, history, opinion",agencies,categories,FCC\b(?<!\wFCC),Federal Communications Commission,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Deposit\s+Insurance\s+Corp(?:oration|\.|\b)|FEDERAL\s+DEPOSIT\s+INSURANCE\s+CORP(?:ORATION|\.|\b)),Federal Deposit Insurance Corporation,,,fjc-idb: FDIC
-"party, history, opinion",agencies,categories,FDIC\b(?<!\wFDIC),Federal Deposit Insurance Corporation,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Election\s+Commission|FEDERAL\s+ELECTION\s+COMMISSION),Federal Election Commission,,,fjc-idb: FEC
-"party, history, opinion",agencies,categories,FEC\b(?<!\wFEC),Federal Election Commission,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Energy\s+(?:Administration|Agency)|FEDERAL\s+ENERGY\s+(?:ADMINISTRATION|AGENCY)),Federal Energy Administration,,,fjc-idb: FEA. fjc-idb calls it the Federal Energy Agency; FEA is also finite element analysis
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Ff]inite\s+[Ee]lement|[FF]INITE\s+[EE]LEMENT))(?s:.)*?(?:FEA\b(?<!\wFEA)),Federal Energy Administration,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Energy\s+Regulatory\s+Commission|FEDERAL\s+ENERGY\s+REGULATORY\s+COMMISSION),Federal Energy Regulatory Commission,,,fjc-idb: 8
-"party, history, opinion",agencies,categories,FERC\b(?<!\wFERC),Federal Energy Regulatory Commission,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Home\s+Loan\s+Bank\s+Board|FEDERAL\s+HOME\s+LOAN\s+BANK\s+BOARD),Federal Home Loan Bank Board,,,fjc-idb: FHLB. Its abbreviation is FHLBB; FHLB is a Federal Home Loan Bank
-"party, history, opinion",agencies,categories,FHLBB\b(?<!\wFHLBB),Federal Home Loan Bank Board,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Labor\s+Relations\s+Authority|FEDERAL\s+LABOR\s+RELATIONS\s+AUTHORITY),Federal Labor Relations Authority,,,fjc-idb: FLRA
-"party, history, opinion",agencies,categories,FLRA\b(?<!\wFLRA),Federal Labor Relations Authority,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Labor\s+Relations\s+Board|FEDERAL\s+LABOR\s+RELATIONS\s+BOARD),Federal Labor Relations Board,,,fjc-idb: FLRB
-"party, history, opinion",agencies,categories,(?:Federal\s+Maritime\s+Board|FEDERAL\s+MARITIME\s+BOARD),Federal Maritime Board,,,fjc-idb: FMBD
-"party, history, opinion",agencies,categories,(?:Federal\s+Maritime\s+Commission|FEDERAL\s+MARITIME\s+COMMISSION),Federal Maritime Commission,,,fjc-idb: FMC. FMC is also a company
-"party, history, opinion",agencies,categories,FMC\b(?<!\wFMC)(?!\s+(?:Corp|Tech|Inc|Lithium|CORP|TECH|INC)),Federal Maritime Commission,,,
-"party, history, opinion",agencies,categories,(?:Mine\s+Safety\s+(?:and|&)\s+Health\s+Review\s+Commission|MINE\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+REVIEW\s+COMMISSION),Federal Mine Safety and Health Review Commission,,,fjc-idb: MSHR. fjc-idb calls it the Federal Mine Safety and Health Review
-"party, history, opinion",agencies,categories,FMSHRC\b(?<!\wFMSHRC),Federal Mine Safety and Health Review Commission,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Motor\s+Carrier\s+Safety\s+Administration|FEDERAL\s+MOTOR\s+CARRIER\s+SAFETY\s+ADMINISTRATION),Federal Motor Carrier Safety Administration,,,fjc-idb: FMCS. Its abbreviation is FMCSA; FMCS is the Federal Mediation and Conciliation Service
-"party, history, opinion",agencies,categories,FMCSA\b(?<!\wFMCSA),Federal Motor Carrier Safety Administration,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Railroad\s+Administration|FEDERAL\s+RAILROAD\s+ADMINISTRATION),Federal Railroad Administration,,,fjc-idb: FRA
-"party, history, opinion",agencies,categories,FRA\b(?<!\wFRA),Federal Railroad Administration,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Reserve\b|FEDERAL\s+RESERVE\b),Federal Reserve System,,,fjc-idb: FRS. Includes the Board of Governors and the Federal Reserve Banks
-"party, history, opinion",agencies,categories,FRB\b(?<!\wFRB),Federal Reserve System,,,
-"party, history, opinion",agencies,categories,Fed(?<=\b[Tt]he\sFed)(?![.\w]),Federal Reserve System,,,
-"party, history, opinion",agencies,categories,(?:Federal\s+Trade\s+Commission|FEDERAL\s+TRADE\s+COMMISSION),Federal Trade Commission,,,fjc-idb: 4
-"party, history, opinion",agencies,categories,FTC\b(?<!\wFTC),Federal Trade Commission,,,
-"party, history, opinion",agencies,categories,F\.T\.C\.,Federal Trade Commission,,,
-"party, history, opinion",agencies,categories,(?:Food\s+(?:and|&)\s+Drug\s+Administration|FOOD\s+(?:AND|&)\s+DRUG\s+ADMINISTRATION),Food and Drug Administration,,,fjc-idb: FDA
-"party, history, opinion",agencies,categories,FDA\b(?<!\wFDA),Food and Drug Administration,,,
-"party, history, opinion",agencies,categories,USFDA\b(?<!\wUSFDA),Food and Drug Administration,,,
-"party, history, opinion",agencies,categories,(?:General\s+Services\s+Administration|GENERAL\s+SERVICES\s+ADMINISTRATION),General Services Administration,,,fjc-idb: GSA
-"party, history, opinion",agencies,categories,GSA\b(?<!\wGSA),General Services Administration,,,
-"party, history, opinion",agencies,categories,(?:(?:Government\s+Accountability|General\s+Accounting|Government\s+Accounting)\s+Office|(?:GOVERNMENT\s+ACCOUNTABILITY|GENERAL\s+ACCOUNTING|GOVERNMENT\s+ACCOUNTING)\s+OFFICE),Government Accountability Office,,,fjc-idb: GAO. Called the General Accounting Office before 2004; fjc-idb calls it the Government Accounting Office
-"party, history, opinion",agencies,categories,GAO\b(?<!\wGAO),Government Accountability Office,,,
-"party, history, opinion",agencies,categories,(?:Health\s+Care\s+Financing\s+Administration|HEALTH\s+CARE\s+FINANCING\s+ADMINISTRATION),Health Care Financing Administration,,,fjc-idb: HCFA. Renamed the Centers for Medicare and Medicaid Services (CMS) in 2001
-"party, history, opinion",agencies,categories,(?:Centers?\s+for\s+Medicare\s+(?:and|&)\s+Medicaid\s+Services|CENTERS?\s+FOR\s+MEDICARE\s+(?:AND|&)\s+MEDICAID\s+SERVICES),Health Care Financing Administration,,,
-"party, history, opinion",agencies,categories,HCFA\b(?<!\wHCFA),Health Care Financing Administration,,,
-"party, history, opinion",agencies,categories,\A(?=(?s:.)*?(?:Medicare|Medicaid|MEDICARE|MEDICAID))(?s:.)*?(?:CMS\b(?<!\wCMS)),Health Care Financing Administration,,,
-"party, history, opinion",agencies,categories,(?:Immigration\s+(?:and|&)\s+Naturali[sz]ation\s+Service|IMMIGRATION\s+(?:AND|&)\s+NATURALI[SZ]ATION\s+SERVICE),Immigration and Naturalization Service,,,fjc-idb: 6
-"party, history, opinion",agencies,categories,INS\b(?<!\wINS)(?!\.),Immigration and Naturalization Service,,,
-"party, history, opinion",agencies,categories,I\.N\.S\.,Immigration and Naturalization Service,,,
-"party, history, opinion",agencies,categories,(?:Internal\s+Revenue\s+Service|INTERNAL\s+REVENUE\s+SERVICE),Internal Revenue Service,,,fjc-idb: 3. fjc-idb codes the Tax Court and the IRS together
-"party, history, opinion",agencies,categories,(?:Commissioner\s+of\s+Internal\s+Revenue|COMMISSIONER\s+OF\s+INTERNAL\s+REVENUE),Internal Revenue Service,,,
-"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Internal\s+Revenue|BUREAU\s+OF\s+INTERNAL\s+REVENUE),Internal Revenue Service,,,
-"party, history, opinion",agencies,categories,IRS\b(?<!\wIRS),Internal Revenue Service,,,
-"party, history, opinion",agencies,categories,I\.R\.S\.,Internal Revenue Service,,,
-"party, history, opinion",agencies,categories,(?:International\s+Trade\s+Commission|INTERNATIONAL\s+TRADE\s+COMMISSION),International Trade Commission,,,fjc-idb: ITC. ITC is also an investment tax credit
-"party, history, opinion",agencies,categories,USITC\b(?<!\wUSITC),International Trade Commission,,,
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Tt]ax\s+[Cc]redit|[TT]AX\s+[CC]REDIT))(?s:.)*?(?:ITC\b(?<!\wITC)),International Trade Commission,,,
-"party, history, opinion",agencies,categories,(?:Interstate\s+Commerce\s+Commission|INTERSTATE\s+COMMERCE\s+COMMISSION),Interstate Commerce Commission,,,fjc-idb: 0. ICC is also the International Chamber of Commerce and the International Criminal Court
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:International\s+Chamber\s+of\s+Commerce|International\s+Criminal\s+Court|INTERNATIONAL\s+CHAMBER\s+OF\s+COMMERCE|INTERNATIONAL\s+CRIMINAL\s+COURT))(?s:.)*?(?:ICC\b(?<!\wICC)),Interstate Commerce Commission,,,
-"party, history, opinion",agencies,categories,I\.C\.C\.,Interstate Commerce Commission,,,
-"party, history, opinion",agencies,categories,(?:Library\s+of\s+Congress|LIBRARY\s+OF\s+CONGRESS),Library of Congress,,,fjc-idb: LOC. LOC is also a letter of credit and a likelihood of confusion
-"party, history, opinion",agencies,categories,(?:Maritime\s+Administration(?<!Federal\sMaritime\sAdministration)|MARITIME\s+ADMINISTRATION(?<!FEDERAL\sMARITIME\sADMINISTRATION)),Maritime Administration,,,fjc-idb: MARA
-"party, history, opinion",agencies,categories,MARAD\b(?<!\wMARAD),Maritime Administration,,,
-"party, history, opinion",agencies,categories,(?:Merit\s+Systems?\s+Protection\s+Board|MERIT\s+SYSTEMS?\s+PROTECTION\s+BOARD),Merit Systems Protection Board,,,fjc-idb: MSPB
-"party, history, opinion",agencies,categories,MSPB\b(?<!\wMSPB),Merit Systems Protection Board,,,
-"party, history, opinion",agencies,categories,(?:Mine\s+Safety\s+(?:and|&)\s+Health\s+Administration|MINE\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+ADMINISTRATION),Mine Safety and Health Administration,,,fjc-idb: MSHA
-"party, history, opinion",agencies,categories,MSHA\b(?<!\wMSHA),Mine Safety and Health Administration,,,
-"party, history, opinion",agencies,categories,(?:National\s+Aeronautics\s+(?:and|&)\s+Space\s+Administration|NATIONAL\s+AERONAUTICS\s+(?:AND|&)\s+SPACE\s+ADMINISTRATION),National Aeronautics and Space Administration,,,fjc-idb: NASA
-"party, history, opinion",agencies,categories,NASA\b(?<!\wNASA),National Aeronautics and Space Administration,,,
-"party, history, opinion",agencies,categories,(?:National\s+Credit\s+Union\s+(?:Administration|Association)|NATIONAL\s+CREDIT\s+UNION\s+(?:ADMINISTRATION|ASSOCIATION)),National Credit Union Administration,,,fjc-idb: NCUA. fjc-idb calls it the National Credit Union Association
-"party, history, opinion",agencies,categories,NCUA\b(?<!\wNCUA),National Credit Union Administration,,,
-"party, history, opinion",agencies,categories,(?:National\s+Highway\s+Traffic\s+Safety\s+Administration|NATIONAL\s+HIGHWAY\s+TRAFFIC\s+SAFETY\s+ADMINISTRATION),National Highway Traffic Safety Administration,,,fjc-idb: NHTS
-"party, history, opinion",agencies,categories,NHTSA\b(?<!\wNHTSA),National Highway Traffic Safety Administration,,,
-"party, history, opinion",agencies,categories,(?:National\s+Labor\s+Relations\s+Board|NATIONAL\s+LABOR\s+RELATIONS\s+BOARD),National Labor Relations Board,,,fjc-idb: 1
-"party, history, opinion",agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board,,,
-"party, history, opinion",agencies,categories,N\.L\.R\.B\.,National Labor Relations Board,,,
-"party, history, opinion",agencies,categories,(?:Railroad\s+Adjustment\s+Board|RAILROAD\s+ADJUSTMENT\s+BOARD),National Railroad Adjustment Board,,,fjc-idb: RRAB. fjc-idb calls it the Railroad Adjustment Board
-"party, history, opinion",agencies,categories,NRAB\b(?<!\wNRAB),National Railroad Adjustment Board,,,
-"party, history, opinion",agencies,categories,(?:National\s+Science\s+Foundation|NATIONAL\s+SCIENCE\s+FOUNDATION),National Science Foundation,,,fjc-idb: NSF. NSF is also non-sufficient funds
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Ii]nsufficient\s+[Ff]unds|[Nn]on-?sufficient|[II]NSUFFICIENT\s+[FF]UNDS|[NN]ON-?SUFFICIENT))(?s:.)*?(?:NSF\b(?<!\wNSF)),National Science Foundation,,,
-"party, history, opinion",agencies,categories,(?:National\s+Transportation\s+Safety\s+Board|NATIONAL\s+TRANSPORTATION\s+SAFETY\s+BOARD),National Transportation Safety Board,,,fjc-idb: NTSB
-"party, history, opinion",agencies,categories,NTSB\b(?<!\wNTSB),National Transportation Safety Board,,,
-"party, history, opinion",agencies,categories,(?:Northwest\s+Power\s+(?:and\s+Conservation|Planning)\s+Council|NORTHWEST\s+POWER\s+(?:AND\s+CONSERVATION|PLANNING)\s+COUNCIL),Northwest Power and Conservation Council,,,fjc-idb: NPCC. Formerly the Northwest Power Planning Council
-"party, history, opinion",agencies,categories,(?:Nuclear\s+Regulatory\s+Commission|NUCLEAR\s+REGULATORY\s+COMMISSION),Nuclear Regulatory Commission,,,fjc-idb: NRC. NRC is also the National Research Council and the National Response Center
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:National\s+Research\s+Council|National\s+Response\s+Center|NATIONAL\s+RESEARCH\s+COUNCIL|NATIONAL\s+RESPONSE\s+CENTER))(?s:.)*?(?:NRC\b(?<!\wNRC)),Nuclear Regulatory Commission,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Occupational\s+Safety\s+(?:and|&)\s+Health\s+Administration|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OCCUPATIONAL\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+ADMINISTRATION),Occupational Safety and Health Administration,,,fjc-idb: OSHA. Cal/OSHA is California's
-"party, history, opinion",agencies,categories,OSHA\b(?<!\wOSHA)(?<!Cal/OSHA)(?<!Cal-OSHA),Occupational Safety and Health Administration,,,
-"party, history, opinion",agencies,categories,(?:Occupational\s+Safety\s+(?:and|&)\s+Health\s+Review\s+Commission|OCCUPATIONAL\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+REVIEW\s+COMMISSION),Occupational Safety and Health Review Commission,,,fjc-idb: OSHC
-"party, history, opinion",agencies,categories,OSHRC\b(?<!\wOSHRC),Occupational Safety and Health Review Commission,,,
-"party, history, opinion",agencies,categories,\A(?=(?s:.)*?(?:Congressional\s+Accountability\s+Act|CONGRESSIONAL\s+ACCOUNTABILITY\s+ACT))(?s:.)*?(?:(?:Office\s+of\s+Compliance|OFFICE\s+OF\s+COMPLIANCE)),Office of Compliance,,,"fjc-idb: OCBD. Only with the Congressional Accountability Act, since many organizations have an office of compliance; renamed the Office of Congressional Workplace Rights in 2018"
-"party, history, opinion",agencies,categories,(?:Office\s+of\s+Congressional\s+Workplace\s+Rights|OFFICE\s+OF\s+CONGRESSIONAL\s+WORKPLACE\s+RIGHTS),Office of Congressional Workplace Rights,,,fjc-idb: OCWR
-"party, history, opinion",agencies,categories,OCWR\b(?<!\wOCWR),Office of Congressional Workplace Rights,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Office\s+of\s+Management\s+(?:and|&)\s+Budget|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OFFICE\s+OF\s+MANAGEMENT\s+(?:AND|&)\s+BUDGET),Office of Management and Budget,,,fjc-idb: OMB
-"party, history, opinion",agencies,categories,(?:White\s+House\s+Office\s+of\s+Management\s+(?:and|&)\s+Budget|WHITE\s+HOUSE\s+OFFICE\s+OF\s+MANAGEMENT\s+(?:AND|&)\s+BUDGET),Office of Management and Budget,,,
-"party, history, opinion",agencies,categories,OMB\b(?<!\wOMB),Office of Management and Budget,,,
-"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Office\s+of\s+Personnel\s+Management|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OFFICE\s+OF\s+PERSONNEL\s+MANAGEMENT),Office of Personnel Management,,,fjc-idb: OPM
-"party, history, opinion",agencies,categories,OPM\b(?<!\wOPM),Office of Personnel Management,,,
-"party, history, opinion",agencies,categories,(?:Office\s+of\s+Senate\s+Fair\s+Employment\s+Practices|OFFICE\s+OF\s+SENATE\s+FAIR\s+EMPLOYMENT\s+PRACTICES),Office of Senate Fair Employment Practices,,,fjc-idb: OSFE
-"party, history, opinion",agencies,categories,(?:Chief\s+Administrative\s+Hearing\s+Officer|CHIEF\s+ADMINISTRATIVE\s+HEARING\s+OFFICER),Office of the Chief Administrative Hearing Officer,,,fjc-idb: CAHO
-"party, history, opinion",agencies,categories,CAHO\b(?<!\wCAHO),Office of the Chief Administrative Hearing Officer,,,
-"party, history, opinion",agencies,categories,OCAHO\b(?<!\wOCAHO),Office of the Chief Administrative Hearing Officer,,,
-"party, history, opinion",agencies,categories,(?:Comptroller\s+of\s+the\s+Currency|COMPTROLLER\s+OF\s+THE\s+CURRENCY),Office of the Comptroller of the Currency,,,fjc-idb: OCC. OCC is also the Options Clearing Corporation
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Options\s+Clearing|OPTIONS\s+CLEARING))(?s:.)*?(?:OCC\b(?<!\wOCC)),Office of the Comptroller of the Currency,,,
-"party, history, opinion",agencies,categories,(?:Office\s+of\s+the\s+Federal\s+Inspector|OFFICE\s+OF\s+THE\s+FEDERAL\s+INSPECTOR),Office of the Federal Inspector,,,fjc-idb: OFI
-"party, history, opinion",agencies,categories,(?:Office\s+of\s+Thrift\s+Supervision|OFFICE\s+OF\s+THRIFT\s+SUPERVISION),Office of Thrift Supervision,,,fjc-idb: OTS
-"party, history, opinion",agencies,categories,OTS\b(?<!\wOTS),Office of Thrift Supervision,,,
-"party, history, opinion",agencies,categories,(?:Office\s+of\s+Workers[\'’]?\s+Compensation\s+Programs|OFFICE\s+OF\s+WORKERS[\'’]?\s+COMPENSATION\s+PROGRAMS),Office of Workers Compensation Programs,,,fjc-idb: OWCP. The value has no apostrophe
-"party, history, opinion",agencies,categories,OWCP\b(?<!\wOWCP),Office of Workers Compensation Programs,,,
-"party, history, opinion",agencies,categories,(?:Patent\s+(?:and|&)\s+Trademark\s+Office|PATENT\s+(?:AND|&)\s+TRADEMARK\s+OFFICE),Patent Office,,,fjc-idb: PATO. Renamed the Patent and Trademark Office (PTO) in 1975; PTO is also paid time off
-"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Patent\s+Office|(?:UNITED\s+STATES|U\.\s?S\.)\s+PATENT\s+OFFICE),Patent Office,,,
-"party, history, opinion",agencies,categories,(?:Patent\sOffice(?<=\b[Tt]he\sPatent\sOffice)|PATENT\sOFFICE(?<=\b[TT]HE\sPATENT\sOFFICE)),Patent Office,,,
-"party, history, opinion",agencies,categories,USPTO\b(?<!\wUSPTO),Patent Office,,,
-"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Pp]aid\s+[Tt]ime\s+[Oo]ff|[PP]AID\s+[TT]IME\s+[OO]FF))(?s:.)*?(?:PTO\b(?<!\wPTO)),Patent Office,,,
-"party, history, opinion",agencies,categories,(?:Postal\s+(?:Rate|Regulatory)\s+Commission|POSTAL\s+(?:RATE|REGULATORY)\s+COMMISSION),Postal Rate Commission,,,fjc-idb: PRC. Renamed the Postal Regulatory Commission in 2006; PRC is also the People's Republic of China
-"party, history, opinion",agencies,categories,(?:Railroad\s+Retirement\s+Board|RAILROAD\s+RETIREMENT\s+BOARD),Railroad Retirement Board,,,fjc-idb: RRRB
-"party, history, opinion",agencies,categories,RRB\b(?<!\wRRB),Railroad Retirement Board,,,
-"party, history, opinion",agencies,categories,(?:Securities\s+(?:and|&)\s+Exchange\s+Commission|SECURITIES\s+(?:AND|&)\s+EXCHANGE\s+COMMISSION),Securities and Exchange Commission,,,fjc-idb: SEC. SEC. before a number is a section of a statute
-"party, history, opinion",agencies,categories,SEC\b(?<!\wSEC)(?!\.\s*\d),Securities and Exchange Commission,,,
-"party, history, opinion",agencies,categories,S\.E\.C\.,Securities and Exchange Commission,,,
-"party, history, opinion",agencies,categories,(?:Small\s+Business\s+Administration|SMALL\s+BUSINESS\s+ADMINISTRATION),Small Business Administration,,,fjc-idb: SBA
-"party, history, opinion",agencies,categories,SBA\b(?<!\wSBA),Small Business Administration,,,
-"party, history, opinion",agencies,categories,(?:Social\s+Security\s+Administration|SOCIAL\s+SECURITY\s+ADMINISTRATION),Social Security Administration,,,fjc-idb: SSA
-"party, history, opinion",agencies,categories,SSA\b(?<!\wSSA),Social Security Administration,,,
-"party, history, opinion",agencies,categories,(?:Surface\s+Transportation\s+Board|SURFACE\s+TRANSPORTATION\s+BOARD),Surface Transportation Board,,,fjc-idb: STB
-"party, history, opinion",agencies,categories,STB\b(?<!\wSTB),Surface Transportation Board,,,
-"party, history, opinion",agencies,categories,(?:Transportation\s+Security\s+Administration|TRANSPORTATION\s+SECURITY\s+ADMINISTRATION),Transportation Security Administration,,,fjc-idb: TSA
-"party, history, opinion",agencies,categories,TSA\b(?<!\wTSA),Transportation Security Administration,,,
-"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Postal\s+Service|(?:UNITED\s+STATES|U\.\s?S\.)\s+POSTAL\s+SERVICE),United States Postal Service,,,fjc-idb: USPS. Called the Post Office Department before 1971
-"party, history, opinion",agencies,categories,(?:Postal\sService(?<=\b[Tt]he\sPostal\sService)|POSTAL\sSERVICE(?<=\b[TT]HE\sPOSTAL\sSERVICE)),United States Postal Service,,,
-"party, history, opinion",agencies,categories,(?:Post\s+Office\s+Department|POST\s+OFFICE\s+DEPARTMENT),United States Postal Service,,,
-"party, history, opinion",agencies,categories,USPS\b(?<!\wUSPS),United States Postal Service,,,
-"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Tax\s+Court|(?:UNITED\s+STATES|U\.\s?S\.)\s+TAX\s+COURT),United States Tax Court,,,fjc-idb: 3. fjc-idb codes the Tax Court and the IRS together
-"party, history, opinion",agencies,categories,(?:Tax\sCourt(?<=\b[Tt]he\sTax\sCourt)\b|TAX\sCOURT(?<=\b[TT]HE\sTAX\sCOURT)\b),United States Tax Court,,,
-"party, history, opinion",agencies,categories,(?:Veterans[\'’]?\s+Administration|VETERANS[\'’]?\s+ADMINISTRATION),Veterans Administration,,,"fjc-idb: VET. Became the Department of Veterans Affairs in 1989, which has VA"
-"party, history, opinion",agencies,categories,(?:Washington\s+Metropolitan\s+Area\s+Transit\s+(?:Authority|Commission)|WASHINGTON\s+METROPOLITAN\s+AREA\s+TRANSIT\s+(?:AUTHORITY|COMMISSION)),Washington Metropolitan Area Transit Authority,,,fjc-idb: WMAT
-"party, history, opinion",agencies,categories,WMATA\b(?<!\wWMATA),Washington Metropolitan Area Transit Authority,,,
+"party, history, opinion",agencies,categories,(?:Agency\s+for\s+International\s+Development|AGENCY\s+FOR\s+INTERNATIONAL\s+DEVELOPMENT),Agency for International Development,,; ,fjc-idb: AID
+"party, history, opinion",agencies,categories,USAID\b(?<!\wUSAID),Agency for International Development,,; ,
+"party, history, opinion",agencies,categories,(?:Alcohol\s+(?:and|&)\s+Tobacco\s+Tax\s+(?:and|&)\s+Trade\s+Bureau|ALCOHOL\s+(?:AND|&)\s+TOBACCO\s+TAX\s+(?:AND|&)\s+TRADE\s+BUREAU),Alcohol and Tobacco Tax and Trade Bureau,,; ,fjc-idb: TTB
+"party, history, opinion",agencies,categories,TTB\b(?<!\wTTB),Alcohol and Tobacco Tax and Trade Bureau,,; ,
+"party, history, opinion",agencies,categories,(?:Benefits\s+Review\s+Board|BENEFITS\s+REVIEW\s+BOARD),Benefits Review Board,,; ,fjc-idb: BRB
+"party, history, opinion",agencies,categories,BRB\b(?<!\wBRB),Benefits Review Board,,; ,
+"party, history, opinion",agencies,categories,(?:Board\s+of\s+Contract\s+Appeals|BOARD\s+OF\s+CONTRACT\s+APPEALS),Board of Contract Appeals,,; ,"fjc-idb: BCA. Any board of contract appeals, such as the Armed Services (ASBCA) and Civilian (CBCA) boards"
+"party, history, opinion",agencies,categories,ASBCA\b(?<!\wASBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,CBCA\b(?<!\wCBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,GSBCA\b(?<!\wGSBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,PSBCA\b(?<!\wPSBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,VABCA\b(?<!\wVABCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,DOTBCA\b(?<!\wDOTBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,IBCA\b(?<!\wIBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,EBBCA\b(?<!\wEBBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,ENGBCA\b(?<!\wENGBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,HUDBCA\b(?<!\wHUDBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,DOEBCA\b(?<!\wDOEBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,LBCA\b(?<!\wLBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,AGBCA\b(?<!\wAGBCA),Board of Contract Appeals,,; ,
+"party, history, opinion",agencies,categories,(?:Bonneville\s+Power\s+Administration|BONNEVILLE\s+POWER\s+ADMINISTRATION),Bonneville Power Administration,,; ,fjc-idb: BPA. BPA is also bisphenol A
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Bb]isphenol|[BB]ISPHENOL))(?s:.)*?(?:BPA\b(?<!\wBPA)),Bonneville Power Administration,,; ,
+"party, history, opinion",agencies,categories,"(?:Bureau\s+of\s+Alcohol,?\s+Tobacco,?\s+(?:and\s+)?Firearms(?:,?\s+and\s+Explosives)?|BUREAU\s+OF\s+ALCOHOL,?\s+TOBACCO,?\s+(?:AND\s+)?FIREARMS(?:,?\s+AND\s+EXPLOSIVES)?)",Bureau of Alcohol Tobacco Firearms and Explosives,,; ,"fjc-idb: BATF. Commonly ATF; the value has no commas, which separate agencies"
+"party, history, opinion",agencies,categories,ATF\b(?<!\wATF),Bureau of Alcohol Tobacco Firearms and Explosives,,; ,
+"party, history, opinion",agencies,categories,ATFE\b(?<!\wATFE),Bureau of Alcohol Tobacco Firearms and Explosives,,; ,
+"party, history, opinion",agencies,categories,BATF\b(?<!\wBATF),Bureau of Alcohol Tobacco Firearms and Explosives,,; ,
+"party, history, opinion",agencies,categories,BATFE\b(?<!\wBATFE),Bureau of Alcohol Tobacco Firearms and Explosives,,; ,
+"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Land\s+Management|BUREAU\s+OF\s+LAND\s+MANAGEMENT),Bureau of Land Management,,; ,fjc-idb: IBLM. BLM is also Black Lives Matter
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Black\s+Lives\s+Matter|BLACK\s+LIVES\s+MATTER))(?s:.)*?(?:BLM\b(?<!\wBLM)),Bureau of Land Management,,; ,
+"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Prisons|BUREAU\s+OF\s+PRISONS),Bureau of Prisons,,; ,fjc-idb: BOP. BOP is also a blowout preventer
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Bb]lowout\s+[Pp]reventer|[BB]LOWOUT\s+[PP]REVENTER))(?s:.)*?(?:BOP\b(?<!\wBOP)),Bureau of Prisons,,; ,
+"party, history, opinion",agencies,categories,(?:Civil\s+Aeronautics\s+(?:Board|Authority)|CIVIL\s+AERONAUTICS\s+(?:BOARD|AUTHORITY)),Civil Aeronautics Board,,; ,fjc-idb: CAB
+"party, history, opinion",agencies,categories,CAB\b(?<!\wCAB),Civil Aeronautics Board,,; ,
+"party, history, opinion",agencies,categories,(?:(?:(?:United\s+States|U\.\s?S\.)|Federal)\s+Civil\s+Service\s+Commission|(?:(?:UNITED\s+STATES|U\.\s?S\.)|FEDERAL)\s+CIVIL\s+SERVICE\s+COMMISSION),Civil Service Commission,,; ,"fjc-idb: CSC. Only the federal commission (abolished in 1978); states and cities have their own, and CSC is also a company"
+"party, history, opinion",agencies,categories,(?:Combatant\s+Status\s+Review\s+Tribunals?|COMBATANT\s+STATUS\s+REVIEW\s+TRIBUNALS?),Combatant Status Review Tribunal,,; ,fjc-idb: CSRT
+"party, history, opinion",agencies,categories,CSRT\b(?<!\wCSRT),Combatant Status Review Tribunal,,; ,
+"party, history, opinion",agencies,categories,CSRTs\b(?<!\wCSRTs),Combatant Status Review Tribunal,,; ,
+"party, history, opinion",agencies,categories,(?:Commodity\s+Futures?\s+Trading\s+Commission|COMMODITY\s+FUTURES?\s+TRADING\s+COMMISSION),Commodity Futures Trading Commission,,; ,fjc-idb: CFTR. fjc-idb calls it the Commodity Future Trading Commission (CFTR)
+"party, history, opinion",agencies,categories,CFTC\b(?<!\wCFTC),Commodity Futures Trading Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Congressional\s+Budget\s+Office|CONGRESSIONAL\s+BUDGET\s+OFFICE),Congressional Budget Office,,; ,fjc-idb: CBO
+"party, history, opinion",agencies,categories,CBO\b(?<!\wCBO),Congressional Budget Office,,; ,
+"party, history, opinion",agencies,categories,(?:Consumer\s+Financial\s+Protection\s+Bureau|CONSUMER\s+FINANCIAL\s+PROTECTION\s+BUREAU),Consumer Financial Protection Bureau,,; ,fjc-idb: CFPB
+"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Consumer\s+Financial\s+Protection|BUREAU\s+OF\s+CONSUMER\s+FINANCIAL\s+PROTECTION),Consumer Financial Protection Bureau,,; ,
+"party, history, opinion",agencies,categories,CFPB\b(?<!\wCFPB),Consumer Financial Protection Bureau,,; ,
+"party, history, opinion",agencies,categories,(?:Consumer\s+Products?\s+Safety\s+Commission|CONSUMER\s+PRODUCTS?\s+SAFETY\s+COMMISSION),Consumer Product Safety Commission,,; ,fjc-idb: CPSC
+"party, history, opinion",agencies,categories,CPSC\b(?<!\wCPSC),Consumer Product Safety Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Copyright\s+Royalty\s+Tribunal|COPYRIGHT\s+ROYALTY\s+TRIBUNAL),Copyright Royalty Tribunal,,; ,fjc-idb: CRT. CRT is also a cathode ray tube and critical race theory
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Cc]athode\s+[Rr]ay|[Cc]ritical\s+[Rr]ace|[CC]ATHODE\s+[RR]AY|[CC]RITICAL\s+[RR]ACE))(?s:.)*?(?:CRT\b(?<!\wCRT)),Copyright Royalty Tribunal,,; ,
+"party, history, opinion",agencies,categories,(?:Court\s+of\s+Military\s+Commission\s+Review|COURT\s+OF\s+MILITARY\s+COMMISSION\s+REVIEW),Court of Military Commission Review,,; ,fjc-idb: CMCR
+"party, history, opinion",agencies,categories,CMCR\b(?<!\wCMCR),Court of Military Commission Review,,; ,
+"party, history, opinion",agencies,categories,USCMCR\b(?<!\wUSCMCR),Court of Military Commission Review,,; ,
+"party, history, opinion",agencies,categories,(?:Defense\s+Nuclear\s+Facilities\s+Safety\s+Board|DEFENSE\s+NUCLEAR\s+FACILITIES\s+SAFETY\s+BOARD),Defense Nuclear Facilities Safety Board,,; ,fjc-idb: DNFS
+"party, history, opinion",agencies,categories,DNFSB\b(?<!\wDNFSB),Defense Nuclear Facilities Safety Board,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Agriculture|Agriculture\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?AGRICULTURE|AGRICULTURE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Agriculture,,; ,fjc-idb: AGRI
+"party, history, opinion",agencies,categories,USDA\b(?<!\wUSDA),Department of Agriculture,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Commerce|Commerce\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?COMMERCE|COMMERCE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Commerce,,; ,fjc-idb: COMM. DOC alone is usually a department of corrections
+"party, history, opinion",agencies,categories,USDOC\b(?<!\wUSDOC),Department of Commerce,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Defense|Defense\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?DEFENSE|DEFENSE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Defense,,; ,fjc-idb: DOD
+"party, history, opinion",agencies,categories,DOD\b(?<!\wDOD),Department of Defense,,; ,
+"party, history, opinion",agencies,categories,DoD\b(?<!\wDoD),Department of Defense,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Education|Education\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?EDUCATION|EDUCATION\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Education,,; ,fjc-idb: EDUC. No abbreviation is common and unambiguous
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Energy|Energy\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?ENERGY|ENERGY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Energy,,; ,fjc-idb: DOE. DOE alone is also a John Doe and the New York City Department of Education
+"party, history, opinion",agencies,categories,USDOE\b(?<!\wUSDOE),Department of Energy,,; ,
+"party, history, opinion",agencies,categories,U\.S\.\ DOE\b(?<!\wU\.S\.\ DOE),Department of Energy,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Health\s+(?:and|&)\s+Human\s+Services|Health\s+(?:and|&)\s+Human\s+Services\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES|HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Health and Human Services,,; ,fjc-idb: HHS
+"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Health\s+(?:and|&)\s+Human\s+Services|SECRETARY\s+OF\s+HEALTH\s+(?:AND|&)\s+HUMAN\s+SERVICES),Department of Health and Human Services,,; ,
+"party, history, opinion",agencies,categories,HHS\b(?<!\wHHS),Department of Health and Human Services,,; ,
+"party, history, opinion",agencies,categories,DHHS\b(?<!\wDHHS),Department of Health and Human Services,,; ,
+"party, history, opinion",agencies,categories,"(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Health,?\s+Education,?\s+(?:and\s+)?Welfare|Health,?\s+Education,?\s+(?:and\s+)?Welfare\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE|HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z])",Department of Health Education and Welfare,,; ,"fjc-idb: HEW. The value has no commas, which separate agencies"
+"party, history, opinion",agencies,categories,"(?:Secretary\s+of\s+Health,?\s+Education,?\s+(?:and\s+)?Welfare|SECRETARY\s+OF\s+HEALTH,?\s+EDUCATION,?\s+(?:AND\s+)?WELFARE)",Department of Health Education and Welfare,,; ,
+"party, history, opinion",agencies,categories,HEW\b(?<!\wHEW),Department of Health Education and Welfare,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Homeland\s+Security|Homeland\s+Security\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HOMELAND\s+SECURITY|HOMELAND\s+SECURITY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Homeland Security,,; ,fjc-idb: DHS. DHS is also a state department of human services
+"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Homeland\s+Security|SECRETARY\s+OF\s+HOMELAND\s+SECURITY),Department of Homeland Security,,; ,
+"party, history, opinion",agencies,categories,USDHS\b(?<!\wUSDHS),Department of Homeland Security,,; ,
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Human\s+Services|HUMAN\s+SERVICES))(?s:.)*?(?:DHS\b(?<!\wDHS)),Department of Homeland Security,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Housing\s+(?:and|&)\s+Urban\s+Development|Housing\s+(?:and|&)\s+Urban\s+Development\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT|HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Housing and Urban Development,,; ,fjc-idb: HUD
+"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Housing\s+(?:and|&)\s+Urban\s+Development|SECRETARY\s+OF\s+HOUSING\s+(?:AND|&)\s+URBAN\s+DEVELOPMENT),Department of Housing and Urban Development,,; ,
+"party, history, opinion",agencies,categories,HUD\b(?<!\wHUD),Department of Housing and Urban Development,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Justice|Justice\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?JUSTICE|JUSTICE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Justice,,; ,fjc-idb: DOJ
+"party, history, opinion",agencies,categories,DOJ\b(?<!\wDOJ),Department of Justice,,; ,
+"party, history, opinion",agencies,categories,USDOJ\b(?<!\wUSDOJ),Department of Justice,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Labor|Labor\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?LABOR|LABOR\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Labor,,; ,"fjc-idb: LABR. fjc-idb excepts OSHA, which has its own value"
+"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Labor|SECRETARY\s+OF\s+LABOR)(?!\s+(?:and|AND|&)\s),Department of Labor,,; ,
+"party, history, opinion",agencies,categories,DOL\b(?<!\wDOL),Department of Labor,,; ,
+"party, history, opinion",agencies,categories,USDOL\b(?<!\wUSDOL),Department of Labor,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Science\s+(?:and|&)\s+Technology|Science\s+(?:and|&)\s+Technology\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?SCIENCE\s+(?:AND|&)\s+TECHNOLOGY|SCIENCE\s+(?:AND|&)\s+TECHNOLOGY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Science and Technology,,; ,fjc-idb: DOST
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?State|State\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?STATE|STATE\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z])(?!\s+of\b),Department of State,,; ,"fjc-idb: STAT. Matched with case, since a state department of corrections is not the State Department"
+"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Army\b|(?:UNITED\s+STATES|U\.\s?S\.)\s+ARMY\b),Department of the Army,,; ,fjc-idb: ARMY
+"party, history, opinion",agencies,categories,(?:Dep(?:artment|['’]t|t\.?)\s+of\s+the\s+Army|DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+THE\s+ARMY),Department of the Army,,; ,
+"party, history, opinion",agencies,categories,(?:Army\s+Corps\s+of\s+Engineers|ARMY\s+CORPS\s+OF\s+ENGINEERS),Department of the Army,,; ,
+"party, history, opinion",agencies,categories,Army(?<=\b[Tt]he\sArmy)\b,Department of the Army,,; ,
+"party, history, opinion",agencies,categories,ARMY(?<=\b[Tt]he\sARMY)\b,Department of the Army,,; ,
+"party, history, opinion",agencies,categories,USACE\b(?<!\wUSACE),Department of the Army,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Interior|Interior\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?INTERIOR|INTERIOR\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of the Interior,,; ,fjc-idb: DOI. DOI is also a date of injury
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Dd]ate\s+of\s+[Ii]njury|[DD]ATE\s+OF\s+[II]NJURY))(?s:.)*?(?:DOI\b(?<!\wDOI)),Department of the Interior,,; ,
+"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Navy\b|(?:UNITED\s+STATES|U\.\s?S\.)\s+NAVY\b),Department of the Navy,,; ,fjc-idb: NAVY
+"party, history, opinion",agencies,categories,(?:Dep(?:artment|['’]t|t\.?)\s+of\s+the\s+Navy|DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+THE\s+NAVY),Department of the Navy,,; ,
+"party, history, opinion",agencies,categories,Navy(?<=\b[Tt]he\sNavy)\b,Department of the Navy,,; ,
+"party, history, opinion",agencies,categories,NAVY(?<=\b[Tt]he\sNAVY)\b,Department of the Navy,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Treasury|Treasury\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?TREASURY|TREASURY\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of the Treasury,,; ,"fjc-idb: TREA. fjc-idb excepts the IRS, which has its own value"
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Transportation|Transportation\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?TRANSPORTATION|TRANSPORTATION\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Transportation,,; ,fjc-idb: TRAN. DOT is also the Dictionary of Occupational Titles
+"party, history, opinion",agencies,categories,USDOT\b(?<!\wUSDOT),Department of Transportation,,; ,
+"party, history, opinion",agencies,categories,U\.S\.\ DOT\b(?<!\wU\.S\.\ DOT),Department of Transportation,,; ,
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Dictionary\s+of\s+Occupational\s+Titles|Occupational\s+Titles|DICTIONARY\s+OF\s+OCCUPATIONAL\s+TITLES|OCCUPATIONAL\s+TITLES))(?s:.)*?(?:DOT\b(?<!\wDOT)),Department of Transportation,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+(?:Dep(?:artment|['’]t|t\.?)\s+of\s+(?:the\s+)?Veterans[\'’]?\s+Affairs|Veterans[\'’]?\s+Affairs\s+Dep(?:artment|['’]t|t\.?))|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+(?:DEP(?:ARTMENT|['’]T|T\.?)\s+OF\s+(?:THE\s+)?VETERANS[\'’]?\s+AFFAIRS|VETERANS[\'’]?\s+AFFAIRS\s+DEP(?:ARTMENT|['’]T|T\.?)))(?!\s+(?:and|AND|&)\s+(?!The\b|THE\b)[A-Z]),Department of Veterans Affairs,,; ,fjc-idb: DVA. VA in a citation or an address is Virginia
+"party, history, opinion",agencies,categories,(?:Secretary\s+of\s+Veterans[\'’]?\s+Affairs|SECRETARY\s+OF\s+VETERANS[\'’]?\s+AFFAIRS),Department of Veterans Affairs,,; ,
+"party, history, opinion",agencies,categories,DVA\b(?<!\wDVA),Department of Veterans Affairs,,; ,
+"party, history, opinion",agencies,categories,"VA\b(?<!\wVA)(?<!,\sVA)(?!\.)",Department of Veterans Affairs,,; ,
+"party, history, opinion",agencies,categories,(?:Drug\s+Enforcement\s+(?:Administration|Agency)|DRUG\s+ENFORCEMENT\s+(?:ADMINISTRATION|AGENCY)),Drug Enforcement Administration,,; ,fjc-idb: DEA. fjc-idb calls it the Drug Enforcement Agency
+"party, history, opinion",agencies,categories,DEA\b(?<!\wDEA),Drug Enforcement Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Economic\s+Regulatory\s+Administration|ECONOMIC\s+REGULATORY\s+ADMINISTRATION),Economic Regulatory Administration,,; ,fjc-idb: ERA. ERA is also the Equal Rights Amendment and the word era
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Environmental\s+Protection\s+Agency|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+ENVIRONMENTAL\s+PROTECTION\s+AGENCY),Environmental Protection Agency,,; ,fjc-idb: EPA. EPA is also the Equal Pay Act and some states' agencies
+"party, history, opinion",agencies,categories,USEPA\b(?<!\wUSEPA),Environmental Protection Agency,,; ,
+"party, history, opinion",agencies,categories,U\.S\.\ EPA\b(?<!\wU\.S\.\ EPA),Environmental Protection Agency,,; ,
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Equal\s+Pay\s+Act|EQUAL\s+PAY\s+ACT))(?s:.)*?(?:EPA\b(?<!\wEPA)(?<!Ohio\sEPA)(?<!Illinois\sEPA)),Environmental Protection Agency,,; ,
+"party, history, opinion",agencies,categories,(?:Equal\s+Employment\s+Opportunity\s+Commission|EQUAL\s+EMPLOYMENT\s+OPPORTUNITY\s+COMMISSION),Equal Employment Opportunity Commission,,; ,fjc-idb: EEOC
+"party, history, opinion",agencies,categories,EEOC\b(?<!\wEEOC),Equal Employment Opportunity Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Aviation\s+(?:Administration|Agency)|FEDERAL\s+AVIATION\s+(?:ADMINISTRATION|AGENCY)),Federal Aviation Administration,,; ,fjc-idb: FAA. FAA is also the Federal Arbitration Act
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Federal\s+Arbitration\s+Act|FEDERAL\s+ARBITRATION\s+ACT))(?s:.)*?(?:FAA\b(?<!\wFAA)),Federal Aviation Administration,,; ,
+"party, history, opinion",agencies,categories,(?:(?:(?:United\s+States|U\.\s?S\.)|Federal)\s+Coal\s+Commission|(?:(?:UNITED\s+STATES|U\.\s?S\.)|FEDERAL)\s+COAL\s+COMMISSION),Federal Coal Commission,,; ,fjc-idb: COAL
+"party, history, opinion",agencies,categories,(?:Federal\s+Coal\s+Mine\s+Safety\s+Board|FEDERAL\s+COAL\s+MINE\s+SAFETY\s+BOARD),Federal Coal Mine Safety Board,,; ,fjc-idb: FCMS
+"party, history, opinion",agencies,categories,(?:Federal\s+Communications?\s+Commission|FEDERAL\s+COMMUNICATIONS?\s+COMMISSION),Federal Communications Commission,,; ,fjc-idb: FCC. fjc-idb calls it the Federal Communication Commission
+"party, history, opinion",agencies,categories,FCC\b(?<!\wFCC),Federal Communications Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Deposit\s+Insurance\s+Corp(?:oration|\.|\b)|FEDERAL\s+DEPOSIT\s+INSURANCE\s+CORP(?:ORATION|\.|\b)),Federal Deposit Insurance Corporation,,; ,fjc-idb: FDIC
+"party, history, opinion",agencies,categories,FDIC\b(?<!\wFDIC),Federal Deposit Insurance Corporation,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Election\s+Commission|FEDERAL\s+ELECTION\s+COMMISSION),Federal Election Commission,,; ,fjc-idb: FEC
+"party, history, opinion",agencies,categories,FEC\b(?<!\wFEC),Federal Election Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Energy\s+(?:Administration|Agency)|FEDERAL\s+ENERGY\s+(?:ADMINISTRATION|AGENCY)),Federal Energy Administration,,; ,fjc-idb: FEA. fjc-idb calls it the Federal Energy Agency; FEA is also finite element analysis
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Ff]inite\s+[Ee]lement|[FF]INITE\s+[EE]LEMENT))(?s:.)*?(?:FEA\b(?<!\wFEA)),Federal Energy Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Energy\s+Regulatory\s+Commission|FEDERAL\s+ENERGY\s+REGULATORY\s+COMMISSION),Federal Energy Regulatory Commission,,; ,fjc-idb: 8
+"party, history, opinion",agencies,categories,FERC\b(?<!\wFERC),Federal Energy Regulatory Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Home\s+Loan\s+Bank\s+Board|FEDERAL\s+HOME\s+LOAN\s+BANK\s+BOARD),Federal Home Loan Bank Board,,; ,fjc-idb: FHLB. Its abbreviation is FHLBB; FHLB is a Federal Home Loan Bank
+"party, history, opinion",agencies,categories,FHLBB\b(?<!\wFHLBB),Federal Home Loan Bank Board,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Labor\s+Relations\s+Authority|FEDERAL\s+LABOR\s+RELATIONS\s+AUTHORITY),Federal Labor Relations Authority,,; ,fjc-idb: FLRA
+"party, history, opinion",agencies,categories,FLRA\b(?<!\wFLRA),Federal Labor Relations Authority,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Labor\s+Relations\s+Board|FEDERAL\s+LABOR\s+RELATIONS\s+BOARD),Federal Labor Relations Board,,; ,fjc-idb: FLRB
+"party, history, opinion",agencies,categories,(?:Federal\s+Maritime\s+Board|FEDERAL\s+MARITIME\s+BOARD),Federal Maritime Board,,; ,fjc-idb: FMBD
+"party, history, opinion",agencies,categories,(?:Federal\s+Maritime\s+Commission|FEDERAL\s+MARITIME\s+COMMISSION),Federal Maritime Commission,,; ,fjc-idb: FMC. FMC is also a company
+"party, history, opinion",agencies,categories,FMC\b(?<!\wFMC)(?!\s+(?:Corp|Tech|Inc|Lithium|CORP|TECH|INC)),Federal Maritime Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Mine\s+Safety\s+(?:and|&)\s+Health\s+Review\s+Commission|MINE\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+REVIEW\s+COMMISSION),Federal Mine Safety and Health Review Commission,,; ,fjc-idb: MSHR. fjc-idb calls it the Federal Mine Safety and Health Review
+"party, history, opinion",agencies,categories,FMSHRC\b(?<!\wFMSHRC),Federal Mine Safety and Health Review Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Motor\s+Carrier\s+Safety\s+Administration|FEDERAL\s+MOTOR\s+CARRIER\s+SAFETY\s+ADMINISTRATION),Federal Motor Carrier Safety Administration,,; ,fjc-idb: FMCS. Its abbreviation is FMCSA; FMCS is the Federal Mediation and Conciliation Service
+"party, history, opinion",agencies,categories,FMCSA\b(?<!\wFMCSA),Federal Motor Carrier Safety Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Railroad\s+Administration|FEDERAL\s+RAILROAD\s+ADMINISTRATION),Federal Railroad Administration,,; ,fjc-idb: FRA
+"party, history, opinion",agencies,categories,FRA\b(?<!\wFRA),Federal Railroad Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Reserve\b|FEDERAL\s+RESERVE\b),Federal Reserve System,,; ,fjc-idb: FRS. Includes the Board of Governors and the Federal Reserve Banks
+"party, history, opinion",agencies,categories,FRB\b(?<!\wFRB),Federal Reserve System,,; ,
+"party, history, opinion",agencies,categories,Fed(?<=\b[Tt]he\sFed)(?![.\w]),Federal Reserve System,,; ,
+"party, history, opinion",agencies,categories,(?:Federal\s+Trade\s+Commission|FEDERAL\s+TRADE\s+COMMISSION),Federal Trade Commission,,; ,fjc-idb: 4
+"party, history, opinion",agencies,categories,FTC\b(?<!\wFTC),Federal Trade Commission,,; ,
+"party, history, opinion",agencies,categories,F\.T\.C\.,Federal Trade Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Food\s+(?:and|&)\s+Drug\s+Administration|FOOD\s+(?:AND|&)\s+DRUG\s+ADMINISTRATION),Food and Drug Administration,,; ,fjc-idb: FDA
+"party, history, opinion",agencies,categories,FDA\b(?<!\wFDA),Food and Drug Administration,,; ,
+"party, history, opinion",agencies,categories,USFDA\b(?<!\wUSFDA),Food and Drug Administration,,; ,
+"party, history, opinion",agencies,categories,(?:General\s+Services\s+Administration|GENERAL\s+SERVICES\s+ADMINISTRATION),General Services Administration,,; ,fjc-idb: GSA
+"party, history, opinion",agencies,categories,GSA\b(?<!\wGSA),General Services Administration,,; ,
+"party, history, opinion",agencies,categories,(?:(?:Government\s+Accountability|General\s+Accounting|Government\s+Accounting)\s+Office|(?:GOVERNMENT\s+ACCOUNTABILITY|GENERAL\s+ACCOUNTING|GOVERNMENT\s+ACCOUNTING)\s+OFFICE),Government Accountability Office,,; ,fjc-idb: GAO. Called the General Accounting Office before 2004; fjc-idb calls it the Government Accounting Office
+"party, history, opinion",agencies,categories,GAO\b(?<!\wGAO),Government Accountability Office,,; ,
+"party, history, opinion",agencies,categories,(?:Health\s+Care\s+Financing\s+Administration|HEALTH\s+CARE\s+FINANCING\s+ADMINISTRATION),Health Care Financing Administration,,; ,fjc-idb: HCFA. Renamed the Centers for Medicare and Medicaid Services (CMS) in 2001
+"party, history, opinion",agencies,categories,(?:Centers?\s+for\s+Medicare\s+(?:and|&)\s+Medicaid\s+Services|CENTERS?\s+FOR\s+MEDICARE\s+(?:AND|&)\s+MEDICAID\s+SERVICES),Health Care Financing Administration,,; ,
+"party, history, opinion",agencies,categories,HCFA\b(?<!\wHCFA),Health Care Financing Administration,,; ,
+"party, history, opinion",agencies,categories,\A(?=(?s:.)*?(?:Medicare|Medicaid|MEDICARE|MEDICAID))(?s:.)*?(?:CMS\b(?<!\wCMS)),Health Care Financing Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Immigration\s+(?:and|&)\s+Naturali[sz]ation\s+Service|IMMIGRATION\s+(?:AND|&)\s+NATURALI[SZ]ATION\s+SERVICE),Immigration and Naturalization Service,,; ,fjc-idb: 6
+"party, history, opinion",agencies,categories,INS\b(?<!\wINS)(?!\.),Immigration and Naturalization Service,,; ,
+"party, history, opinion",agencies,categories,I\.N\.S\.,Immigration and Naturalization Service,,; ,
+"party, history, opinion",agencies,categories,(?:Internal\s+Revenue\s+Service|INTERNAL\s+REVENUE\s+SERVICE),Internal Revenue Service,,; ,fjc-idb: 3. fjc-idb codes the Tax Court and the IRS together
+"party, history, opinion",agencies,categories,(?:Commissioner\s+of\s+Internal\s+Revenue|COMMISSIONER\s+OF\s+INTERNAL\s+REVENUE),Internal Revenue Service,,; ,
+"party, history, opinion",agencies,categories,(?:Bureau\s+of\s+Internal\s+Revenue|BUREAU\s+OF\s+INTERNAL\s+REVENUE),Internal Revenue Service,,; ,
+"party, history, opinion",agencies,categories,IRS\b(?<!\wIRS),Internal Revenue Service,,; ,
+"party, history, opinion",agencies,categories,I\.R\.S\.,Internal Revenue Service,,; ,
+"party, history, opinion",agencies,categories,(?:International\s+Trade\s+Commission|INTERNATIONAL\s+TRADE\s+COMMISSION),International Trade Commission,,; ,fjc-idb: ITC. ITC is also an investment tax credit
+"party, history, opinion",agencies,categories,USITC\b(?<!\wUSITC),International Trade Commission,,; ,
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Tt]ax\s+[Cc]redit|[TT]AX\s+[CC]REDIT))(?s:.)*?(?:ITC\b(?<!\wITC)),International Trade Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Interstate\s+Commerce\s+Commission|INTERSTATE\s+COMMERCE\s+COMMISSION),Interstate Commerce Commission,,; ,fjc-idb: 0. ICC is also the International Chamber of Commerce and the International Criminal Court
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:International\s+Chamber\s+of\s+Commerce|International\s+Criminal\s+Court|INTERNATIONAL\s+CHAMBER\s+OF\s+COMMERCE|INTERNATIONAL\s+CRIMINAL\s+COURT))(?s:.)*?(?:ICC\b(?<!\wICC)),Interstate Commerce Commission,,; ,
+"party, history, opinion",agencies,categories,I\.C\.C\.,Interstate Commerce Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Library\s+of\s+Congress|LIBRARY\s+OF\s+CONGRESS),Library of Congress,,; ,fjc-idb: LOC. LOC is also a letter of credit and a likelihood of confusion
+"party, history, opinion",agencies,categories,(?:Maritime\s+Administration(?<!Federal\sMaritime\sAdministration)|MARITIME\s+ADMINISTRATION(?<!FEDERAL\sMARITIME\sADMINISTRATION)),Maritime Administration,,; ,fjc-idb: MARA
+"party, history, opinion",agencies,categories,MARAD\b(?<!\wMARAD),Maritime Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Merit\s+Systems?\s+Protection\s+Board|MERIT\s+SYSTEMS?\s+PROTECTION\s+BOARD),Merit Systems Protection Board,,; ,fjc-idb: MSPB
+"party, history, opinion",agencies,categories,MSPB\b(?<!\wMSPB),Merit Systems Protection Board,,; ,
+"party, history, opinion",agencies,categories,(?:Mine\s+Safety\s+(?:and|&)\s+Health\s+Administration|MINE\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+ADMINISTRATION),Mine Safety and Health Administration,,; ,fjc-idb: MSHA
+"party, history, opinion",agencies,categories,MSHA\b(?<!\wMSHA),Mine Safety and Health Administration,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Aeronautics\s+(?:and|&)\s+Space\s+Administration|NATIONAL\s+AERONAUTICS\s+(?:AND|&)\s+SPACE\s+ADMINISTRATION),National Aeronautics and Space Administration,,; ,fjc-idb: NASA
+"party, history, opinion",agencies,categories,NASA\b(?<!\wNASA),National Aeronautics and Space Administration,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Credit\s+Union\s+(?:Administration|Association)|NATIONAL\s+CREDIT\s+UNION\s+(?:ADMINISTRATION|ASSOCIATION)),National Credit Union Administration,,; ,fjc-idb: NCUA. fjc-idb calls it the National Credit Union Association
+"party, history, opinion",agencies,categories,NCUA\b(?<!\wNCUA),National Credit Union Administration,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Highway\s+Traffic\s+Safety\s+Administration|NATIONAL\s+HIGHWAY\s+TRAFFIC\s+SAFETY\s+ADMINISTRATION),National Highway Traffic Safety Administration,,; ,fjc-idb: NHTS
+"party, history, opinion",agencies,categories,NHTSA\b(?<!\wNHTSA),National Highway Traffic Safety Administration,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Labor\s+Relations\s+Board|NATIONAL\s+LABOR\s+RELATIONS\s+BOARD),National Labor Relations Board,,; ,fjc-idb: 1
+"party, history, opinion",agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board,,; ,
+"party, history, opinion",agencies,categories,N\.L\.R\.B\.,National Labor Relations Board,,; ,
+"party, history, opinion",agencies,categories,(?:Railroad\s+Adjustment\s+Board|RAILROAD\s+ADJUSTMENT\s+BOARD),National Railroad Adjustment Board,,; ,fjc-idb: RRAB. fjc-idb calls it the Railroad Adjustment Board
+"party, history, opinion",agencies,categories,NRAB\b(?<!\wNRAB),National Railroad Adjustment Board,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Science\s+Foundation|NATIONAL\s+SCIENCE\s+FOUNDATION),National Science Foundation,,; ,fjc-idb: NSF. NSF is also non-sufficient funds
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Ii]nsufficient\s+[Ff]unds|[Nn]on-?sufficient|[II]NSUFFICIENT\s+[FF]UNDS|[NN]ON-?SUFFICIENT))(?s:.)*?(?:NSF\b(?<!\wNSF)),National Science Foundation,,; ,
+"party, history, opinion",agencies,categories,(?:National\s+Transportation\s+Safety\s+Board|NATIONAL\s+TRANSPORTATION\s+SAFETY\s+BOARD),National Transportation Safety Board,,; ,fjc-idb: NTSB
+"party, history, opinion",agencies,categories,NTSB\b(?<!\wNTSB),National Transportation Safety Board,,; ,
+"party, history, opinion",agencies,categories,(?:Northwest\s+Power\s+(?:and\s+Conservation|Planning)\s+Council|NORTHWEST\s+POWER\s+(?:AND\s+CONSERVATION|PLANNING)\s+COUNCIL),Northwest Power and Conservation Council,,; ,fjc-idb: NPCC. Formerly the Northwest Power Planning Council
+"party, history, opinion",agencies,categories,(?:Nuclear\s+Regulatory\s+Commission|NUCLEAR\s+REGULATORY\s+COMMISSION),Nuclear Regulatory Commission,,; ,fjc-idb: NRC. NRC is also the National Research Council and the National Response Center
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:National\s+Research\s+Council|National\s+Response\s+Center|NATIONAL\s+RESEARCH\s+COUNCIL|NATIONAL\s+RESPONSE\s+CENTER))(?s:.)*?(?:NRC\b(?<!\wNRC)),Nuclear Regulatory Commission,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Occupational\s+Safety\s+(?:and|&)\s+Health\s+Administration|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OCCUPATIONAL\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+ADMINISTRATION),Occupational Safety and Health Administration,,; ,fjc-idb: OSHA. Cal/OSHA is California's
+"party, history, opinion",agencies,categories,OSHA\b(?<!\wOSHA)(?<!Cal/OSHA)(?<!Cal-OSHA),Occupational Safety and Health Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Occupational\s+Safety\s+(?:and|&)\s+Health\s+Review\s+Commission|OCCUPATIONAL\s+SAFETY\s+(?:AND|&)\s+HEALTH\s+REVIEW\s+COMMISSION),Occupational Safety and Health Review Commission,,; ,fjc-idb: OSHC
+"party, history, opinion",agencies,categories,OSHRC\b(?<!\wOSHRC),Occupational Safety and Health Review Commission,,; ,
+"party, history, opinion",agencies,categories,\A(?=(?s:.)*?(?:Congressional\s+Accountability\s+Act|CONGRESSIONAL\s+ACCOUNTABILITY\s+ACT))(?s:.)*?(?:(?:Office\s+of\s+Compliance|OFFICE\s+OF\s+COMPLIANCE)),Office of Compliance,,; ,"fjc-idb: OCBD. Only with the Congressional Accountability Act, since many organizations have an office of compliance; renamed the Office of Congressional Workplace Rights in 2018"
+"party, history, opinion",agencies,categories,(?:Office\s+of\s+Congressional\s+Workplace\s+Rights|OFFICE\s+OF\s+CONGRESSIONAL\s+WORKPLACE\s+RIGHTS),Office of Congressional Workplace Rights,,; ,fjc-idb: OCWR
+"party, history, opinion",agencies,categories,OCWR\b(?<!\wOCWR),Office of Congressional Workplace Rights,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Office\s+of\s+Management\s+(?:and|&)\s+Budget|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OFFICE\s+OF\s+MANAGEMENT\s+(?:AND|&)\s+BUDGET),Office of Management and Budget,,; ,fjc-idb: OMB
+"party, history, opinion",agencies,categories,(?:White\s+House\s+Office\s+of\s+Management\s+(?:and|&)\s+Budget|WHITE\s+HOUSE\s+OFFICE\s+OF\s+MANAGEMENT\s+(?:AND|&)\s+BUDGET),Office of Management and Budget,,; ,
+"party, history, opinion",agencies,categories,OMB\b(?<!\wOMB),Office of Management and Budget,,; ,
+"party, history, opinion",agencies,categories,(?:(?:[Tt]he(?<!\w[Tt]he)|United\s+States|U\.\s?S\.(?:\s?A\.)?|[Ff]ederal(?<!\w[Ff]ederal))\s+Office\s+of\s+Personnel\s+Management|(?:[TT]HE(?<!\w[TT]HE)|UNITED\s+STATES|U\.\s?S\.(?:\s?A\.)?|[FF]EDERAL(?<!\w[FF]EDERAL))\s+OFFICE\s+OF\s+PERSONNEL\s+MANAGEMENT),Office of Personnel Management,,; ,fjc-idb: OPM
+"party, history, opinion",agencies,categories,OPM\b(?<!\wOPM),Office of Personnel Management,,; ,
+"party, history, opinion",agencies,categories,(?:Office\s+of\s+Senate\s+Fair\s+Employment\s+Practices|OFFICE\s+OF\s+SENATE\s+FAIR\s+EMPLOYMENT\s+PRACTICES),Office of Senate Fair Employment Practices,,; ,fjc-idb: OSFE
+"party, history, opinion",agencies,categories,(?:Chief\s+Administrative\s+Hearing\s+Officer|CHIEF\s+ADMINISTRATIVE\s+HEARING\s+OFFICER),Office of the Chief Administrative Hearing Officer,,; ,fjc-idb: CAHO
+"party, history, opinion",agencies,categories,CAHO\b(?<!\wCAHO),Office of the Chief Administrative Hearing Officer,,; ,
+"party, history, opinion",agencies,categories,OCAHO\b(?<!\wOCAHO),Office of the Chief Administrative Hearing Officer,,; ,
+"party, history, opinion",agencies,categories,(?:Comptroller\s+of\s+the\s+Currency|COMPTROLLER\s+OF\s+THE\s+CURRENCY),Office of the Comptroller of the Currency,,; ,fjc-idb: OCC. OCC is also the Options Clearing Corporation
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:Options\s+Clearing|OPTIONS\s+CLEARING))(?s:.)*?(?:OCC\b(?<!\wOCC)),Office of the Comptroller of the Currency,,; ,
+"party, history, opinion",agencies,categories,(?:Office\s+of\s+the\s+Federal\s+Inspector|OFFICE\s+OF\s+THE\s+FEDERAL\s+INSPECTOR),Office of the Federal Inspector,,; ,fjc-idb: OFI
+"party, history, opinion",agencies,categories,(?:Office\s+of\s+Thrift\s+Supervision|OFFICE\s+OF\s+THRIFT\s+SUPERVISION),Office of Thrift Supervision,,; ,fjc-idb: OTS
+"party, history, opinion",agencies,categories,OTS\b(?<!\wOTS),Office of Thrift Supervision,,; ,
+"party, history, opinion",agencies,categories,(?:Office\s+of\s+Workers[\'’]?\s+Compensation\s+Programs|OFFICE\s+OF\s+WORKERS[\'’]?\s+COMPENSATION\s+PROGRAMS),Office of Workers Compensation Programs,,; ,fjc-idb: OWCP. The value has no apostrophe
+"party, history, opinion",agencies,categories,OWCP\b(?<!\wOWCP),Office of Workers Compensation Programs,,; ,
+"party, history, opinion",agencies,categories,(?:Patent\s+(?:and|&)\s+Trademark\s+Office|PATENT\s+(?:AND|&)\s+TRADEMARK\s+OFFICE),Patent Office,,; ,fjc-idb: PATO. Renamed the Patent and Trademark Office (PTO) in 1975; PTO is also paid time off
+"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Patent\s+Office|(?:UNITED\s+STATES|U\.\s?S\.)\s+PATENT\s+OFFICE),Patent Office,,; ,
+"party, history, opinion",agencies,categories,(?:Patent\sOffice(?<=\b[Tt]he\sPatent\sOffice)|PATENT\sOFFICE(?<=\b[TT]HE\sPATENT\sOFFICE)),Patent Office,,; ,
+"party, history, opinion",agencies,categories,USPTO\b(?<!\wUSPTO),Patent Office,,; ,
+"party, history, opinion",agencies,categories,\A(?!(?s:.)*?(?:[Pp]aid\s+[Tt]ime\s+[Oo]ff|[PP]AID\s+[TT]IME\s+[OO]FF))(?s:.)*?(?:PTO\b(?<!\wPTO)),Patent Office,,; ,
+"party, history, opinion",agencies,categories,(?:Postal\s+(?:Rate|Regulatory)\s+Commission|POSTAL\s+(?:RATE|REGULATORY)\s+COMMISSION),Postal Rate Commission,,; ,fjc-idb: PRC. Renamed the Postal Regulatory Commission in 2006; PRC is also the People's Republic of China
+"party, history, opinion",agencies,categories,(?:Railroad\s+Retirement\s+Board|RAILROAD\s+RETIREMENT\s+BOARD),Railroad Retirement Board,,; ,fjc-idb: RRRB
+"party, history, opinion",agencies,categories,RRB\b(?<!\wRRB),Railroad Retirement Board,,; ,
+"party, history, opinion",agencies,categories,(?:Securities\s+(?:and|&)\s+Exchange\s+Commission|SECURITIES\s+(?:AND|&)\s+EXCHANGE\s+COMMISSION),Securities and Exchange Commission,,; ,fjc-idb: SEC. SEC. before a number is a section of a statute
+"party, history, opinion",agencies,categories,SEC\b(?<!\wSEC)(?!\.\s*\d),Securities and Exchange Commission,,; ,
+"party, history, opinion",agencies,categories,S\.E\.C\.,Securities and Exchange Commission,,; ,
+"party, history, opinion",agencies,categories,(?:Small\s+Business\s+Administration|SMALL\s+BUSINESS\s+ADMINISTRATION),Small Business Administration,,; ,fjc-idb: SBA
+"party, history, opinion",agencies,categories,SBA\b(?<!\wSBA),Small Business Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Social\s+Security\s+Administration|SOCIAL\s+SECURITY\s+ADMINISTRATION),Social Security Administration,,; ,fjc-idb: SSA
+"party, history, opinion",agencies,categories,SSA\b(?<!\wSSA),Social Security Administration,,; ,
+"party, history, opinion",agencies,categories,(?:Surface\s+Transportation\s+Board|SURFACE\s+TRANSPORTATION\s+BOARD),Surface Transportation Board,,; ,fjc-idb: STB
+"party, history, opinion",agencies,categories,STB\b(?<!\wSTB),Surface Transportation Board,,; ,
+"party, history, opinion",agencies,categories,(?:Transportation\s+Security\s+Administration|TRANSPORTATION\s+SECURITY\s+ADMINISTRATION),Transportation Security Administration,,; ,fjc-idb: TSA
+"party, history, opinion",agencies,categories,TSA\b(?<!\wTSA),Transportation Security Administration,,; ,
+"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Postal\s+Service|(?:UNITED\s+STATES|U\.\s?S\.)\s+POSTAL\s+SERVICE),United States Postal Service,,; ,fjc-idb: USPS. Called the Post Office Department before 1971
+"party, history, opinion",agencies,categories,(?:Postal\sService(?<=\b[Tt]he\sPostal\sService)|POSTAL\sSERVICE(?<=\b[TT]HE\sPOSTAL\sSERVICE)),United States Postal Service,,; ,
+"party, history, opinion",agencies,categories,(?:Post\s+Office\s+Department|POST\s+OFFICE\s+DEPARTMENT),United States Postal Service,,; ,
+"party, history, opinion",agencies,categories,USPS\b(?<!\wUSPS),United States Postal Service,,; ,
+"party, history, opinion",agencies,categories,(?:(?:United\s+States|U\.\s?S\.)\s+Tax\s+Court|(?:UNITED\s+STATES|U\.\s?S\.)\s+TAX\s+COURT),United States Tax Court,,; ,fjc-idb: 3. fjc-idb codes the Tax Court and the IRS together
+"party, history, opinion",agencies,categories,(?:Tax\sCourt(?<=\b[Tt]he\sTax\sCourt)\b|TAX\sCOURT(?<=\b[TT]HE\sTAX\sCOURT)\b),United States Tax Court,,; ,
+"party, history, opinion",agencies,categories,(?:Veterans[\'’]?\s+Administration|VETERANS[\'’]?\s+ADMINISTRATION),Veterans Administration,,; ,"fjc-idb: VET. Became the Department of Veterans Affairs in 1989, which has VA"
+"party, history, opinion",agencies,categories,(?:Washington\s+Metropolitan\s+Area\s+Transit\s+(?:Authority|Commission)|WASHINGTON\s+METROPOLITAN\s+AREA\s+TRANSIT\s+(?:AUTHORITY|COMMISSION)),Washington Metropolitan Area Transit Authority,,; ,fjc-idb: WMAT
+"party, history, opinion",agencies,categories,WMATA\b(?<!\wWMATA),Washington Metropolitan Area Transit Authority,,; ,

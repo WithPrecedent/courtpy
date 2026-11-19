@@ -28,6 +28,8 @@ nav:
   - Tutorial: tutorial.md
   - Advanced User Guide: advanced.md
   - Writing Rules: rules.md
+  - Building a Study: studies.md
+  - Catalog: catalog.md
   - Recipes: recipes.md
 - API: reference/
 - Development:
