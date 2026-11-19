@@ -568,5 +568,3 @@ def _read(
     if source is None:
         source = download(kinds = kind)[kind]
     return utilities.read_csv(source)
-
-
