@@ -27,13 +27,16 @@ Each module can also be imported from `courtpy` itself (such as
 | sources | `courtpy.courtlistener` | `CourtListener`, a client for the REST API, and `read_case`, which reads a saved CourtListener case. |
 | sources | `courtpy.lexis` | `split` and `read_case` for Lexis-Nexis text files. |
 | wrangler | `courtpy.rules` | courtpy's rulebooks (`RULEBOOKS`, such as "federal"), which are `amos` rulebooks (`amos.parsers.ParseAll`) of the CSV files of rules, and `register_rulebooks`, which makes rulebooks of a study's own folders of rules. |
-| wrangler | `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table. |
+| wrangler | `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table, and the `parse_all` technique (`ParseAll`), which parses loaded cases again from their kept text. |
 | wrangler | `courtpy.coders` | The coders, which are `amos` techniques (including `tidy_cases`, which gives columns with missing values the right types), and `code`, which applies them. |
 | wrangler | `courtpy.shapers` | `cases_to_dockets` and `dockets_to_cases`, which make a row for each docket number of each case and make cases of them again, `cases_to_courts`, `cases_to_case_types`, and `cases_to_party_types`, which summarize cases by court, case type, and party type, and `summarize`, which they share with `cases_to_judges`. |
 | wrangler | `courtpy.loaders` | The loaders, which are `amos` techniques that collect, parse, and code cases in a project, and `ReferenceLoader`, the base of the techniques that load other tables (see [Reference tables](#reference-tables)). |
+| artist | `courtpy.plots` | The plots, which are `amos` plots: `court_rates`, `cases_over_time`, `issues_over_time`, `panel_composition`, `lower_court_rates`, `trends_by_administration`, and `judge_network` (see [Figures and checks](#figures-and-checks)). |
+| critic | `courtpy.audits` | The evaluators that check court data: `audit_random_assignment`, `audit_parsing`, `audit_coverage`, and `validate_coding`. |
+| critic | `courtpy.inferers` | `panel_effects`, which estimates the effect of a judge's colleagues on the judge's vote. |
 | references | `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `add_biography`, `add_jcs`, `add_circuit`, `code_panels`, `cases_to_votes`, `dockets_to_votes`, `votes_to_cases`, `cases_to_judges`, `load_roster`, and `download_biographies` techniques. |
 | references | `courtpy.politics` | `build_table`, which makes a table of each year's political context from the sources' current files, `justices`, which returns each justice's Martin-Quinn and Judicial Common Space scores, the tables of date ranges `executives`, `legislatures`, and `high_courts`, and the `add_executive`, `add_legislature`, `add_high_court`, `load_politics`, and `download_politics` techniques. |
-| references | `courtpy.courts` | `federal_courts`, the table of the federal courts in "instructions/federal/courts.csv", and `circuits`, which finds the circuit of each case. |
+| references | `courtpy.courts` | `court_table` and `federal_courts`, the tables of courts in "instructions/{jurisdiction}/courts.csv", `court_labels`, which labels each case's court for tables and plots, and `circuits`, which finds the circuit of each case. |
 | references | `courtpy.scores` | The `add_judge_scores` and `add_court_scores` techniques, which add scores of judges and courts from training data. |
 | references | `courtpy.jcs` | `medians`, which loads the Judicial Common Space medians of each year, and `download`, which downloads the published scores with judicial-common-space, and the `download_jcs` technique. |
 | references | `courtpy.scdb` | `cases` and `votes`, which load the Supreme Court Database, and the `add_scdb`, `load_scdb`, and `download_scdb` techniques. |
@@ -50,7 +53,7 @@ for its cluster id, in a folder named for its court. Its keys are:
 
 | Key | Contents |
 | --- | --- |
-| `source` | "court_listener". |
+| `source` | "courtlistener". |
 | `court` | The court's `id`, `full_name`, `short_name`, `citation_string`, and `jurisdiction`. |
 | `cluster` | CourtListener's opinion cluster: the case name, date filed, judges, attorneys, disposition, precedential status, and so on. |
 | `docket` | CourtListener's whole docket (the docket number, the dates it was filed, argued, and terminated, the court appealed from, the PACER case id, the type of appeal, and so on, without the fields in `options._DOCKET_SKIPPED`), from the bulk data, or from the API if "dockets" was asked for. Otherwise `null`. |
@@ -73,14 +76,36 @@ stages:
 2. For Lexis-Nexis, the "lexis_nexis" rules divide the text into the header and
    the opinions and find each part of the header.
 3. Every section except those whose names end in "_lines" is collapsed onto one
-   line, and the rules are applied: "header" and "general" always, and then
-   the rulebooks that are named ("federal" by default).
+   line, and the rules are applied: the source's header rules (its `header`,
+   such as "lexis_nexis_header", which find the court and the agencies with
+   the jurisdiction's "courts.csv" and "agencies.csv") and "general" always,
+   and then the rulebooks that are named ("federal" by default).
 
 The row starts with the case's `metadata`, which is used instead of anything
 the rules find with the same name (unless the metadata is missing). A few
 columns are then added: `author` (the first of `authors`), `panel_size`,
-`concurrences`, `dissents`, and `word_count`. The text of the opinions is not
-kept unless `keep_text` is true, because it would make the table very large.
+`concurrences`, `dissents`, and `word_count`. The text of the cases'
+sections (such as `party`, `history`, `judges`, and `opinion`) is not kept
+unless `keep_text` is true, because it would make the table very large.
+
+With the text kept, the `parse_all` technique parses the cases again without
+reading the saved files, as after a change to the rules. Each case gets its
+source's header rules (by its `source` column), "general", and the
+rulebooks in its "rulebooks" parameter ("federal" unless it is set). A value
+that the rules find replaces the table's, and where they find nothing, the
+table's is kept. Given "rules", `parse_all` is `amos`'s, which it replaces in
+the `amos` library, so settings written for `amos` still work.
+
+```toml
+[wrangler]
+techniques = "load_court_listener, parse_all, drop_text_columns"
+
+[load_court_listener_parameters]
+keep_text = true
+
+[parse_all_parameters]
+rulebooks = "federal, deference.csv"
+```
 
 Parsing a large set of cases takes a while. Pass `workers` (the number of
 processes) to `parse` to use more of your computer.
@@ -108,7 +133,7 @@ The coders are `amos` techniques, so they can be named in the settings of any
 `amos` worker, and they record what they did in the dataset's `history`.
 `code_parties`, `code_case_type`, `code_outcome`, and `tidy_cases` are
 mungers (`amos.Munger`), which change and add columns without adding or removing rows, so the history
-lists the columns that each one changed and created. `drop_text` is a cleaner
+lists the columns that each one changed and created. `drop_text_columns` is a cleaner
 (`amos.Cleaner`), which removes columns. They use the columns made by the
 federal rules.
 
@@ -117,7 +142,7 @@ federal rules.
 | `code_parties` | Completes the parties' roles from their opposites (if one party is an appellant, the other is an appellee), and adds `party1_appealing`, `party1_defending`, and the same for `party2`. |
 | `code_case_type` | `type_criminal` (the United States is a party and there is a sign of a criminal case), and each party's role in the case: `party1_prosecution`, `party1_criminal_defendant`, `party1_civil_plaintiff`, and `party1_civil_defendant` (and the same for `party2`). |
 | `code_outcome` | `outcome_reversal` (from the header's disposition, or else from the decision that the opinion states, or else from the opinion's words anywhere), `outcome_party1_won` and `outcome_party2_won`, the winner by side (`outcome_criminal_defendant_won`, `outcome_prosecution_won`, `outcome_civil_plaintiff_won`, and `outcome_civil_defendant_won`), and `appeal_by_defendant`. Outcomes that cannot be known are missing. |
-| `drop_text` | Removes columns of text and lists (such as names and dates), which models cannot use. Its `keep` parameter names columns to keep. |
+| `drop_text_columns` | Removes columns of text and lists (such as names and dates), which models cannot use. Its `keep` parameter names columns to keep. |
 | `tidy_cases` | Gives columns of booleans and whole numbers with missing values the "boolean" and "Int64" types, which allow them. Tables that courtpy parses or loads are tidied already, so it is for tables made or changed in other ways. |
 
 To write your own, subclass `amos.Munger` and write `munge` (or subclass
@@ -240,7 +265,7 @@ known about the author of each opinion to a table of cases:
 
 ```ini
 [wrangler]
-techniques = load_court_listener, add_biography, drop_text
+techniques = load_court_listener, add_biography, drop_text_columns
 
 [add_biography_parameters]
 name = author
@@ -304,7 +329,7 @@ folder.
 
 ```ini
 [wrangler]
-techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text
+techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text_columns
 ```
 
 `add_circuit` adds the makeup of the whole circuit of each case on the day
@@ -504,6 +529,55 @@ again, which the Federal Judicial Center updates during the year). fjc-idb's
 own functions (such as `fjc_idb.run` and `fjc_idb.merge_district`) work on
 the same folder.
 
+## Figures and checks
+
+courtpy's plots, evaluators, and inferer are `amos` techniques for the
+"artist" and "critic" stages, so a settings file names them as it names
+`amos`'s own. The plots need the packages of the `analysis` extra
+(`pip install courtpy[analysis]`); the checks need none.
+
+Courts are labeled with their `feature_name` in "courts.csv" (such as "Tenth
+Circuit"), in the order of the table. A rate in a plot is the share of the
+cases that have a flag (or the mean of a number), measured from the cases
+themselves, so it has no confidence interval; each bar says how many cases
+it counts. The column of a rate is the dataset's label unless "column" is
+set.
+
+| Technique | Draws or checks | Needs |
+| --- | --- | --- |
+| `court_rates` | The rate of a column in each court, with the rate of all the courts as a line. | `Cases`. |
+| `cases_over_time` | The number of cases of each court in each year, a panel for each court in the data. | `Cases`, with `year`. |
+| `issues_over_time` | The number of cases with each issue in "issues" (columns of flags, such as `criminal_firearm` or `type_immigration`) in each court in each year, a panel for each court in the data. | `Cases`, with `year`. |
+| `panel_composition` | The rate of a column for each composition of the panel by the parties of the presidents who appointed its judges ("DDD" to "RRR"), split by "by" (such as `type_criminal`). | `Cases`, after `add_biography` or `code_panels`. |
+| `lower_court_rates` | The rate of a column for each court below (`lower_court_name`), grouped by the court that reviewed it. | `Cases`. |
+| `trends_by_administration` | The yearly rate of a column in each court, with the terms of Democratic and Republican presidents shaded. | `Cases`, with `year`. |
+| `judge_network` | The judges, joined by how often they sat together (or, with "dissents", how often one dissented from the other), colored by party. | `Votes`. |
+| `audit_random_assignment` | Whether the traits of cases that a panel cannot change (such as `type_criminal` and `review_agency`) are balanced across panel compositions within each court and year, with a permutation test. | `Cases`, after `add_biography` or `code_panels`. |
+| `audit_parsing` | How many cases lack a court, a court below, judges, a year, or an outcome, have panels of another size, or have a header's disposition that disagrees with the opinion's stated decision, with examples to read. | `Cases`. |
+| `audit_coverage` | The cases of each court and year against the appeals that the Integrated Database records, and the share that the data has (and of published opinions). | `Cases`, and the database (downloaded, or "source"). |
+| `validate_coding` | How often courtpy's coding agrees with another source's ("pairs", such as `published = idb_published` after `add_idb`), with Cohen's kappa. | `Cases`. |
+| `panel_effects` | The effect of the colleagues' party on a judge's vote, with the judge's party and their product, a fixed effect for each court and year, standard errors clustered by case, and a randomization test that reassigns colleagues within each court and year. | `Votes`. |
+
+```toml
+[study_project]
+study_workers = "wrangler, artist, critic"
+
+[wrangler]
+techniques = "load_court_listener, add_biography"
+
+[artist]
+techniques = "court_rates, cases_over_time, issues_over_time, panel_composition"
+
+[issues_over_time_parameters]
+issues = "criminal_firearm, type_immigration"
+
+[panel_composition_parameters]
+by = "type_criminal"
+
+[critic]
+techniques = "audit_parsing, audit_random_assignment"
+```
+
 ## Loaders
 
 `amos` loads a project's data with loaders, the first techniques of the
@@ -515,7 +589,7 @@ and loaders (see [Building a Study](studies.md#sources-of-your-own)):
 
 | Loader | Source | Does |
 | --- | --- | --- |
-| `load_court_listener` | A folder of saved CourtListener cases. Defaults to "court_listener". | Downloads cases into the folder (if "download" is set), parses them, and codes them. |
+| `load_court_listener` | A folder of saved CourtListener cases. Defaults to "courtlistener". | Downloads cases into the folder (if "download" is set), parses them, and codes them. |
 | `load_lexis_nexis` | A folder of Lexis-Nexis cases, one per text file. Defaults to "lexis_nexis". | Divides any "batches" into the folder, parses the cases, and codes them. |
 | `load_cases` | A dataset saved by `Cases.save` (or `courtpy parse`): its joblib file or its table. | Loads the dataset (a joblib file of `Votes` is `Votes` again), or the table as `Cases`, with its types. It applies no coders unless "coders" names some. |
 
@@ -529,13 +603,13 @@ Their parameters go in a "{loader}_parameters" section of the settings:
 | `reuse` | all | Whether to load the saved dataset, if there is one, instead of collecting, parsing, and coding again. |
 | `label`, `task`, `groups` | all | As in `amos`. They default to those in the "general" section. |
 | `download` | `load_court_listener` | "bulk" to extract cases from the bulk data, "api" to download them with the API, a way that a study adds, or "none" (the default) to use the cases already in the folder. Any parameter that the loader does not know is an option of the way to download. |
-| `courts` | `load_court_listener` | CourtListener court ids (such as "ca1, ca2") or groups (`federal_appellate`, `federal_circuits`, or `supreme_court`). |
+| `courts` | `load_court_listener` | CourtListener court ids (such as "ca1, ca2") or groups (`federal_appellate`, `federal_circuits`, or `scotus`). |
 | `start_date`, `end_date` | `load_court_listener` | Dates filed (YYYY-MM-DD). |
 | `max_cases`, `overwrite` | `load_court_listener` | Most cases to download, and whether to download cases saved before. |
 | `dockets` | `load_court_listener` | For "api", whether to download each case's docket too (one more request per case). |
 | `bulk_folder`, `bulk_date`, `stream` | `load_court_listener` | For "bulk", where to keep the bulk files, which date's files to use, and whether to read them from CourtListener without saving them. |
 | `batches` | `load_lexis_nexis` | Files (or folders) of many cases to divide into the source folder first. |
-| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", "criminal", and "agencies") or CSV files or folders. "header" and "general" are always applied. Defaults to "federal". |
+| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", "criminal", and "agencies") or CSV files or folders. The source's header rules and "general" are always applied. Defaults to "federal". |
 | `keep_text`, `limit`, `workers` | `load_court_listener`, `load_lexis_nexis` | Whether to keep the opinions' text, most cases to parse, and processes to parse with. |
 
 The loaders work through the project's clerk, as `amos` loaders do. A folder
@@ -551,7 +625,7 @@ or `None` to start a new one, and returns an `amos.Dataset`:
 
 ```python
 dataset = courtpy.loaders.LoadCourtListener().apply(
-    None, source = "court_listener", label = "outcome_reversal")
+    None, source = "courtlistener", label = "outcome_reversal")
 ```
 
 ### Reference tables
@@ -682,7 +756,7 @@ courtpy.options._COURT_GROUPS["new_england"] = ("ca1", "mad", "nhd", "med", "rid
 | `RateLimitError: CourtListener asked courtpy to wait ... hours` | The account's daily limit was reached. Run the same download again later. |
 | `ValueError: ... row N: the pattern ... is not valid` | A rule's regular expression has an error. `courtpy rules file.csv` checks a file. |
 | `KeyError: 'code_outcome' needs the columns [...]` | A coder needs columns made by the federal rules. |
-| `ValueError: no court_listener cases were found in ...` | The loader's source folder has no saved cases. Set "download" or "source". |
+| `ValueError: no courtlistener cases were found in ...` | The loader's source folder has no saved cases. Set "download" or "source". |
 | `ModuleNotFoundError: No module named 'statsmodels'` | `logit_sm` (and the other statsmodels models) need statsmodels. Use `logit` for scikit-learn's logistic regression, or `pip install amos[statistics]`. |
 | `KeyError: the label 'outcome_reversal' is not a column of the data` | The label is made by a coder that was not run. Check the "coders" setting. |
 | `FileNotFoundError: there is no roster of judges at ...` | `add_biography`, `code_panels`, and `cases_to_votes` need a roster. Make and save one with `courtpy.judges.Roster.from_fjc().save()`, or name one with the "source" parameter of `add_biography` or the "roster" parameter of the others. |

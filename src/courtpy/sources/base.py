@@ -2,7 +2,7 @@
 
 A `Source` is a kind of saved case that courtpy can read and parse, such as
 the JSON files that CourtListener's API and bulk data are saved as
-("court_listener") or the text files of Lexis-Nexis ("lexis_nexis"). A
+("courtlistener") or the text files of Lexis-Nexis ("lexis_nexis"). A
 `Download` is a way to collect cases into a folder, such as from
 CourtListener's bulk data ("bulk") or its API ("api"), and saves them as one
 source.
@@ -69,17 +69,23 @@ class Source(abc.ABC):
     to `SOURCES` when it is defined, under its `name`.
 
     Attributes:
-        name: the name of the source, such as "court_listener". Defaults to
+        name: the name of the source, such as "courtlistener". Defaults to
             the snake case name of the class.
         pattern: the file pattern of its saved cases, such as "*.json".
         structure: the rulebook that finds the sections of its cases, if
             they need finding (such as "lexis_nexis"), or `None`.
+        header: the rulebook that finds the court, the parties and their
+            roles, and the judges in its cases' sections, which the parser
+            applies before any other (see `courtpy.rules.make_header_rules`).
+            Defaults to "header", which has only the rules that fit every
+            source.
 
     """
 
     name: ClassVar[str] = ''
     pattern: ClassVar[str] = '*'
     structure: ClassVar[str | None] = None
+    header: ClassVar[str] = 'header'
 
     """ Initialization Methods """
 
@@ -175,7 +181,7 @@ class Download(abc.ABC):
 
     name: ClassVar[str] = ''
     aliases: ClassVar[tuple[str, ...]] = ()
-    source: ClassVar[str] = 'court_listener'
+    source: ClassVar[str] = 'courtlistener'
 
     """ Initialization Methods """
 
@@ -286,7 +292,7 @@ def find_source(name: str) -> Source:
     """Returns a source of saved cases, by name.
 
     Args:
-        name: the name of a `Source`, such as "court_listener".
+        name: the name of a `Source`, such as "courtlistener".
 
     Raises:
         ValueError: if no source has that name.

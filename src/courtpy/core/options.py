@@ -17,8 +17,8 @@ Contents:
         holds courtpy's downloads.
     _DEFAULT_CODERS: techniques that code variables after cases are parsed.
     _DEFAULT_JURISDICTION: rulebooks used when none are named.
-    _REQUIRED_RULEBOOKS: rulebooks applied to every case, before those that
-        are named.
+    _REQUIRED_RULEBOOKS: rulebooks applied to every case, after its
+        source's header rulebook and before those that are named.
     _DOCKET_SKIPPED: fields of a CourtListener docket that are not kept with
         a saved case.
     _ENV_API_KEY: environment variable that can hold the API key.
@@ -71,7 +71,7 @@ _COURT_GROUPS: dict[str, tuple[str, ...]] = {
     'federal_circuits': (
         'ca1', 'ca2', 'ca3', 'ca4', 'ca5', 'ca6', 'ca7', 'ca8', 'ca9', 'ca10',
         'ca11', 'cadc'),
-    'supreme_court': ('scotus',)}
+    'scotus': ('scotus',)}
 # The folder of the `amos` workspace's data folder where courtpy keeps the
 # downloads that every project shares (see `utilities.data_folder`).
 _DATA_SUBFOLDER: str = 'courts'
@@ -80,10 +80,10 @@ _DATA_SUBFOLDER: str = 'courts'
 _DEFAULT_CODERS: tuple[str, ...] = (
     'code_parties', 'code_case_type', 'code_outcome')
 _DEFAULT_JURISDICTION: str = 'federal'
-# "header" was written for Lexis-Nexis headers, but CourtListener cases need it
-# too (for now) for the parties' roles, the court, the judges, and the
-# disposition, which the coders use.
-_REQUIRED_RULEBOOKS: tuple[str, ...] = ('header', 'general')
+# Each source's header rulebook (its `header`, such as "lexis_nexis_header") is
+# applied before these, since the coders use the parties' roles, the court,
+# the judges, and the disposition that it finds.
+_REQUIRED_RULEBOOKS: tuple[str, ...] = ('general',)
 # Every other field of a docket is saved with its case. These are dates the
 # record changed, where CourtListener and the Internet Archive store their
 # copies, and how often the docket was viewed.
@@ -134,7 +134,7 @@ _SCDB_FILES: dict[str, str] = {
 _SCDB_LINK: str = 'CSV Organized by Supreme Court Citation'
 _SCDB_PAGE: str = 'https://scdb.la.psu.edu/data/'
 _SCDB_RELEASE: str = r'/data/(\d{4})-release-(\d+)/?$'
-_SOURCES: tuple[str, ...] = ('court_listener', 'lexis_nexis')
+_SOURCES: tuple[str, ...] = ('courtlistener', 'lexis_nexis')
 # CourtListener recommends "html_with_citations" as the most reliable text.
 _TEXT_FIELDS: tuple[str, ...] = (
     'html_with_citations', 'html_columbia', 'html_lawbox', 'xml_harvard',

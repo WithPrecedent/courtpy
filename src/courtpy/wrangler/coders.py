@@ -2,8 +2,8 @@
 
 `code_parties`, `code_case_type`, `code_outcome`, `split_values`, and
 `tidy_cases` are `amos.Munger` techniques, which change and add columns
-without adding or removing rows, and `drop_text` is an `amos.Cleaner`, which
-removes columns.
+without adding or removing rows, and `drop_text_columns` is an
+`amos.Cleaner`, which removes columns.
 Each is added to the `amos` (and `chrisjen`) library as soon as courtpy is
 imported, and it can be named in the settings of any `amos` worker.
 courtpy's loaders (see `courtpy.loaders`) also run the coders named in
@@ -21,7 +21,7 @@ Contents:
     CodeOutcome: decides whether each decision reversed the court below, and
         which side won.
     CodeParties: completes the roles of the parties.
-    DropText: removes columns that models cannot use, such as text and lists.
+    DropTextColumns: removes columns that models cannot use, such as text and lists.
     SplitValues: turns text with several values in each cell into lists or
         columns.
     TidyCases: gives columns of booleans or whole numbers with missing values
@@ -302,7 +302,7 @@ class CodeOutcome(amos.Munger):
 
 
 @dataclasses.dataclass
-class DropText(amos.Cleaner):
+class DropTextColumns(amos.Cleaner):
     """Removes columns that models cannot use, such as text and lists.
 
     Removes every column of text, lists, or dates stored as text (such as
@@ -505,14 +505,17 @@ def code(
 def _several_values() -> tuple[str, ...]:
     """Returns the columns of the federal rules with several values in a cell.
 
-    The rulebook's files are read the first time only.
+    The rulebooks' files are read the first time only.
 
     Returns:
         The names of the columns that the `names`, `matches`, and
-            `categories` rules of the federal rulebook make, in order.
+            `categories` rules of the header rulebooks of every source and of
+            the federal rulebook make, in order.
 
     """
-    book = amos.parsers.Rulebook.create(rules.RULEBOOKS['federal'])
+    book = amos.parsers.Rulebook.create(*(
+        rulebook for name, rulebook in rules.RULEBOOKS.items()
+        if name == 'federal' or name.endswith('header')))
     return tuple(dict.fromkeys(
         n for r in book if r.kind in _SEVERAL_KINDS for n in r.names))
 
@@ -545,7 +548,7 @@ def _is_text(column: pd.Series) -> bool:
         column: a column of the cases.
 
     Returns:
-        Whether models cannot use the column (so `DropText` removes it).
+        Whether models cannot use the column (so `DropTextColumns` removes it).
 
     """
     if isinstance(column.dtype, pd.CategoricalDtype):

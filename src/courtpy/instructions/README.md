@@ -12,16 +12,31 @@ The rules are in three folders:
 * `federal` has the rules that fit only federal opinions. A file here adds
   to the `general` file of the same name and does not repeat its rules. A
   topic with no federal rules (such as citations) has no file here.
-* `lexis_nexis` has the rules that divide a Lexis-Nexis case into its parts,
-  with a file for each kind of court (`federal_appellate.csv`, for the
-  federal courts of appeals).
+* `sources` has a folder for each source of cases (`courtlistener` and
+  `lexis_nexis`) with the rules that fit only its cases: `header.csv`, and
+  for Lexis-Nexis, the rules that divide a case into its parts, with a file
+  for each kind of court (`federal_appellate.csv`, for the federal courts of
+  appeals).
 
-Two files of `federal` are tables rather than rules:
+Some files of `federal` are tables that rules are made from, or that
+courtpy reads, rather than rules:
 
 * `courts.csv` has a row for each federal court: courtpy's number for it,
-  its name, its level, its circuit, CourtListener's id for it, and patterns
-  of the names that the Federal Judicial Center and opinions use for it (see
-  `courtpy.courts`). `add_circuit` finds each case's circuit with it.
+  its name, its name as a label for tables and plots (`feature_name`), its
+  level (`high`, `appellate`, `trial`, or `specialty`), its circuit,
+  CourtListener's id for it (`courtlistener_name`), and patterns of the
+  names that the Federal Judicial Center and opinions use for it (see
+  `courtpy.courts`). The header rules find each case's court with it (by
+  CourtListener's id, or by the names in a Lexis-Nexis header) and the
+  court whose decision is reviewed (by the names in the history), so a court
+  added to it is found without changing the rules, and `add_circuit` finds
+  each case's circuit with it.
+* `agencies.csv` is a topic of rules of its own (below), and the header
+  rules are made from it too, to find the agencies named in each party and
+  the history. In a party, an agency's name must end the party or come
+  before a comma, semicolon, closing parenthesis, or "et al.", so that a
+  company named for an agency (such as "FMC WYOMING CORPORATION") is not
+  taken for it.
 * `presidents.csv` has the term of each president, with the president's
   party (-1 for Democratic and 1 for Republican). `add_executive` and
   `courtpy.politics.presidents` read it, so a new president can be added to
@@ -29,8 +44,8 @@ Two files of `federal` are tables rather than rules:
 
 | Topic | Files | What it does |
 | --- | --- | --- |
-| `lexis_nexis` | `lexis_nexis/federal_appellate.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
-| `header` | `general/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. Always applied. |
+| `lexis_nexis` | `sources/lexis_nexis/federal_appellate.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
+| `courtlistener_header`, `lexis_nexis_header` | `general/header.csv`, `federal/agencies.csv`, `sources/courtlistener/header.csv` or `sources/lexis_nexis/header.csv`, `federal/courts.csv` | Finds variables in the parts of the header: each party's role, the agencies named in each party and the history (`party1_agencies`, `party2_agencies`, and `history_agencies`), the disposition, the counsel, citations, docket numbers, and the names of the judges (`general/header.csv`). Every source's rules find the trial or specialized court whose decision is reviewed in the history (`lower_court_num` and `lower_court_name`, from the courts' names in `courts.csv`). The Lexis-Nexis rules also find the court's number and name (`court_num` and `court_name`, from the court's names in `courts.csv`), the subsequent history, the Lexis citation, and the notice of an unpublished opinion; CourtListener cases have their court's number and name, and the court below's, from CourtListener's ids for them. When a CourtListener case has no roles in its header (as recent ones often do not), its rules read them from the caption at the start of the opinion. Each source's header rules are applied to its cases (`header`, with only the general rules and agencies, to a source with none of its own). Always applied. |
 | `general` | `general/general.csv` | Finds the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, procedure (such as pro se, mandamus, and mootness), and standards of review. Always applied. |
 | `citations` | `general/citations.csv` | Finds citations to cases, statutes, regulations, the Constitution, legislative materials, and other sources (`citations_...`). |
 | `civil` | `general/civil.csv`, `federal/civil.csv` | Finds the civil issues discussed: general civil issues (`civil_...`), torts (`tort_...`), contracts (`contract_...`), intellectual property (`ip_...`), and writs (`writ_...`). Each prefix is a case type (see `code_case_type`), so a new prefix (such as `immigration_`) is a case type too. |
@@ -40,13 +55,13 @@ Two files of `federal` are tables rather than rules:
 | `agencies` | `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by "; " (such as "Internal Revenue Service; United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
 
 Each topic's rules are its `general` file and then its `federal` file, in
-that order. `header` and `general` are applied to every case, whether or not
-they are named. The others can be chosen by name: `rulebooks = civil,
-criminal` in a settings file (or `courtpy.parse(folder, rulebooks = ["civil",
-"criminal"])` in Python) parses with `header`, `general`, `civil`, and
-`criminal`. The "federal" rulebook (the default) is every topic but
-`lexis_nexis`, in the order above. A file named more than once is applied
-once.
+that order. The source's header rules and `general` are applied to every
+case, whether or not they are named. The others can be chosen by name:
+`rulebooks = civil, criminal` in a settings file (or `courtpy.parse(folder,
+rulebooks = ["civil", "criminal"])` in Python) parses with the header rules,
+`general`, `civil`, and `criminal`. The "federal" rulebook (the default) is
+every topic from `general` on, in the order above. A file named more than
+once is applied once.
 
 ## The columns
 
@@ -75,8 +90,8 @@ and the kinds `flag`, `count`, `label`, `labels`, `section`, `excerpts`, and
 | `counts` | The number of times the pattern appears. | `opinion,habeas_mentions,counts,habeas` |
 | `matches` | Every match, separated by the `separator`. | `opinion,citations_case,matches,\d+ (?:F\.(?:[23]d\|4th)\|U\.S\.) \d+,,,; ` |
 | `match` | The first match. A later rule can search it as a new section of text. | `header,counsel,match,\nCOUNSEL\:.*?(?=\n\n)` |
-| `category` | The rule's `value` if the pattern appears. The first rule for a name that matches is used. | `court,court_num,category,FIRST CIRCUIT,1` |
-| `categories` | The `value` of every rule for the name whose pattern appears, once each, in the order of the rules and separated by the `separator` (such as "Internal Revenue Service; United States Tax Court"). A value cannot have the separator. | `opinion,agencies,categories,NLRB\b(?<!\wNLRB),National Labor Relations Board` |
+| `category` | The rule's `value` if the pattern appears. The first rule for a name that matches is used. | `court,court_num,category,COURT OF APPEALS FOR THE FIRST CIRCUIT,1` (as made from `courts.csv`) |
+| `categories` | The `value` of every rule for the name whose pattern appears, once each, in the order of the rules and separated by the `separator` (such as "Internal Revenue Service; United States Tax Court"). A value cannot have the separator. | `opinion,agencies,categories,NLRB\b(?<![\w-]NLRB),National Labor Relations Board` |
 | `names` | The names in the text, found by splitting it wherever the pattern matches, and separated by the `separator`. The pattern should match what comes between names: titles, filler words, and punctuation. | `judges,panel_judges,names,\b(?:BEFORE\|CIRCUIT\|JUDGES?\|AND)\b\|[,;:],,,; ` |
 | `split` | New sections, named in `name`: the text before and after the first match. | `party,"party1, party2",split,\Wv\.\W` |
 | `replace` | The text with every match replaced by the `value` (a blank `value` removes the matches). Without a `name`, it changes the section for the rules below it. | `party1,,replace,\bET AL\b` |
@@ -93,7 +108,8 @@ labeled part of a text); see its `amos.parsers` module.
   section except those whose names end in `_lines` has its line breaks and
   extra spaces replaced with single spaces, so that a phrase broken across two
   lines is still found. (The `lexis_nexis` rules run before this, so they can
-  use line breaks, written `\n`.)
+  use line breaks, written `\n`.) The header rules run next, and then the
+  `federal` rules.
 * **Names are cleaned.** A `names` rule makes the text upper-case and removes
   periods and apostrophes before splitting it, so write its pattern in
   capital letters.
@@ -109,13 +125,20 @@ labeled part of a text); see its `amos.parsers` module.
   that. So `agencies.csv` matches with case, writing a name in its
   capitalized form and in capitals (`Federal\s+Trade\s+Commission|FEDERAL\s+TRADE\s+COMMISSION`),
   and puts the check that an abbreviation is a whole word after its letters
-  (`NLRB\b(?<!\wNLRB)` rather than `\bNLRB\b`).
+  (`NLRB\b(?<![\w-]NLRB)` rather than `\bNLRB\b`). The check also skips an
+  abbreviation right after a hyphen, which is usually a judge's initials at
+  the end of a docket number (such as "06-CR-126-CAB").
+* **Curly quotes and dashes are UTF-8.** Some patterns have characters such
+  as `’` (in `['’]`, an apostrophe of either kind) or `–` and `—`. If they
+  show as `â€™` or `'â]`, the spreadsheet opened the file in another
+  encoding: open it again as UTF-8 (in LibreOffice, choose "Unicode
+  (UTF-8)" as the character set when it asks).
 * **Missing sections are not errors.** If a case has no section that a rule
   searches (such as `future` in a CourtListener case), a flag is FALSE, a
   count is 0, and the other kinds are blank.
 * **A `match` rule does not replace a section made by a rule above it.** So
   two `match` rules for one name are a first choice and a fallback: the
-  `federal` rules make `panel_text` from the opinion's "Before ..." line,
+  header rules make `panel_text` from the opinion's "Before ..." line,
   and only otherwise from the header's judges.
 * **Three sets of variables record the disposition.** `disposition_...` come
   from the header's disposition, `decision_...` from the decision that the
@@ -137,7 +160,7 @@ These sections can be targets in the `federal` rules (and your own):
 | --- | --- | --- |
 | `party` | The caption. | The full case name. |
 | `party1`, `party2` | Made by the `split` rule in `general/header.csv`. | The same. |
-| `court` | The court's line in the header. | The court's full name. |
+| `court` | The court's line in the header, which `courts.csv` numbers. | The court's full name. (`court_num` comes from CourtListener's id for the court.) |
 | `docket_number` | The docket line. | The docket number (if dockets were downloaded). |
 | `citation` | The citation line. | The case's citations. |
 | `dates` | Every line with a date, with "; " between them. | (Dates come from CourtListener's data.) |
@@ -152,14 +175,14 @@ These sections can be targets in the `federal` rules (and your own):
 | `posture`, `syllabus` | (None.) | CourtListener's posture and syllabus. |
 | `opinion` | Everything after the line "OPINION". | The text of every opinion, the majority first. |
 
-The `federal` rules make these sections from the opinion, which your own
-rules (below them) can search too:
+The header rules make these sections from the opinion, which your own
+rules can search too:
 
 | Section | Holds |
 | --- | --- |
 | `opening_lines` | The first 4,000 characters of the opinion (not kept in the table). |
-| `caption` | The header's caption, if it names an appellant or appellee. Otherwise, the caption in the opinion's opening, from the first party's role through the second's (such as "Plaintiff-Appellee, v. JOHN DOE, Defendant-Appellant"). |
-| `caption1`, `caption2` | The caption before and after "v.", in the order of `party1` and `party2`. |
+| `caption` | CourtListener only: the header's caption, if it names an appellant or appellee. Otherwise, the caption in the opinion's opening, from the first party's role through the second's (such as "Plaintiff-Appellee, v. JOHN DOE, Defendant-Appellant"). |
+| `caption1`, `caption2` | CourtListener only: the caption before and after "v.", in the order of `party1` and `party2`. |
 | `panel_text` | The panel as the opinion's opening names it ("Before SMITH, JONES, and BROWN, Circuit Judges"). Otherwise, the `judges` section. |
 | `decision` | The decision as the opinion states it. |
 

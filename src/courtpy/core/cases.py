@@ -29,8 +29,8 @@ import pandas as pd
 _SEPARATOR: str = '; '
 _TRUE: frozenset[str] = frozenset({'true', 't', '1', 'yes'})
 _WHOLE_NUMBERS: frozenset[str] = frozenset({
-    'year', 'court_num', 'cluster_id', 'docket_id', 'author_id',
-    'citation_count'})
+    'year', 'court_num', 'lower_court_num', 'cluster_id', 'docket_id',
+    'author_id', 'citation_count'})
 
 
 @dataclasses.dataclass
@@ -43,7 +43,7 @@ class Case:
     Args:
         id: a unique name for the case, which becomes the row's label in the
             table (such as the CourtListener cluster id or the file name).
-        source: where the case came from: "court_listener" or "lexis_nexis".
+        source: where the case came from: "courtlistener" or "lexis_nexis".
         sections: sections of text that rules search, by name (such as
             "party", "disposition", and "opinion"). Defaults to an empty
             `dict`.

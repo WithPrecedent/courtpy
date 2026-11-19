@@ -149,7 +149,7 @@ class BulkData:
         courts: str | Iterable[str],
         start_date: str | None = None,
         end_date: str | None = None,
-        folder: pathlib.Path | str = 'court_listener',
+        folder: pathlib.Path | str = 'courtlistener',
         *,
         max_cases: int | None = None,
         overwrite: bool = False) -> list[pathlib.Path]:
@@ -162,7 +162,7 @@ class BulkData:
                 (no earliest date).
             end_date: latest date filed, as YYYY-MM-DD. Defaults to `None` (no
                 latest date).
-            folder: folder to save the cases in. Defaults to "court_listener".
+            folder: folder to save the cases in. Defaults to "courtlistener".
             max_cases: most cases to save. Defaults to `None` (every case).
             overwrite: whether to replace cases that were already saved with
                 their opinions. Defaults to `False`.
@@ -190,7 +190,7 @@ class BulkData:
             if not overwrite and courtlistener.is_complete(path):
                 continue
             courtlistener.save_case(path, {
-                'source': 'court_listener',
+                'source': 'courtlistener',
                 'bulk_date': date,
                 'court': court_records.get(court, {'id': court}),
                 'cluster': cluster,

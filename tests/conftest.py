@@ -101,7 +101,7 @@ def write_case(
     """Saves a CourtListener case the way the downloaders do."""
     path = courtpy.courtlistener.case_path(folder, court, cluster['id'])
     courtpy.courtlistener.save_case(path, {
-        'source': 'court_listener',
+        'source': 'courtlistener',
         'court': {
             'id': court,
             'full_name': 'Court of Appeals for the First Circuit',
@@ -117,7 +117,7 @@ def write_case(
 @pytest.fixture
 def court_listener_folder(tmp_path: pathlib.Path) -> pathlib.Path:
     """Returns a folder with three saved CourtListener cases."""
-    folder = tmp_path / 'court_listener'
+    folder = tmp_path / 'courtlistener'
     write_case(folder, make_cluster(1), [make_opinion(11, 1)])
     write_case(
         folder,

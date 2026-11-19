@@ -4,6 +4,106 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## Unreleased
+
+* "instructions/federal/courts.csv" uses levels that state courts can
+  share. **Breaking:** the level "district" is now "trial" and "supreme" is
+  now "high".
+* **Breaking:** the Supreme Court's `court` is "scotus" (it was
+  "supreme_court"), and the column of CourtListener's ids is
+  `courtlistener_name` (it was `courtlistener`).
+* "courts.csv" has a new `feature_name` column, the court's name as a label
+  for tables and plots (such as "District of Alabama" or "SCOTUS").
+* **Breaking:** the group of CourtListener courts for the Supreme Court is
+  `scotus` (it was `supreme_court`).
+* Each source has its own header rules, in
+  "instructions/sources/{source}/header.csv" (the Lexis-Nexis rules that
+  divide a case are in "sources/lexis_nexis" too). "general/header.csv"
+  keeps only the rules that fit every source. A `Source` names its header
+  rulebook in `header` ("courtlistener_header" or "lexis_nexis_header"),
+  which the parser applies before the others. **Breaking:** the "header"
+  rulebook is no longer part of "federal", `options._REQUIRED_RULEBOOKS` is
+  only "general", and `Parser.structures` is now `Parser.source_rules`.
+* The header rules name no courts or agencies of their own.
+  - A Lexis-Nexis case's `court_num` comes from the names of the courts in
+    the jurisdiction's "courts.csv" (`opinion_name`, then `fjc_name`; see
+    `rules.make_court_rules`), and a CourtListener case's from
+    CourtListener's id for its court (`courts.court_numbers_by_courtlistener_name`).
+    The judges' roster numbers its courts with the same rules.
+  - "courts.csv" has `opinion_name` patterns for the courts of appeals and
+    the Supreme Court, and rows for the Temporary Emergency Court of Appeals
+    (105) and the bankruptcy appellate panels (106 to 111). **Breaking:**
+    they were 998 and 999.
+  - **Breaking:** the `agency` column is gone. The agencies of the
+    jurisdiction's "agencies.csv" that each party and the history name are
+    `party1_agencies`, `party2_agencies`, and `history_agencies` (see
+    `rules.make_agency_rules`). In a party, an agency's name must end the
+    party or come before a comma, semicolon, closing parenthesis, or "et
+    al.", so a company named for an agency ("FMC WYOMING CORPORATION") is
+    not taken for it.
+* An abbreviation in "agencies.csv" (such as "CAB" or "FMC") no longer
+  matches right after a hyphen, where it is usually a judge's initials at
+  the end of a docket number ("06-CR-126-CAB"), not an agency.
+* Cases have `court_name` (courtpy's name for the court in "courts.csv",
+  such as "tenth_circuit") beside `court_num`, and `lower_court_num` and
+  `lower_court_name` for the trial or specialized court whose decision is
+  reviewed. The header rules find the court below in the history, by the
+  names in "courts.csv"; a CourtListener case has it from its docket's
+  "appeal_from" when the docket names it. The `opinion_name` of each
+  district court also matches the forms of Lexis-Nexis histories ("D. N.M.",
+  "D. of Kan.", and "W.D. Oklahoma").
+* Tighter header rules:
+  - `party1_united_states` and `party2_united_states` are the United
+    States itself ("UNITED STATES OF AMERICA", "U.S.", or "USA", also as a
+    relator's plaintiff), not a company or official named for it (such as
+    "U.S. Bank" or "United States Marshal").
+  - `docket_criminal` and `docket_civil` need a criminal or civil docket
+    number ("06-CR-126", "4:07CV00123", or "Criminal Action No. 07-123"),
+    not any word that starts with "cr" or "civ".
+  - `future_grant` needs a form of "grant" (not "approve" or "issued").
+  - The Lexis-Nexis `concurring_lines` and `dissenting_lines` are only lines
+    that start with "CONCUR" or "DISSENT" in capitals (such as "CONCUR BY:").
+* courtpy has techniques for `amos`'s "artist" and "critic" stages.
+  - Plots (`courtpy.plots`): `court_rates` (the measured rate of a column
+    in each court), `cases_over_time` and `issues_over_time` (cases, and
+    cases with each issue, of every court in each year, a panel per court),
+    `panel_composition` (the rate for each panel from "DDD" to "RRR"),
+    `lower_court_rates` (the rate for each court below, by reviewing
+    court), `trends_by_administration` (yearly rates with presidents'
+    terms shaded), and `judge_network`. Courts are labeled with their
+    `feature_name`.
+  - Evaluators (`courtpy.audits`): `audit_random_assignment` (balance of
+    case traits across panel compositions within court and year, with a
+    permutation test), `audit_parsing` (cases missing what the rules should
+    find, with examples), `audit_coverage` (cases against the Integrated
+    Database's appeals by court and year), and `validate_coding` (agreement
+    and Cohen's kappa with another source's coding).
+  - Inferer (`courtpy.inferers`): `panel_effects`, the effect of the
+    colleagues' party on a judge's vote, with court-year fixed effects,
+    standard errors clustered by case, and a randomization test.
+  - CI installs the `analysis` extra, so the tests of the plots run there
+    and mypy checks against the same packages as development.
+  - `courts.court_labels` labels each case's court in the table's order,
+    and `judges.republican_appointees` and `judges.panel_compositions`
+    describe each panel by its judges' parties.
+* **Breaking:** the `drop_text` cleaner is now `drop_text_columns`
+  (`coders.DropTextColumns`).
+* With `keep_text`, the table keeps the text of every section of each case
+  (such as `party`, `history`, `judges`, and `opinion`), not only the
+  opinions and the Lexis-Nexis header.
+* `parse_all` (`parsers.ParseAll`) parses loaded cases again from their kept
+  text, with each case's source's header rules, "general", and its
+  "rulebooks" ("federal" unless set), and makes `author`, `panel_size`,
+  `concurrences`, `dissents`, and `word_count` again. It replaces `amos`'s
+  `parse_all` in the `amos` library and does what it does when given
+  "rules".
+* `courts.court_table` reads the table of courts of any jurisdiction, and
+  `courts.court_names_by_courtlistener_name` maps CourtListener's ids to
+  courtpy's names for the courts.
+* **Breaking:** the CourtListener source is named "courtlistener" (it was
+  "court_listener"), and so is the default folder of its cases. The
+  `load_court_listener` loader keeps its name.
+
 ## 0.5.0
 
 courtpy follows the `amos` way of working more closely: its data are `amos`

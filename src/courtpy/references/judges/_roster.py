@@ -844,20 +844,19 @@ def _is_text(column: Any) -> bool:
 def _number_courts(courts: Iterable[str]) -> dict[str, int]:
     """Returns the numbers that the federal rules give courts.
 
-    The numbers come from the rules that make "court_num" for cases (in
-    "general/header.csv"), so a judge's court and a case's court always have
-    the same number.
+    The numbers come from the rules that make "court_num" for cases from the
+    names in the table of federal courts (see `rules.make_court_rules`), so
+    a judge's court and a case's court always have the same number.
 
     Args:
-        courts: names of courts of appeals and the Supreme Court.
+        courts: the Federal Judicial Center's names of courts of appeals and
+            the Supreme Court.
 
     Returns:
         The number of each court that the rules number, by its name.
 
     """
-    numbering = amos.parsers.Rulebook(rules = [
-        rule for rule in amos.parsers.Rulebook.create(rules.RULEBOOKS['header'])
-        if rule.names == ('court_num',)])
+    numbering = amos.parsers.Rulebook.create(rules.make_court_rules())
     names = list(dict.fromkeys(courts))
     found = numbering.apply(
         pd.DataFrame({'court': pd.Series(names, dtype = 'str')}))

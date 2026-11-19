@@ -1,0 +1,8 @@
+column,name,kind,pattern,value,flags,separator,note
+citation,cite_lexis,flags,\d+ U\.S\. APP\. LEXIS \d+,,"ignorecase, dotall",,Lexis citation
+future,future_cert_petition,flags,(certior|Supreme Court),,"ignorecase, dotall",,
+future,future_en_banc,flags,en banc,,"ignorecase, dotall",,
+future,future_grant,flags,\bGRANT(?:ED|ING|S)?\b,,ignorecase,,"Something later granted, such as rehearing or certiorari (""granted by"")"
+future,future_deny,flags,(denied|denial),,"ignorecase, dotall",,
+future,future_remand,flags,remand,,"ignorecase, dotall",,
+notice,notice_unpublished,flags,(unpublished|precedent),,"ignorecase, dotall",,

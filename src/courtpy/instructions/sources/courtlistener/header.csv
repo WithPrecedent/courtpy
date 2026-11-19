@@ -1,0 +1,8 @@
+column,name,kind,pattern,value,flags,separator,note
+party,caption,match,.*\bAPPELL(?:ANT|EE).*,,"ignorecase, dotall",,"The header's caption, if it names an appellant or appellee, so that the next rule is only used when it does not"
+opening_lines,caption,match,"(?:(?:Cross[-–— ]{1,3})?(?:Appell(?:ant|ee)s?|APPELL(?:ANT|EE)S?)[\s\-–—/,]{1,4}){0,2}(?:Cross[-–— ]{1,3})?(?:Appell(?:ant|ee)s?|APPELL(?:ANT|EE)S?)(?:(?![a-z]{4}).){0,100}?(?:\b[Vv]ersus\b|\bVERSUS\b|\b[Vv]s?\.)[\s\-–—]{1,3}(?:.{0,300}?(?:Cross[-–— ]{1,3})?(?:Appell(?:ant|ee)s?|APPELL(?:ANT|EE)S?)\b)?|[A-Z][A-Zc .,'’&;-]{3,200}?\s+v\.\s+[A-Z]{2}.{0,300}?[,\s]\s*(?:Cross[-–— ]{1,3})?(?:Appell(?:ant|ee)s?|APPELL(?:ANT|EE)S?)\b(?=[.,;\s]*(?:_|On\s|ON\s|Appeals?\s|APPEALS?\s))",,,,"Otherwise, the caption in the opinion's opening: a role before ""v."" (such as ""Plaintiff-Appellee, v.""), with only punctuation, docket numbers, or capital letters between them, through the other party's role if it is near; or a first party in capital letters and a role after the second (as the Third Circuit writes them)"
+caption,"caption1, caption2",split,\b[Vv]ersus\b|\bVERSUS\b|\b[Vv]s?\.(?=[\s\-–—]),,,,"Divides the caption at ""v."", in the same order as the parties"
+caption1,party1_appellant,flags,(?<!CROSS-)APPELLANT,,"ignorecase, dotall",,
+caption1,party1_appellee,flags,(?<!CROSS-)APPELLEE,,"ignorecase, dotall",,
+caption2,party2_appellant,flags,(?<!CROSS-)APPELLANT,,"ignorecase, dotall",,
+caption2,party2_appellee,flags,(?<!CROSS-)APPELLEE,,"ignorecase, dotall",,

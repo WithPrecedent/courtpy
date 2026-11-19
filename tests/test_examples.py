@@ -26,7 +26,7 @@ ISSUES = (
 
 def test_federal_appeals_example(tmp_path: pathlib.Path) -> None:
     rng = random.Random(7)
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     for number in range(1, 81):
         court = rng.choice(['ca1', 'ca2', 'ca9'])
         text = ' '.join(rng.sample(ISSUES, 2))

@@ -31,7 +31,7 @@ consolidated several appeals then has each appeal's record on its own row:
 ```python
 import courtpy
 
-cases = courtpy.parse("data/court_listener")
+cases = courtpy.parse("data/courtlistener")
 dockets = courtpy.code(cases, ["cases_to_dockets", "add_idb"], parameters = {
     "add_idb": {"columns": "appeal_type, judgment_date, published"}})
 ```

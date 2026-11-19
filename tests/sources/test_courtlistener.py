@@ -168,6 +168,27 @@ def test_read_case(court_listener_folder: pathlib.Path) -> None:
     assert '§ 922(g)' in first.sections['opinion']
 
 
+@pytest.mark.parametrize(('docket', 'lower'), [
+    # The API names the court appealed from by its address, and the bulk data
+    # by its id.
+    ({'appeal_from': 'https://www.courtlistener.com/api/rest/v4/courts/mad/'},
+     (1026, 'district_of_massachusetts')),
+    ({'appeal_from_id': 'NYSD'}, (1104, 'southern_district_of_new_york')),
+    ({'appeal_from_id': 'nowhere'}, (None, None)),
+    (None, (None, None))])
+def test_read_case_finds_the_courts(
+    tmp_path: pathlib.Path,
+    docket: dict[str, Any] | None,
+    lower: tuple[int | None, str | None]) -> None:
+    path = tmp_path / 'ca1' / '1.json'
+    courtlistener.save_case(path, {
+        'source': 'courtlistener', 'court': {'id': 'ca1'}, 'cluster': make_cluster(1),
+        'docket': docket, 'citations': [], 'opinions': [make_opinion(11, 1)]})
+    metadata = courtlistener.read_case(path).metadata
+    assert (metadata['court_num'], metadata['court_name']) == (1, 'first_circuit')
+    assert (metadata['lower_court_num'], metadata['lower_court_name']) == lower
+
+
 @pytest.mark.parametrize(('kind', 'role'), [
     ('010combined', 'majority'), ('020lead', 'majority'), ('Lead Opinion', 'majority'),
     ('030concurrence', 'concurrence'), ('035concurrenceinpart', 'mixed'),

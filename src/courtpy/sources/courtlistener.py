@@ -13,7 +13,7 @@ run by the Free Law Project. Its opinions can be downloaded in two ways:
   have no limits, but are very large and are updated every three months.
 
 Both save each case as a JSON file named for its CourtListener cluster id, in
-a folder named for its court (such as "court_listener/ca1/4567890.json"),
+a folder named for its court (such as "courtlistener/ca1/4567890.json"),
 which `read_case` turns into a `Case` for parsing.
 
 Contents:
@@ -55,6 +55,7 @@ import amos
 import requests
 
 from ..core import cases, options, secrets, utilities
+from ..references import courts
 from . import base
 
 logger = logging.getLogger(__name__)
@@ -201,7 +202,7 @@ class CourtListener:
         courts: str | Iterable[str],
         start_date: str | None = None,
         end_date: str | None = None,
-        folder: pathlib.Path | str = 'court_listener',
+        folder: pathlib.Path | str = 'courtlistener',
         *,
         max_cases: int | None = None,
         dockets: bool = False,
@@ -222,7 +223,7 @@ class CourtListener:
                 (no earliest date).
             end_date: latest date filed, as YYYY-MM-DD. Defaults to `None` (no
                 latest date).
-            folder: folder to save the cases in. Defaults to "court_listener".
+            folder: folder to save the cases in. Defaults to "courtlistener".
             max_cases: most cases to save in each court in this run. Defaults
                 to `None` (every case).
             dockets: whether to also download each case's docket (every
@@ -256,7 +257,7 @@ class CourtListener:
     def download_case(
         self,
         cluster_id: int | str,
-        folder: pathlib.Path | str = 'court_listener') -> pathlib.Path:
+        folder: pathlib.Path | str = 'courtlistener') -> pathlib.Path:
         """Downloads one case by its CourtListener cluster id.
 
         This takes four requests: the case, its opinions, its docket (which
@@ -266,7 +267,7 @@ class CourtListener:
         Args:
             cluster_id: the id of the opinion cluster (the number in the
                 case's CourtListener address, after "/opinion/").
-            folder: folder to save the case in. Defaults to "court_listener".
+            folder: folder to save the case in. Defaults to "courtlistener".
 
         Returns:
             The path of the saved case.
@@ -568,7 +569,7 @@ class CourtListener:
         if court is None and docket_record and docket_record.get('court_id'):
             court = self.court(str(docket_record['court_id']))
         record = {
-            'source': 'court_listener',
+            'source': 'courtlistener',
             'court': dict(court or {'id': court_id}),
             'cluster': {
                 k: v for k, v in cluster.items() if k != 'sub_opinions'},
@@ -652,12 +653,14 @@ class CourtListenerSource(base.Source):
     """Reads cases saved by `CourtListener` or `courtpy.bulk.BulkData`.
 
     Each case is a JSON file (see `read_case`), whose sections come from its
-    data, so no rules are needed to find them.
+    data, so no rules are needed to find them. The "courtlistener_header"
+    rules find the parties and judges in them.
 
     """
 
-    name: ClassVar[str] = 'court_listener'
+    name: ClassVar[str] = 'courtlistener'
     pattern: ClassVar[str] = '*.json'
+    header: ClassVar[str] = 'courtlistener_header'
 
     """ Required Methods """
 
@@ -801,7 +804,15 @@ def read_case(path: pathlib.Path | str) -> cases.Case:
 
     The sections of text have the same names as the sections that rules find
     in Lexis-Nexis cases (such as "party", "history", "counsel", and
-    "judges"), so that the same rules work for both.
+    "judges"), so that the same rules work for both. "court_num" and
+    "court_name" are courtpy's number and name for the case's court, found
+    by CourtListener's id for it in the table of courts of
+    `options._DEFAULT_JURISDICTION` (see
+    `courtpy.courts.court_numbers_by_courtlistener_name`), and
+    "lower_court_num" and "lower_court_name" are those of the court appealed
+    from, by the docket's id for it. Each is `None` if the table does not
+    have the court (the header rules then look for the court appealed from
+    in the history).
 
     Args:
         path: path of a case saved by `CourtListener` or `BulkData`.
@@ -867,12 +878,23 @@ def read_case(path: pathlib.Path | str) -> cases.Case:
         for k, v in sections.items() if v}
     date_filed = _first(cluster.get('date_filed'))
     status = _first(cluster.get('precedential_status'))
+    court_id = court.get('id') or docket.get('court_id')
+    lower_id = _court_id_from(
+        docket.get('appeal_from_id') or docket.get('appeal_from'))
+    numbers = courts.court_numbers_by_courtlistener_name(
+        options._DEFAULT_JURISDICTION)
+    names = courts.court_names_by_courtlistener_name(
+        options._DEFAULT_JURISDICTION)
     metadata: dict[str, Any] = {
-        'source': 'court_listener',
+        'source': 'courtlistener',
         'cluster_id': cluster.get('id'),
         'docket_id': cluster.get('docket_id') or docket.get('id') or (
             _id_from_url(cluster.get('docket'))),
-        'court': court.get('id') or docket.get('court_id'),
+        'court': court_id,
+        'court_num': numbers.get(str(court_id or '').lower()),
+        'court_name': names.get(str(court_id or '').lower()),
+        'lower_court_num': numbers.get(lower_id or ''),
+        'lower_court_name': names.get(lower_id or ''),
         'case_name': _first(cluster.get('case_name')),
         'docket_number': sections.get('docket_number'),
         'citation': sections.get('citation'),
@@ -901,7 +923,7 @@ def read_case(path: pathlib.Path | str) -> cases.Case:
         metadata['scdb_id'] = _first(cluster.get('scdb_id'))
     return cases.Case(
         id = str(cluster.get('id') or path.stem),
-        source = 'court_listener',
+        source = 'courtlistener',
         sections = sections,
         metadata = metadata,
         path = path)
@@ -1001,6 +1023,28 @@ def _first(*values: Any) -> str:
         if value not in (None, '') and str(value).strip():
             return str(value).strip()
     return ''
+
+
+def _court_id_from(value: Any) -> str | None:
+    """Returns CourtListener's id for a court that a docket refers to.
+
+    Bulk dockets name the court appealed from by its id ("appeal_from_id",
+    such as "mad"), and the API by its address ("appeal_from", such as
+    "https://www.courtlistener.com/api/rest/v4/courts/mad/").
+
+    Args:
+        value: a court's id, its address, a `dict` with its "id", or `None`.
+
+    Returns:
+        The id in lower case, or `None` if `value` is blank.
+
+    """
+    if isinstance(value, Mapping):
+        value = value.get('id')
+    if value in (None, ''):
+        return None
+    text = str(value).strip().rstrip('/')
+    return text.rsplit('/', 1)[-1].lower() or None
 
 
 def _id_from_url(url: Any) -> int | None:

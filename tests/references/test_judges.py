@@ -686,7 +686,7 @@ def test_build_roster_merges_by_judge() -> None:
 def test_cases_to_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # The example study of judges' votes, on invented cases.
     rng = random.Random(7)
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     bench = ['Lynch', 'Howard', 'Thompson', 'Stone', 'Woods']
     for number in range(1, 91):
         panel = rng.sample(bench, 3)
@@ -743,7 +743,7 @@ def test_techniques_in_a_wrangler(
     tmp_path: pathlib.Path) -> None:
     # As techniques of the wrangler (after the loader), they take parameters,
     # such as a roster and a table of years that are not in the usual places.
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     folder.parent.mkdir()
     court_listener_folder.rename(folder)
     # The mergers find the files that their "source" names as the clerk finds
@@ -1032,3 +1032,22 @@ def test_dockets_to_votes(court_listener_folder: pathlib.Path, roster: judges.Ro
     assert not {'case_docket', 'docket'} & set(back.data.columns)
     with pytest.raises(KeyError, match = 'cases_to_dockets'):
         judges.DocketsToVotes().shape(pd.DataFrame({'x': [1]}), roster = roster)
+
+
+def test_panel_compositions() -> None:
+    seats = pd.DataFrame({
+        'judge_party1': [-1, 1, -1, 1],
+        'judge_party2': [-1, 1, 1, 1],
+        'judge_party3': [-1, 1, 1, None]})
+    assert courtpy.judges.republican_appointees(seats).tolist() == [0, 3, 2, pd.NA]
+    found = courtpy.judges.panel_compositions(seats)
+    assert found.tolist()[:3] == ['DDD', 'RRR', 'DRR'] and pd.isna(found.iloc[3])
+    assert list(found.cat.categories) == ['DDD', 'DDR', 'DRR', 'RRR']
+    # A fourth judge makes a panel of another size.
+    four = seats.assign(judge_party4 = [None, 1, None, None])
+    assert courtpy.judges.republican_appointees(four).tolist()[:2] == [0, pd.NA]
+    # From code_panels' mean party.
+    means = pd.DataFrame({'panel_party': [-1 / 3, 1.0, 0.5], 'panel_found': [3, 3, 2]})
+    assert courtpy.judges.republican_appointees(means).tolist() == [1, 3, pd.NA]
+    with pytest.raises(KeyError, match = 'add_biography'):
+        courtpy.judges.republican_appointees(pd.DataFrame({'year': [2008]}))

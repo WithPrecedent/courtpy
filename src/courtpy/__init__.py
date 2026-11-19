@@ -52,6 +52,7 @@ __all__: list[str] = [
     'Source',
     'SourceLoader',
     'Votes',
+    'audits',
     'bulk',
     'cases',
     'code',
@@ -60,6 +61,7 @@ __all__: list[str] = [
     'courts',
     'datasets',
     'fjc_idb',
+    'inferers',
     'jcs',
     'judges',
     'lexis',
@@ -67,6 +69,7 @@ __all__: list[str] = [
     'options',
     'parse',
     'parsers',
+    'plots',
     'politics',
     'rules',
     'scdb',
@@ -84,6 +87,7 @@ from amos import Project
 # Importing the modules of the wrangler and of the reference data adds their
 # techniques to the `amos` library, so they can be named in settings as soon
 # as courtpy is imported.
+from .artist import plots
 from .core import cases, datasets, options, secrets, utilities
 from .core.cases import Case
 from .core.datasets import (
@@ -96,6 +100,7 @@ from .core.datasets import (
     PartyTypes,
     Votes,
 )
+from .critic import audits, inferers
 from .references import courts, fjc_idb, jcs, judges, politics, scdb, scores
 from .sources import bulk, courtlistener, lexis
 from .sources.base import Download, Source
@@ -111,6 +116,6 @@ from .wrangler.parsers import Parser, parse
 for _module in (
         cases, datasets, options, secrets, utilities, bulk, courtlistener,
         lexis, coders, loaders, parsers, rules, shapers, courts, fjc_idb, jcs,
-        judges, politics, scdb, scores):
+        judges, politics, scdb, scores, plots, audits, inferers):
     _short = _module.__name__.rpartition('.')[2]
     sys.modules.setdefault(f'{__name__}.{_short}', _module)

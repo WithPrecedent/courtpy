@@ -14,9 +14,21 @@ topic applies the general rules and then the jurisdiction's (see
 `find_rule_files`). courtpy reads only federal cases so far, so every
 rulebook here is federal.
 
-The rules that find the sections of a source's cases are in a folder named
-for the source, with a file for each kind of court (such as
-"lexis_nexis/federal_appellate.csv"; see `find_structure_file`).
+Each source's rules are in its folder of "sources" (such as
+"sources/lexis_nexis"): the rules that find the sections of its cases, with
+a file for each kind of court (such as "federal_appellate.csv"; see
+`find_structure_file`), and the rules of its header ("header.csv"). The
+header rulebook of a source (see `make_header_rules`) applies
+"general/header.csv" (the rules that fit every source), rules made from the
+jurisdiction's "agencies.csv" that find the agencies named in each party and
+the history (see `make_agency_rules`), the source's "header.csv", and, for a
+source whose cases name their court in text, rules made from the
+jurisdiction's "courts.csv" that find "court_num" and "court_name" (see
+`make_court_rules`). Rules made from "courts.csv" also find the court whose
+decision is reviewed in every source's history ("lower_court_num" and
+"lower_court_name").
+So the header rules name no courts or agencies of their own, and a court or
+agency added to the tables is found without changing them.
 
 `register_rulebooks` makes a rulebook of each topic, a subclass of
 `amos.parsers.ParseAll` that is added to the `amos` library, so it has a name
@@ -25,9 +37,13 @@ the "rules" of `parse_all` can use (such as "federal" or "civil"). Each is
 also a technique of its own (such as `parse_civil`), which searches the
 columns of text of a dataset (such as "opinion", which a case loader keeps
 with "keep_text"). A study can make rulebooks of its own folders of rules the
-same way. courtpy's own are in `RULEBOOKS`: "header", "general",
+same way. courtpy's own are in `RULEBOOKS`: "general",
 "citations", "civil", "constitutional", "criminal", "review", "agencies",
-"federal" (all of those, in that order), and "lexis_nexis".
+"federal" (all of those, in that order), the header rulebooks "header" (for
+a source with no rules of its own), "courtlistener_header", and
+"lexis_nexis_header", and "lexis_nexis", which finds the sections of a
+Lexis-Nexis case. The parser applies a source's header rulebook (named by
+its `header`) before the others.
 
 Rules that make several values in one cell (`names`, `matches`, and
 `categories` rules, such as "panel_judges", "citations_case", and
@@ -42,12 +58,27 @@ Contents:
     find_rule_files: returns the files of rules of a topic in a jurisdiction.
     find_structure_file: returns the file of rules that finds the sections
         of a source's cases.
+    make_agency_rules: returns rules that find the agencies named in
+        sections of the header.
+    make_court_rules: returns rules that find a case's court from its
+        name.
+    make_header_rules: returns the rules of a source's header.
     register_rulebooks: makes a rulebook of each topic in folders of rule
         files.
+    _AGENCY_COLUMNS: the sections of the header whose agencies are found.
+    _PARTY_AGENCY_END: what must follow an agency's name in a party.
+    _PARTY_COLUMNS: the sections of the header that are parties.
     _CASE_TYPE_TOPICS: the topics whose rules' prefixes are case types.
+    _COURT_NAME_COLUMNS: the columns of a table of courts with patterns of
+        their names, in the order they are tried.
     _GENERAL: the folder of the rules that fit every jurisdiction.
+    _HEADER: the stem of the files of header rules.
+    _LOWER_COURT_LEVELS: the levels of courts, in the order they are tried,
+        that the history is searched for to find the court whose decision is
+        reviewed.
     _INSTRUCTIONS: courtpy's "instructions" folder.
     _JURISDICTION: the jurisdiction of the cases that courtpy reads.
+    _SOURCES: the folder of the rules of each source.
     _TOPICS: the topics of courtpy's rules, in the order of the "federal"
         rulebook.
 
@@ -61,11 +92,36 @@ from collections.abc import Sequence
 from typing import Any
 
 import amos
+import pandas as pd
 
 from ..core import utilities
+from ..references import courts
 
 _INSTRUCTIONS = utilities.instructions_folder()
 _GENERAL = _INSTRUCTIONS / 'general'
+_SOURCES = _INSTRUCTIONS / 'sources'
+_HEADER = 'header'
+# The sections of the header whose agencies are found, each into a column of
+# its own ("party1_agencies" and so on), so a study can tell an agency that
+# is a party from one whose decision is reviewed.
+_AGENCY_COLUMNS: tuple[str, ...] = ('party1', 'party2', 'history')
+# An agency that is a party is named as a party of its own, so its name ends
+# the party or comes before a comma ("..., Respondent"), a semicolon (between
+# parties), a closing parenthesis, or "et al." A name followed by other words
+# is part of another party's name (such as "FMC WYOMING CORPORATION").
+_PARTY_AGENCY_END: str = r'(?=\s*(?:[,;)]|\.?\s*$|(?i:et\s+al)\b))'
+# The sections of the header that are parties, whose agencies must end a party
+# (see `_PARTY_AGENCY_END`).
+_PARTY_COLUMNS: tuple[str, ...] = ('party1', 'party2')
+# A court is found by how opinions name it before the Federal Judicial
+# Center's names for it, which opinions rarely use.
+_COURT_NAME_COLUMNS: tuple[str, ...] = ('opinion_name', 'fjc_name')
+# The courts whose decisions the courts of appeals review. The history of an
+# appeal also cites earlier appeals and remands from the Supreme Court, which
+# are not the court below, so courts of appeals and the Supreme Court are left
+# out. (A CourtListener case of the Supreme Court has the court below from its
+# docket.)
+_LOWER_COURT_LEVELS: tuple[str, ...] = ('trial', 'specialty')
 # The folder of the rules of each jurisdiction is named for it. courtpy reads
 # only federal cases so far.
 _JURISDICTION = 'federal'
@@ -73,9 +129,11 @@ _JURISDICTION = 'federal'
 # name (such as "tort" in "tort_negligence") is a case type.
 _CASE_TYPE_TOPICS: tuple[str, ...] = ('criminal', 'civil', 'constitutional')
 # The topics of the built-in rules, in the order of the "federal" rulebook.
+# The header rules are not among them, since they depend on the source (see
+# `make_header_rules`).
 _TOPICS: tuple[str, ...] = (
-    'header', 'general', 'citations', 'civil', 'constitutional', 'criminal',
-    'review', 'agencies')
+    'general', 'citations', 'civil', 'constitutional', 'criminal', 'review',
+    'agencies')
 
 
 """ Public Functions """
@@ -151,7 +209,7 @@ def find_structure_file(source: str, courts: str) -> pathlib.Path:
 
     Args:
         source: the name of the source, which is also the name of its folder
-            of rules, such as "lexis_nexis".
+            of rules in `_SOURCES`, such as "lexis_nexis".
         courts: the kind of courts whose cases the rules fit, which is the
             stem of the file, such as "federal_appellate".
 
@@ -162,11 +220,168 @@ def find_structure_file(source: str, courts: str) -> pathlib.Path:
         The path of the file.
 
     """
-    path = _INSTRUCTIONS / source / f'{courts}.csv'
+    path = _SOURCES / source / f'{courts}.csv'
     if not path.is_file():
         message = f'there are no rules for {courts!r} cases of {source!r}'
         raise FileNotFoundError(message)
     return path
+
+
+def make_agency_rules(
+    jurisdiction: str | None = _JURISDICTION,
+    columns: Sequence[str] = _AGENCY_COLUMNS,
+    party_columns: Sequence[str] = _PARTY_COLUMNS) -> list[dict[str, Any]]:
+    """Returns rules that find the agencies named in sections of the header.
+
+    Each rule of the jurisdiction's "agencies" files (see `find_rule_files`)
+    is made into a rule for each of `columns`, which searches only that
+    column and makes "{column}_agencies" (such as "party1_agencies"), so
+    that the header names no agencies of its own. In a column of
+    `party_columns`, an agency's name must end a party (see
+    `_PARTY_AGENCY_END`), so that a company or person named for an agency is
+    not taken for it.
+
+    Args:
+        jurisdiction: the folder of the jurisdiction's rules, such as
+            "federal". Defaults to `_JURISDICTION`. If it is `None`, only
+            the general rules are read.
+        columns: the sections to search. Defaults to `_AGENCY_COLUMNS`
+            ("party1", "party2", and "history").
+        party_columns: the sections of `columns` that are parties. Defaults
+            to `_PARTY_COLUMNS` ("party1" and "party2").
+
+    Returns:
+        The rules, as `dict`s with the columns of a file of rules, ordered by
+            column and then by the order of the files. They are empty if
+            there are no "agencies" files.
+
+    """
+    try:
+        paths = find_rule_files('agencies', jurisdiction)
+    except FileNotFoundError:
+        return []
+    tables = [
+        utilities.read_csv(path, dtype = str, keep_default_na = False)
+        for path in paths]
+    made: list[dict[str, Any]] = []
+    for column in columns:
+        for table in tables:
+            for row in table.to_dict('records'):
+                rule = {str(key): value for key, value in row.items()}
+                rule.update(column = column, name = f'{column}_agencies')
+                if column in party_columns:
+                    rule['pattern'] = (
+                        f'(?:{rule["pattern"]}){_PARTY_AGENCY_END}')
+                made.append(rule)
+    return made
+
+
+def make_court_rules(
+    jurisdiction: str = _JURISDICTION,
+    column: str = 'court',
+    *,
+    prefix: str = '',
+    levels: Sequence[str] | None = None) -> list[dict[str, Any]]:
+    """Returns rules that find a case's court from its name.
+
+    Each court of the jurisdiction's table of courts (see
+    `courtpy.courts.court_table`) gives two `category` rules for each
+    pattern of its names: one makes "{prefix}court_num" (its number) and the
+    other "{prefix}court_name" (its `court`, such as "tenth_circuit"), if
+    the pattern matches, ignoring case. Every court's "opinion_name" is
+    tried before any court's "fjc_name". Within each, the courts are tried in
+    the order of `levels`, and then in the order of the table (the courts
+    of appeals and the Supreme Court before the district courts, so that
+    "DISTRICT OF COLUMBIA" does not take the D.C. Circuit's cases).
+
+    Args:
+        jurisdiction: the folder of the jurisdiction's instructions, such as
+            "federal". Defaults to `_JURISDICTION`.
+        column: the section with the name of the court. Defaults to "court".
+        prefix: text put before the names of the columns that the rules make
+            (such as "lower_" for the court whose decision is reviewed).
+            Defaults to "", which makes "court_num" and "court_name".
+        levels: the levels of courts (as in the table's "level") to try, in
+            order. Courts of other levels are left out. Defaults to `None`,
+            which tries every court in the order of the table.
+
+    Returns:
+        The rules, as `dict`s with the columns of a file of rules. They are
+            empty if the jurisdiction has no table of courts.
+
+    """
+    try:
+        table = courts.court_table(jurisdiction)
+    except FileNotFoundError:
+        return []
+    if levels is not None:
+        rank = {level: place for place, level in enumerate(levels)}
+        table = table[table['level'].isin(rank)].sort_values(
+            'level', key = lambda found: found.map(rank), kind = 'stable')
+    made: list[dict[str, Any]] = []
+    for names in _COURT_NAME_COLUMNS:
+        for number, name, pattern in zip(
+                table['court_num'], table['court'], table[names],
+                strict = True):
+            if pd.isna(pattern) or not str(pattern).strip():
+                continue
+            note = f'From the {names} of {name} in courts.csv'
+            for made_name, value in (
+                    ('court_num', str(number)), ('court_name', str(name))):
+                made.append({
+                    'column': column,
+                    'name': f'{prefix}{made_name}',
+                    'kind': 'category',
+                    'pattern': str(pattern),
+                    'value': value,
+                    'flags': 'ignorecase',
+                    'note': note})
+    return made
+
+
+def make_header_rules(
+    source: str | None = None,
+    jurisdiction: str = _JURISDICTION,
+    *,
+    courts_named: bool = False) -> list[Any]:
+    """Returns the rules of a source's header.
+
+    The rules are, in order: "general/header.csv" (which divides the parties
+    and finds their roles, the disposition, the counsel, and the judges),
+    the rules of `make_agency_rules`, rules of `make_court_rules` that find
+    the court whose decision is reviewed in the history ("lower_court_num"
+    and "lower_court_name", trying the levels of `_LOWER_COURT_LEVELS` in
+    order), the source's "header.csv" in `_SOURCES` (if it has one), and,
+    if `courts_named`, the rules of `make_court_rules` that find the case's
+    own court ("court_num" and "court_name").
+
+    Args:
+        source: the name of the source, which is also the name of its folder
+            of rules in `_SOURCES`, such as "lexis_nexis". Defaults to
+            `None`, which uses only the rules that fit every source.
+        jurisdiction: the folder of the jurisdiction's rules, such as
+            "federal". Defaults to `_JURISDICTION`.
+        courts_named: whether the source's cases name their court in a
+            "court" section that `make_court_rules` should search. Defaults
+            to `False` (as for CourtListener, whose cases have the id of
+            their court, and of the court below if the docket names it).
+
+    Returns:
+        The rules, in any form that `amos.parsers.Rulebook.create` accepts.
+
+    """
+    found: list[Any] = [_GENERAL / f'{_HEADER}.csv']
+    found.extend(make_agency_rules(jurisdiction))
+    found.extend(make_court_rules(
+        jurisdiction, 'history', prefix = 'lower_',
+        levels = _LOWER_COURT_LEVELS))
+    if source is not None:
+        path = _SOURCES / source / f'{_HEADER}.csv'
+        if path.is_file():
+            found.append(path)
+    if courts_named:
+        found.extend(make_court_rules(jurisdiction))
+    return found
 
 
 def register_rulebooks(
@@ -278,14 +493,30 @@ def _make_rulebook(
 """ Rulebooks """
 
 # courtpy's own rulebooks: the federal rules of each topic (the general file
-# and then the federal one), "federal" for all of them, and the rules that
-# find the sections of a Lexis-Nexis case.
+# and then the federal one), "federal" for all of them, the rules of each
+# source's header, and the rules that find the sections of a Lexis-Nexis
+# case.
 RULEBOOKS: dict[str, type[amos.parsers.ParseAll]] = {
     **register_rulebooks(
         _GENERAL,
         _INSTRUCTIONS / _JURISDICTION,
         topics = _TOPICS,
         combined = _JURISDICTION),
+    _HEADER: _make_rulebook(
+        _HEADER,
+        make_header_rules(),
+        'Finds the parties, their roles, and the judges in the header of a '
+        'case from a source with no header rules of its own.'),
+    f'courtlistener_{_HEADER}': _make_rulebook(
+        f'courtlistener_{_HEADER}',
+        make_header_rules('courtlistener'),
+        'Finds the parties, their roles, and the judges in a CourtListener '
+        'case.'),
+    f'lexis_nexis_{_HEADER}': _make_rulebook(
+        f'lexis_nexis_{_HEADER}',
+        make_header_rules('lexis_nexis', courts_named = True),
+        'Finds the court, the parties, their roles, and the judges in the '
+        'header of a Lexis-Nexis case.'),
     'lexis_nexis': _make_rulebook(
         'lexis_nexis',
         find_structure_file('lexis_nexis', 'federal_appellate'),

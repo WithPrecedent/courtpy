@@ -25,10 +25,10 @@ input_folder = data
 appeals_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_court_listener, drop_text
+techniques = load_court_listener, drop_text_columns
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 download = bulk
 courts = federal_circuits
 start_date = 2019-01-01
@@ -288,8 +288,8 @@ class SourceLoader(CaseLoader, abc.ABC):
     | `start_date`, `end_date` | Dates filed to download (YYYY-MM-DD). |
     | `max_cases` | Most cases to download. |
     | `overwrite` | Whether to download cases that were already saved. |
-    | `rulebooks` | Rules to parse with (such as "civil, criminal"), after "header" and "general", which are always applied. Defaults to "federal". |
-    | `keep_text` | Whether to keep the text of the opinions in the table. |
+    | `rulebooks` | Rules to parse with (such as "civil, criminal"), after the source's header rules and "general", which are always applied. Defaults to "federal". |
+    | `keep_text` | Whether to keep the text of the cases' sections (such as "party", "history", and "opinion") in the table, which `parse_all` can parse again. |
     | `limit` | Most cases to parse, for trying out rules. |
     | `workers` | Number of processes to parse with. |
 
@@ -298,7 +298,7 @@ class SourceLoader(CaseLoader, abc.ABC):
 
     Attributes:
         reads: the name of the source of the saved cases, such as
-            "court_listener".
+            "courtlistener".
 
     """
 
@@ -342,8 +342,8 @@ class SourceLoader(CaseLoader, abc.ABC):
                 Defaults to `False`.
             rulebooks: rules to parse with. Defaults to `None`, in which case
                 `options._DEFAULT_JURISDICTION` is used.
-            keep_text: whether to keep the text of the opinions. Defaults to
-                `False`.
+            keep_text: whether to keep the text of the cases' sections.
+                Defaults to `False`.
             limit: most cases to parse. Defaults to `None` (every case).
             workers: number of processes to parse with. Defaults to `None`
                 (one).
@@ -385,7 +385,7 @@ class LoadCourtListener(SourceLoader):
     """Collects, parses, and codes cases from CourtListener.
 
     The source is a folder of cases saved by `courtpy.BulkData` or
-    `courtpy.CourtListener` (by default, "court_listener" in the clerk's input
+    `courtpy.CourtListener` (by default, "courtlistener" in the clerk's input
     folder). If "download" is set, the cases are downloaded into it first:
     "bulk" extracts them from CourtListener's bulk data (no API key needed),
     and "api" downloads them with the API (with the key from
@@ -403,8 +403,8 @@ class LoadCourtListener(SourceLoader):
 
     """
 
-    default_source: ClassVar[str | None] = 'court_listener'
-    reads: ClassVar[str] = 'court_listener'
+    default_source: ClassVar[str | None] = 'courtlistener'
+    reads: ClassVar[str] = 'courtlistener'
 
 
 @dataclasses.dataclass
@@ -556,10 +556,10 @@ def _parse(
 
     Args:
         folder: the folder of saved cases.
-        source: the name of their source, such as "court_listener".
+        source: the name of their source, such as "courtlistener".
         rulebooks: rules to parse with, or `None` (or blank) for
             `options._DEFAULT_JURISDICTION`.
-        keep_text: whether to keep the text of the opinions.
+        keep_text: whether to keep the text of the cases' sections.
         limit: most cases to parse, or `None` for every case.
         workers: number of processes to parse with, or `None` for one.
 

@@ -19,7 +19,7 @@ label = outcome_criminal_defendant_won
 criminal_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_cases, filter_rows, drop_missing, drop_text
+techniques = load_cases, filter_rows, drop_missing, drop_text_columns
 
 [load_cases_parameters]
 source = cases.csv
@@ -72,7 +72,7 @@ votes_workers = wrangler, analyst, critic
 techniques = load_court_listener, filter_rows, keep_columns, drop_missing
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 coders = code_parties, code_case_type, code_outcome, code_panels, add_executive, cases_to_votes
 
 [filter_rows_parameters]
@@ -120,7 +120,7 @@ seed = 43
 label = judge_dissented
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 coders = code_parties, code_case_type, code_outcome, cases_to_votes, cases_to_judges
 ```
 
@@ -161,7 +161,7 @@ downloads the scores from their sources the first time):
 
 ```ini
 [wrangler]
-techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text
+techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text_columns
 ```
 
 Each matches the case's date ("date_filed") to a table of date ranges, so a
@@ -211,7 +211,7 @@ label = outcome_reversal
 techniques = load_court_listener, add_scdb, filter_rows, keep_columns
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 download = bulk
 courts = scotus
 start_date = 2000-01-01
@@ -250,7 +250,7 @@ groups = case_id
 techniques = load_court_listener, cases_to_dockets, add_idb, filter_rows, keep_columns, drop_missing
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 download = bulk
 courts = federal_circuits
 start_date = 2015-01-01
@@ -285,7 +285,7 @@ opinion,chevron_mentions,counts,\bChevron\b,,,,
 ```
 
 ```python
-table = courtpy.parse("court_listener", rulebooks = ["federal", "deference.csv"])
+table = courtpy.parse("courtlistener", rulebooks = ["federal", "deference.csv"])
 ```
 
 or, in a settings file, `rulebooks = federal, deference.csv` in the loader's
@@ -294,11 +294,11 @@ file first with `courtpy rules deference.csv`.
 
 For a quick look without a file of rules, keep the opinions' text and search
 it with `amos`'s parsers, such as `parse_flags` and `parse_counts`, after the
-loader. `drop_text` then removes the text before the analysis:
+loader. `drop_text_columns` then removes the text before the analysis:
 
 ```toml
 [wrangler]
-techniques = "load_court_listener, parse_flags, parse_counts, drop_text"
+techniques = "load_court_listener, parse_flags, parse_counts, drop_text_columns"
 
 [load_court_listener_parameters]
 keep_text = true
@@ -343,7 +343,7 @@ cases added since. Run the same command each week (for example, with Windows
 Task Scheduler or cron):
 
 ```sh
-courtpy download api --courts federal_circuits --start 2026-01-01 --folder court_listener
+courtpy download api --courts federal_circuits --start 2026-01-01 --folder courtlistener
 ```
 
 ## Parse cases downloaded from Lexis-Nexis
@@ -361,7 +361,7 @@ The second command also codes the parties, case types, and outcomes (add
 ```python
 import courtpy
 
-case = courtpy.courtlistener.read_case("court_listener/ca1/4567890.json")
+case = courtpy.courtlistener.read_case("courtlistener/ca1/4567890.json")
 print(case.sections["judges"])
 parser = courtpy.Parser.create("federal", keep_text = True)
 row = parser.parse(case)

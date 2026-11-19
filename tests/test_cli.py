@@ -17,7 +17,10 @@ def test_rules(capsys: pytest.CaptureFixture[str]) -> None:
     assert cli.main(['rules', 'federal']) == 0
     output = capsys.readouterr().out
     assert 'rules are valid' in output and 'outcome' not in output
-    assert '  party1_appellant' in output
+    assert '  review_district' in output and '  party1_appellant' not in output
+    assert cli.main(['rules', 'lexis_nexis_header']) == 0
+    output = capsys.readouterr().out
+    assert '  party1_appellant' in output and '  court_name' in output
 
 
 def test_bad_rules(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:

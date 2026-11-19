@@ -53,8 +53,11 @@ jobs:
     - name: install uv
       uses: astral-sh/setup-uv@v10.2.0
 
+    # The "analysis" extra (amos[all]) has the packages that courtpy's plots
+    # need (such as matplotlib and networkx), so their tests run instead of
+    # being skipped.
     - name: install dependencies
-      run: uv sync
+      run: uv sync --extra analysis
 
     - name: run tests
       run: uv run pytest tests --cov --cov-report=xml
@@ -77,8 +80,10 @@ jobs:
     - name: install uv
       uses: astral-sh/setup-uv@v10.2.0
 
+    # With the "analysis" extra, mypy checks against the same packages (and
+    # pandas-stubs) as a development environment.
     - name: install dependencies
-      run: uv sync
+      run: uv sync --extra analysis
 
     # The hooks only need to run once, so they are here instead of in the
     # `build_and_test` matrix.
@@ -102,7 +107,7 @@ jobs:
       uses: astral-sh/setup-uv@v10.2.0
 
     - name: install dependencies
-      run: uv sync
+      run: uv sync --extra analysis
 
     # Creates the HTML report that `mkdocs-coverage` adds to the documentation.
     - name: create coverage report

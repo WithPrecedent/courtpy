@@ -50,7 +50,7 @@ def save(folder: pathlib.Path, number: int, court: str, docket: str, date: str) 
     cluster = make_cluster(number, date_filed = date)
     path = courtpy.courtlistener.case_path(folder, court, cluster['id'])
     courtpy.courtlistener.save_case(path, {
-        'source': 'court_listener',
+        'source': 'courtlistener',
         'court': {'id': court, 'full_name': f'Court of Appeals ({court})'},
         'cluster': cluster,
         'docket': {'id': number * 10, 'court_id': court, 'docket_number': docket},
@@ -267,7 +267,7 @@ def test_appeals(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> Non
 def test_add_idb_in_a_wrangler(tmp_path: pathlib.Path) -> None:
     # A file of the database that the settings name is found as the clerk
     # finds files: in the input folder.
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     save(folder, 1, 'ca2', '18-3672-cv, 18-3701-cv', '2019-06-03')
     save(folder, 2, 'cadc', '15-7034', '2020-08-18')
     save(folder, 3, 'cafc', '2019-1234', '2019-06-03')

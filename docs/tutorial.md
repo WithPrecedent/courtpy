@@ -29,7 +29,7 @@ courtpy.BulkData().extract(
     courts = "ca1",
     start_date = "2019-01-01",
     end_date = "2019-12-31",
-    folder = "court_listener")
+    folder = "courtlistener")
 ```
 
 The **API** is faster for a small or very recent set of cases, but it needs an
@@ -44,11 +44,11 @@ Then download:
 
 ```python
 courtpy.CourtListener().download(
-    "ca1", "2026-09-01", "2026-09-30", "court_listener", max_cases = 40)
+    "ca1", "2026-09-01", "2026-09-30", "courtlistener", max_cases = 40)
 ```
 
 Either way, each case is saved as a JSON file in a folder for its court, such
-as `court_listener/ca1/4567890.json`. Running a download again skips the cases
+as `courtlistener/ca1/4567890.json`. Running a download again skips the cases
 that were already saved.
 
 ## 2. Parse the cases into a table
@@ -57,7 +57,7 @@ that were already saved.
 the "federal" rulebook (see [Writing Rules](rules.md)):
 
 ```python
-table = courtpy.parse("court_listener")
+table = courtpy.parse("courtlistener")
 print(table.shape)
 print(table[["case_name", "court_num", "panel_judges", "disposition"]].head())
 ```
@@ -151,7 +151,7 @@ study_workers = wrangler, analyst, critic
 techniques = load_court_listener, keep_columns, drop_missing
 
 [load_court_listener_parameters]
-source = court_listener
+source = courtlistener
 download = api
 courts = ca1
 start_date = 2026-09-01

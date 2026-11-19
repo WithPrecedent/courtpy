@@ -145,9 +145,11 @@ secrets.toml
 # Court opinions, bulk data, and results made by courtpy
 data/
 court_listener/
+courtlistener/
 lexis_nexis/
-# ...but not the rules for Lexis-Nexis cases, which are part of courtpy
-!src/courtpy/instructions/lexis_nexis/
+# ...but not the rules for each source's cases, which are part of courtpy
+!src/courtpy/instructions/sources/courtlistener/
+!src/courtpy/instructions/sources/lexis_nexis/
 results/
 .courtpy/
 *.csv.bz2

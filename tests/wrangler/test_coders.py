@@ -20,7 +20,7 @@ def coded(court_listener_folder: pathlib.Path) -> amos.Dataset:
 def test_coders_are_in_the_library() -> None:
     for name in ('code_parties', 'code_case_type', 'code_outcome'):
         assert amos.library.classify(name) == 'munger'
-    assert amos.library.classify('drop_text') == 'cleaner'
+    assert amos.library.classify('drop_text_columns') == 'cleaner'
 
 
 def test_mungers_record_their_columns(coded: amos.Dataset) -> None:
@@ -94,9 +94,9 @@ def test_code_outcome(coded: amos.Dataset) -> None:
     assert data['outcome_party1_won'].dtype == 'boolean'
 
 
-def test_drop_text(coded: amos.Dataset) -> None:
+def test_drop_text_columns(coded: amos.Dataset) -> None:
     coded.data['case_name'] = coded.data['case_name'].astype('category')
-    coders.DropText().apply(coded, keep = ['court'])
+    coders.DropTextColumns().apply(coded, keep = ['court'])
     data = coded.data
     for column in ('party1', 'panel_judges', 'date_filed', 'url', 'citations_case'):
         assert column not in data.columns
@@ -104,9 +104,9 @@ def test_drop_text(coded: amos.Dataset) -> None:
         assert column in data.columns
 
 
-def test_drop_text_keeps_label() -> None:
+def test_drop_text_columns_keeps_label() -> None:
     dataset = amos.Dataset(pd.DataFrame({'note': ['a', 'b'], 'x': [1, 2]}), label = 'note')
-    coders.DropText().apply(dataset)
+    coders.DropTextColumns().apply(dataset)
     assert list(dataset.data.columns) == ['note', 'x']
 
 

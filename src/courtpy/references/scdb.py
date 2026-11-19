@@ -22,7 +22,7 @@ one of its citations:
 ```python
 import courtpy
 
-cases = courtpy.parse("data/court_listener")
+cases = courtpy.parse("data/courtlistener")
 dataset = courtpy.code(cases, "add_scdb", parameters = {
     "add_scdb": {"columns": "issueArea, decisionDirection, partyWinning"}})
 ```

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pathlib
 
+import pandas as pd
+
 import courtpy
 from courtpy import lexis
 
@@ -33,7 +35,9 @@ def test_parse(lexis_folder: pathlib.Path) -> None:
     doe = table.loc['lexis_batch_00001']
     assert doe['party1'] == 'UNITED STATES OF AMERICA, Plaintiff, Appellee,'
     assert doe['party2'] == 'JOHN DOE, Defendant, Appellant.'
-    assert doe['court_num'] == 1
+    assert doe['court_num'] == 1 and doe['court_name'] == 'first_circuit'
+    assert doe['lower_court_num'] == 1026
+    assert doe['lower_court_name'] == 'district_of_massachusetts'
     assert doe['docket_number'] == 'No. 08-1234'
     assert doe['docket_numbers'] == '08-1234'
     assert doe['date_argued'] == '2009-03-03'
@@ -54,8 +58,11 @@ def test_parse(lexis_folder: pathlib.Path) -> None:
     assert doe['word_count'] > 50
     assert 'opinion' not in table.columns and 'header' not in table.columns
     acme = table.loc['lexis_batch_00002']
-    assert acme['court_num'] == 9
-    assert acme['agency'] == 'NATIONAL LABOR RELATIONS BOARD'
+    assert acme['court_num'] == 9 and acme['court_name'] == 'ninth_circuit'
+    assert pd.isna(acme['lower_court_num']) and pd.isna(acme['lower_court_name'])
+    assert acme['party2_agencies'] == 'National Labor Relations Board'
+    assert acme['history_agencies'] == 'National Labor Relations Board'
+    assert pd.isna(acme['party1_agencies'])
     assert acme['disposition'] == 'DISPOSITION: PETITION DENIED.'
     assert acme['disposition_deny']
     assert acme['notice_unpublished'] and not acme['published']
@@ -70,3 +77,15 @@ def test_keep_text(lexis_folder: pathlib.Path) -> None:
     assert len(table) == 1
     assert table.iloc[0]['opinion'].startswith('LYNCH, Circuit Judge.')
     assert 'COUNSEL:' in table.iloc[0]['header']
+    assert table.iloc[0]['counsel'].startswith('COUNSEL:')
+    assert 'text' not in table.columns
+
+
+def test_parse_all_uses_the_lexis_header_rules(lexis_folder: pathlib.Path) -> None:
+    table = courtpy.parse(lexis_folder, source = 'lexis_nexis', keep_text = True)
+    again = courtpy.parsers.ParseAll().parse(
+        table.drop(columns = ['court_num', 'court_name', 'party2_agencies', 'notice_unpublished']))
+    assert again['court_num'].tolist() == [1, 9]
+    assert again['court_name'].tolist() == ['first_circuit', 'ninth_circuit']
+    assert again.loc['lexis_batch_00002', 'party2_agencies'] == 'National Labor Relations Board'
+    assert again['notice_unpublished'].tolist() == [False, True]

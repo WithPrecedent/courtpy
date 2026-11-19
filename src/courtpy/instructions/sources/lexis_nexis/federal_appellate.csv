@@ -12,5 +12,5 @@ header,disposition,match,\nDISPOSITION\:.*?(?=\n\n|$),,ignorecase,,
 header,citation,match,(?<=\n)\d* (?:F\.(?:[23]d|4th)|U\.S\.|S\. Ct\.|U\.S\. APP\. LEXIS|Fed\. Appx\.) \d\d*.*?(?=\n),,"ignorecase, dotall",,
 header,judges,match,\nJUDGES\:.*?(?=\n\n|\nOPINION|$),,"ignorecase, dotall",,"The ""JUDGES:"" paragraph"
 header,opinion_by,match,\nOPINION BY\:.*?(\n|$),,,,"The ""OPINION BY:"" line"
-text,concurring_lines,matches,(?<=\n)CONCUR.*?(?=\n)|concurring\:.*?(?=\n)|(?<=\n)Concur By\: .*?(?=\n)|(?<=\n)DISSENT[^\n]*?IN PART[^\n]*,,,; ,Lines about concurrences (and opinions dissenting in part)
-text,dissenting_lines,matches,(?<=\n)DISSENT.*?(?=\n)|dissenting\:.*?(?=\n)|(?<=\n)Dissent By\: .*?(?=\n)|(?<=\n)CONCUR[^\n]*?IN PART[^\n]*,,,; ,Lines about dissents (and opinions concurring in part)
+text,concurring_lines,matches,(?<=\n)CONCUR[^\n]*|(?<=\n)DISSENT[^\n]*?IN PART[^\n]*,,,; ,"Lines that start with ""CONCUR"" in capitals (such as ""CONCUR BY:""), and dissents in part"
+text,dissenting_lines,matches,(?<=\n)DISSENT[^\n]*|(?<=\n)CONCUR[^\n]*?IN PART[^\n]*,,,; ,"Lines that start with ""DISSENT"" in capitals (such as ""DISSENT BY:""), and concurrences in part"

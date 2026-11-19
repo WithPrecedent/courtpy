@@ -213,7 +213,7 @@ def test_add_scdb_with_court_listener(
     monkeypatch: pytest.MonkeyPatch) -> None:
     # CourtListener records the database's id of a case of the Supreme Court,
     # which becomes a column of the parsed cases.
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     write_case(
         folder,
         make_cluster(
@@ -249,7 +249,7 @@ def test_add_scdb_in_a_wrangler(
     tmp_path: pathlib.Path) -> None:
     # A file of the database that the settings name is found as the clerk
     # finds files: in the input folder.
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     folder.parent.mkdir()
     court_listener_folder.rename(folder)
     cited = table().assign(usCite = ['950 F.3d 12', *table()['usCite'].iloc[1:]])

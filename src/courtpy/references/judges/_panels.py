@@ -7,6 +7,10 @@ Contents:
     DocketsToVotes: makes a table with one row for each judge on each
         docket.
     VotesToCases: makes a table of votes a table of cases again.
+    panel_compositions: returns the composition of each case's panel by the
+        parties of the presidents who appointed its judges, such as "DDR".
+    republican_appointees: returns how many judges of each case's panel a
+        Republican president appointed.
     vote_table: returns a table with one row for each judge on each case.
     _CASE: column that holds the label of each row's case while a table is
         made.
@@ -453,6 +457,88 @@ class CasesToJudges(shapers.Converter, amos.Shaper):
 
 
 """ Public Functions """
+
+
+def panel_compositions(
+    data: pd.DataFrame,
+    size: int = 3) -> pd.Series:
+    """Returns the composition of each case's panel by its judges' parties.
+
+    The composition names the party of the president who appointed each
+    judge, Democratic ("D") ones first: "DDD", "DDR", "DRR", and "RRR" for a
+    panel of three (see `republican_appointees`).
+
+    Args:
+        data: the cases, with "judge_party1" and so on (from
+            `add_biography`) or "panel_party" and "panel_found" (from
+            `code_panels`).
+        size: the number of judges on the panels to describe. Defaults to 3.
+
+    Returns:
+        The composition of each case's panel, as an ordered category from all
+            Democratic appointees to all Republican ones, missing for a case
+            whose panel is not of `size` judges whose parties are known.
+
+    """
+    found = republican_appointees(data, size)
+    names = ['D' * (size - r) + 'R' * r for r in range(size + 1)]
+    # The number of Republican appointees is the place of the composition
+    # among `names`, and -1 marks a missing one.
+    codes = found.fillna(-1).astype('int64').to_numpy()
+    return pd.Series(
+        pd.Categorical.from_codes(
+            codes, categories = pd.Index(names), ordered = True),
+        index = data.index, name = 'panel_composition')
+
+
+def republican_appointees(
+    data: pd.DataFrame,
+    size: int = 3) -> pd.Series:
+    """Returns how many judges of each case's panel a Republican appointed.
+
+    The judges' parties are those of the presidents who appointed them (-1
+    for a Democrat and 1 for a Republican). They are read from each seat's
+    "judge_party1", "judge_party2", and so on (which `add_biography` adds to
+    cases), or else from "panel_party" (the mean party) and "panel_found"
+    (the number of judges found), which `code_panels` adds.
+
+    Args:
+        data: the cases.
+        size: the number of judges on the panels to count. Defaults to 3.
+
+    Raises:
+        KeyError: if `data` has neither the parties of the seats nor
+            "panel_party" and "panel_found".
+
+    Returns:
+        The number of Republican appointees on each case's panel, as whole
+            numbers, missing for a case whose panel is not of `size` judges
+            whose parties are all known (as for a judge appointed by a
+            president of another party).
+
+    """
+    seats = [f'judge_party{n}' for n in range(1, size + 1)]
+    if all(c in data.columns for c in seats):
+        parties = data[seats].apply(pd.to_numeric, errors = 'coerce')
+        complete = parties.isin([-1, 1]).all(axis = 1)
+        # A panel with more seats than `size` is a panel of another size.
+        extra = f'judge_party{size + 1}'
+        if extra in data.columns:
+            complete &= pd.to_numeric(data[extra], errors = 'coerce').isna()
+        counted = (parties == 1).sum(axis = 1)
+        seated: pd.Series = counted.where(complete).astype('Int64')
+        return seated.rename('republican_appointees')
+    if 'panel_party' in data.columns and 'panel_found' in data.columns:
+        party = pd.to_numeric(data['panel_party'], errors = 'coerce')
+        found = pd.to_numeric(data['panel_found'], errors = 'coerce')
+        counted = (found * (party + 1) / 2).round()
+        averaged: pd.Series = counted.where(found == size).astype('Int64')
+        return averaged.rename('republican_appointees')
+    message = (
+        f'counting the Republican appointees of panels needs {seats} (from '
+        f'add_biography) or "panel_party" and "panel_found" (from '
+        f'code_panels)')
+    raise KeyError(message)
 
 
 def vote_table(

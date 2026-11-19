@@ -64,7 +64,7 @@ def state_folder(tmp_path: pathlib.Path) -> pathlib.Path:
 def make_recorder(
     calls: list[dict[str, Any]],
     *,
-    saves: str = 'court_listener') -> type[base.Download]:
+    saves: str = 'courtlistener') -> type[base.Download]:
     """Returns a way to download, "recorded", that records what it is asked."""
 
     @dataclasses.dataclass
@@ -88,13 +88,20 @@ def make_recorder(
 
 
 def test_courtpy_registers_its_own() -> None:
-    assert base.SOURCES['court_listener'] is courtpy.courtlistener.CourtListenerSource
+    assert base.SOURCES['courtlistener'] is courtpy.courtlistener.CourtListenerSource
     assert base.SOURCES['lexis_nexis'] is courtpy.lexis.LexisNexisSource
     assert base.DOWNLOADS['bulk'] is courtpy.bulk.BulkDownload
     assert base.DOWNLOADS['true'] is courtpy.bulk.BulkDownload
     assert base.DOWNLOADS['api'] is courtpy.courtlistener.ApiDownload
     assert base.find_download(' BULK ') is courtpy.bulk.BulkDownload
     assert courtpy.Source is base.Source and courtpy.Download is base.Download
+
+
+def test_sources_name_their_header_rules() -> None:
+    assert base.SOURCES['courtlistener'].header == 'courtlistener_header'
+    assert base.SOURCES['lexis_nexis'].header == 'lexis_nexis_header'
+    # A source with no header rules of its own has those that fit every one.
+    assert StateCourtTest.header == base.Source.header == 'header'
 
 
 def test_subclasses_register() -> None:
@@ -164,7 +171,7 @@ def test_loader_of_your_own(state_folder: pathlib.Path) -> None:
 
     dataset = LoadStateCourt().apply(None, source = state_folder, coders = 'none')
     assert len(dataset.data) == 2
-    with pytest.raises(ValueError, match = 'saves court_listener cases'):
+    with pytest.raises(ValueError, match = 'saves courtlistener cases'):
         LoadStateCourt().apply(None, source = state_folder, download = 'bulk')
 
 

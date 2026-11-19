@@ -99,6 +99,11 @@ Contents:
         with fjc-biographies.
     name_forms: returns the ways that an opinion may write a judge's name,
         grouped by how much of the name they give.
+    panel_compositions: returns the composition of each case's panel by
+        the parties of the presidents who appointed its judges, such as
+        "DDR".
+    republican_appointees: returns how many judges of each case's panel a
+        Republican president appointed.
     vote_table: returns a table with one row for each judge on each case.
 
 """
@@ -114,6 +119,8 @@ from ._panels import (
     CodePanels,
     DocketsToVotes,
     VotesToCases,
+    panel_compositions,
+    republican_appointees,
     vote_table,
 )
 from ._roster import (
@@ -140,4 +147,6 @@ __all__ = [
     'clean_name',
     'download',
     'name_forms',
+    'panel_compositions',
+    'republican_appointees',
     'vote_table']

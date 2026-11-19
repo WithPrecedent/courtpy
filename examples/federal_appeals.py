@@ -15,7 +15,7 @@ import courtpy
 HERE = pathlib.Path(__file__).parent
 # The settings file's "files" section keeps the cases and the coded table in
 # "data" and the results in "results", in the folder of the project's clerk.
-CASES = HERE / 'data' / 'court_listener'
+CASES = HERE / 'data' / 'courtlistener'
 TABLE = HERE / 'data' / 'cases.csv'
 
 

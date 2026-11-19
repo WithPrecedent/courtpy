@@ -425,7 +425,7 @@ def _parser(
     shared.add_argument(
         '--folder',
         help = 'folder to save the cases in (default: the name of the '
-               'source, such as court_listener)')
+               'source, such as courtlistener)')
     shared.add_argument(
         '--max-cases', type = int, help = 'most cases to save')
     shared.add_argument(
@@ -452,19 +452,19 @@ def _parser(
     parse.add_argument('folder', help = 'folder of saved cases')
     parse.add_argument(
         '--source', choices = sorted(base.SOURCES),
-        default = 'court_listener')
+        default = 'courtlistener')
     parse.add_argument(
         '--rulebooks', nargs = '+',
         help = (
             'built-in rulebooks (such as civil) or CSV files, applied after '
-            'header and general (default: federal)'))
+            "the source's header rules and general (default: federal)"))
     parse.add_argument(
         '--output', default = 'cases.csv',
         help = (
             'file to save the table to, with the whole dataset beside it '
             'in a .joblib file (default: cases.csv)'))
     parse.add_argument(
-        '--keep-text', action = 'store_true', help = "keep the opinions' text")
+        '--keep-text', action = 'store_true', help = "keep the text of the cases' sections")
     parse.add_argument('--limit', type = int, help = 'most cases to parse')
     parse.add_argument(
         '--workers', type = int, default = 1, help = 'processes to parse with')

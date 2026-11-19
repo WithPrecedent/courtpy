@@ -6,9 +6,11 @@ files into one file for each case, which `read_case` reads for parsing.
 
 Lexis-Nexis cases have a header (with the parties, court, docket number,
 dates, history, counsel, judges, and so on) followed by the opinions. The
-rules in the "lexis_nexis" rulebook (the "lexis_nexis" folder of courtpy's
-"instructions" folder, with a file for each kind of court) find each part of
-the header, so they can be changed without changing courtpy.
+rules in the "lexis_nexis" rulebook (in "instructions/sources/lexis_nexis",
+with a file for each kind of court) find each part of the header, and the
+"lexis_nexis_header" rulebook (with that folder's "header.csv") finds the
+court, parties, and judges in the parts, so they can be changed without
+changing courtpy.
 
 Contents:
     LexisNexisSource: reads Lexis-Nexis cases saved one to a text file.
@@ -42,7 +44,9 @@ _DATE_KINDS: tuple[str, ...] = (
 class LexisNexisSource(base.Source):
     """Reads Lexis-Nexis cases saved one to a text file (see `split`).
 
-    The "lexis_nexis" rules find the sections of each case's header, and
+    The "lexis_nexis" rules find the sections of each case's header, the
+    "lexis_nexis_header" rules find the court (by the names in the
+    jurisdiction's table of courts), parties, and judges in them, and
     `finish` adds its dates and publication status.
 
     """
@@ -50,6 +54,7 @@ class LexisNexisSource(base.Source):
     name: ClassVar[str] = 'lexis_nexis'
     pattern: ClassVar[str] = '*.txt'
     structure: ClassVar[str | None] = 'lexis_nexis'
+    header: ClassVar[str] = 'lexis_nexis_header'
 
     """ Required Methods """
 

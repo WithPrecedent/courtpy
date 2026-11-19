@@ -200,7 +200,7 @@ my_study_workers = "wrangler, analyst"
 techniques = "load_court_listener, code_panels, cases_to_votes"
 
 [load_court_listener_parameters]
-source = "court_listener"
+source = "courtlistener"
 download = "bulk"
 courts = "federal_circuits"
 start_date = "2010-01-01"

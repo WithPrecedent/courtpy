@@ -73,27 +73,27 @@ def test_save_and_reuse(court_listener_folder: pathlib.Path, tmp_path: pathlib.P
 
 
 def test_project_with_a_loader(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     folder.parent.mkdir()
     court_listener_folder.rename(folder)
     settings = {
         'general': {'seed': 43, 'label': 'outcome_reversal'},
         'files': {'input_folder': 'data'},
         'appeals_project': {'appeals_workers': 'wrangler, explorer'},
-        'wrangler': {'techniques': 'load_court_listener, drop_text'},
+        'wrangler': {'techniques': 'load_court_listener, drop_text_columns'},
         'explorer': {'techniques': 'summarize, label_balance'}}
     project = courtpy.Project.create(settings, clerk = tmp_path)
     result = project.result
     assert result.label == 'outcome_reversal'
     assert result.history[0] == {
-        'technique': 'load_court_listener', 'source': 'court_listener',
+        'technique': 'load_court_listener', 'source': 'courtlistener',
         'rows': 3, 'columns': result.history[0]['columns']}
     assert 'party1' not in result.data.columns
     assert set(result.tables) == {'summarize', 'label_balance'}
 
 
 def test_amos_parsers_search_kept_text(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
-    folder = tmp_path / 'data' / 'court_listener'
+    folder = tmp_path / 'data' / 'courtlistener'
     folder.parent.mkdir()
     court_listener_folder.rename(folder)
     settings = tmp_path / 'coding.toml'
@@ -103,7 +103,7 @@ def test_amos_parsers_search_kept_text(court_listener_folder: pathlib.Path, tmp_
         '[coding_project]\n'
         'coding_workers = "wrangler"\n'
         '[wrangler]\n'
-        'techniques = "load_court_listener, parse_flags, parse_counts, drop_text"\n'
+        'techniques = "load_court_listener, parse_flags, parse_counts, drop_text_columns"\n'
         '[load_court_listener_parameters]\n'
         'keep_text = true\n'
         '[parse_flags_parameters]\n'
@@ -119,14 +119,39 @@ def test_amos_parsers_search_kept_text(court_listener_folder: pathlib.Path, tmp_
     result = courtpy.Project.create(settings, clerk = tmp_path).result
     assert [e['technique'] for e in result.history] == [
         'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome',
-        'parse_flags', 'parse_counts', 'drop_text']
+        'parse_flags', 'parse_counts', 'drop_text_columns']
     assert result.data.loc['2', 'affirmed']
     assert result.data.loc['2', 'title_vii'] == 1
     assert 'opinion' not in result.data.columns
 
 
+def test_parse_all_in_a_wrangler(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    folder = tmp_path / 'data' / 'courtlistener'
+    folder.parent.mkdir()
+    court_listener_folder.rename(folder)
+    rules = tmp_path / 'heller.csv'
+    rules.write_text('column,name,kind,pattern\nopinion,cites_heller,flags,554 U\\.S\\. 570\n', encoding = 'utf-8')
+    settings = tmp_path / 'reparse.toml'
+    settings.write_text(
+        '[files]\n'
+        'input_folder = "data"\n'
+        '[reparse_project]\n'
+        'reparse_workers = "wrangler"\n'
+        '[wrangler]\n'
+        'techniques = "load_court_listener, parse_all, drop_text_columns"\n'
+        '[load_court_listener_parameters]\n'
+        'keep_text = true\n'
+        '[parse_all_parameters]\n'
+        f'rulebooks = "federal, {rules.as_posix()}"\n',
+        encoding = 'utf-8')
+    result = courtpy.Project.create(settings, clerk = tmp_path).result
+    assert [e['technique'] for e in result.history][-2:] == ['parse_all', 'drop_text_columns']
+    assert result.data.loc['1', 'cites_heller'] and not result.data.loc['2', 'cites_heller']
+    assert 'opinion' not in result.data.columns
+
+
 def test_no_cases(tmp_path: pathlib.Path) -> None:
-    with pytest.raises(ValueError, match = 'no court_listener cases were found'):
+    with pytest.raises(ValueError, match = 'no courtlistener cases were found'):
         loaders.LoadCourtListener().apply(None, source = tmp_path)
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import pathlib
 
+import amos
 import pandas as pd
 import pytest
 from conftest import make_cluster, make_opinion, write_case
@@ -20,6 +21,7 @@ def test_parse_court_listener(court_listener_folder: pathlib.Path) -> None:
     assert list(table.columns[:4]) == ['source', 'cluster_id', 'docket_id', 'court']
     doe = table.loc['1']
     assert doe['court'] == 'ca1' and doe['court_num'] == 1
+    assert doe['court_name'] == 'first_circuit'
     assert doe['party1'] == 'UNITED STATES of America, Plaintiff-Appellee,'
     assert doe['party2_appellant'] and doe['party1_united_states']
     assert doe['disposition_reverse'] and doe['disposition_remand']
@@ -37,7 +39,7 @@ def test_parse_court_listener(court_listener_folder: pathlib.Path) -> None:
 def test_parse_finds_agencies(tmp_path: pathlib.Path) -> None:
     # The agencies of the caption, the history, and the opinion are listed
     # once each, in alphabetical order.
-    folder = tmp_path / 'court_listener'
+    folder = tmp_path / 'courtlistener'
     write_case(folder, make_cluster(
         4, case_name_full = 'NATIONAL LABOR RELATIONS BOARD, Petitioner, v. ACME CORP., Respondent',
         procedural_history = 'On application for enforcement of an order of the NLRB.'),
@@ -143,7 +145,7 @@ def test_save_and_load(court_listener_folder: pathlib.Path, tmp_path: pathlib.Pa
 def test_parser_metadata_wins(court_listener_folder: pathlib.Path) -> None:
     parser = parsers.Parser.create('federal')
     case = cases.Case(
-        id = 'x', source = 'court_listener',
+        id = 'x', source = 'courtlistener',
         sections = {'court': 'Court of Appeals for the First Circuit'},
         metadata = {'court_num': 99, 'agency': None})
     row = parser.parse(case)
@@ -171,3 +173,51 @@ def test_parse_recent_court_listener(recent_folder: pathlib.Path) -> None:
     assert coded['type_criminal'] and coded['appeal_by_defendant']
     assert not coded['outcome_reversal']
     assert not coded['outcome_criminal_defendant_won']
+
+
+def test_keep_text_keeps_every_section(court_listener_folder: pathlib.Path) -> None:
+    table = courtpy.parse(court_listener_folder, keep_text = True)
+    for section in ('party', 'history', 'judges', 'opinion_by', 'opinion'):
+        assert section in table.columns
+    assert table.loc['2', 'party'].startswith('Mary SMITH')
+    # The court's id from CourtListener's data is kept, not its name.
+    assert table.loc['1', 'court'] == 'ca1'
+    assert 'opinion' not in courtpy.parse(court_listener_folder).columns
+
+
+def test_parse_all_is_amos_parse_all() -> None:
+    assert amos.library.borrow('parse_all') is parsers.ParseAll
+    assert issubclass(parsers.ParseAll, amos.parsers.ParseAll)
+
+
+def test_parse_all_parses_kept_text_again(court_listener_folder: pathlib.Path) -> None:
+    table = courtpy.parse(court_listener_folder, keep_text = True)
+    dropped = ['panel_judges', 'party1_appellant', 'disposition_affirm', 'author', 'citations_case']
+    again = parsers.ParseAll().parse(table.drop(columns = dropped))
+    assert set(again.columns) == set(table.columns)
+    for column in [*dropped, 'court_num', 'court_name', 'word_count', 'panel_size']:
+        pd.testing.assert_series_equal(
+            again[column], table[column], check_dtype = False, check_names = False)
+
+
+def test_parse_all_applies_rulebooks(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    rules = tmp_path / 'heller.csv'
+    rules.write_text('column,name,kind,pattern\nopinion,cites_heller,flags,554 U\\.S\\. 570\n', encoding = 'utf-8')
+    table = courtpy.parse(court_listener_folder, keep_text = True)
+    again = parsers.ParseAll().parse(table, rulebooks = [str(rules)])
+    assert again['cites_heller'].tolist() == [True, False, False]
+    # Only the header rules, "general", and the rulebooks named are applied.
+    assert 'citations_case' in again.columns and 'cites_heller' not in table.columns
+
+
+def test_parse_all_with_rules_is_amos_parse_all(court_listener_folder: pathlib.Path) -> None:
+    table = courtpy.parse(court_listener_folder)
+    rules = [{'column': 'case_name', 'name': 'doe', 'kind': 'flags', 'pattern': 'Doe'}]
+    found = parsers.ParseAll().parse(table, rules = rules)
+    assert found['doe'].tolist() == [True, False, False]
+    assert list(found.columns) == [*table.columns, 'doe']
+
+
+def test_parse_all_needs_kept_text(court_listener_folder: pathlib.Path) -> None:
+    with pytest.raises(ValueError, match = 'keep_text'):
+        parsers.ParseAll().parse(courtpy.parse(court_listener_folder))

@@ -99,7 +99,7 @@ def test_review_rules() -> None:
 
 def test_structure_files_are_by_source_and_courts() -> None:
     path = rules.find_structure_file('lexis_nexis', 'federal_appellate')
-    assert path == rules._INSTRUCTIONS / 'lexis_nexis' / 'federal_appellate.csv'
+    assert path == rules._INSTRUCTIONS / 'sources' / 'lexis_nexis' / 'federal_appellate.csv'
     with pytest.raises(FileNotFoundError, match = 'state_trial'):
         rules.find_structure_file('lexis_nexis', 'state_trial')
 
@@ -129,7 +129,7 @@ def test_federal_files_do_not_repeat_general_rules() -> None:
 
 def test_rules_that_ignore_case_do_not_list_both_cases() -> None:
     both = re.compile(r'\[([A-Za-z])([A-Za-z])\]')
-    for path in sorted(rules._INSTRUCTIONS.glob('*/*.csv')):
+    for path in sorted(rules._INSTRUCTIONS.rglob('*.csv')):
         for row in read_rows(path):
             # The tables of courts and presidents are not rules.
             if 'flags' not in row or 'ignorecase' not in row['flags']:
@@ -146,22 +146,38 @@ def test_files_named_twice_are_read_once() -> None:
 def test_built_in_rulebooks_are_valid() -> None:
     federal = amos.parsers.Rulebook.create('federal')
     lexis = amos.parsers.Rulebook.create('lexis_nexis')
+    general_header = amos.parsers.Rulebook.create('header')
+    lexis_header = amos.parsers.Rulebook.create('lexis_nexis_header')
+    courtlistener_header = amos.parsers.Rulebook.create('courtlistener_header')
     assert len(federal) > 300
     for variable in (
-        'party1', 'party2', 'court_num', 'agency', 'panel_judges', 'authors',
-        'concurring', 'dissenting', 'disposition_reverse', 'opinion_reverse',
-        'criminal_firearm', 'civil_titlevii', 'constitutional_amend4',
-        'citations_case', 'citations_statute', 'cite_federal_reporter',
-        'party1_appellant', 'party2_united_states', 'counsel_us_attorney',
-        'docket_criminal', 'notice_unpublished', 'agencies'):
+        'opinion_reverse', 'criminal_firearm',
+        'civil_titlevii', 'constitutional_amend4', 'citations_case',
+        'citations_statute', 'agencies', 'review_district'):
         assert variable in federal.names
+    # The header rules are applied by source, not with the federal rules.
+    assert 'party1' not in federal.names and 'panel_judges' not in federal.names
+    shared = (
+        'party1', 'party2', 'panel_judges', 'authors', 'concurring',
+        'dissenting', 'disposition_reverse', 'cite_federal_reporter', 'party1_appellant',
+        'party2_united_states', 'counsel_us_attorney', 'docket_criminal',
+        'party1_agencies', 'party2_agencies', 'history_agencies',
+        'lower_court_num', 'lower_court_name')
+    for book in (general_header, lexis_header, courtlistener_header):
+        for variable in shared:
+            assert variable in book.names
+    for variable in ('court_num', 'court_name', 'notice_unpublished', 'future_grant', 'cite_lexis'):
+        assert variable in lexis_header.names
+        assert variable not in courtlistener_header.names
+    assert 'caption' in courtlistener_header.names and 'caption' not in lexis_header.names
+    assert 'agency' not in lexis_header.names
     assert lexis.names == [
         'header', 'opinion', 'party', 'court', 'docket_number', 'history',
         'future', 'counsel', 'notice', 'dates', 'disposition', 'citation',
         'judges', 'opinion_by', 'concurring_lines', 'dissenting_lines']
     # Several values in a cell are separated by "; ", with no line breaks in
     # the files (which a checkout on Windows would make "\r\n").
-    for rule in [*federal, *lexis]:
+    for rule in [*federal, *lexis, *lexis_header, *courtlistener_header]:
         if rule.kind in ('names', 'matches'):
             assert rule.separator == '; '
 
@@ -189,8 +205,8 @@ def test_lexis_dates_are_lines() -> None:
     ('ROBERTS, C. J., delivered the opinion of the Court, in which SCALIA, '
      'KENNEDY, and THOMAS, JJ., joined. GINSBURG, J., filed a dissenting '
      'opinion.', ['ROBERTS', 'SCALIA', 'KENNEDY', 'THOMAS', 'GINSBURG'])])
-def test_federal_rules_split_judges(judges: str, expected: list[str]) -> None:
-    found = apply('federal', judges = judges)
+def test_header_rules_split_judges(judges: str, expected: list[str]) -> None:
+    found = apply('header', judges = judges)
     assert found['panel_judges'] == '; '.join(expected)
 
 
@@ -208,17 +224,17 @@ def test_federal_rules_split_judges(judges: str, expected: list[str]) -> None:
     # Not a panel.
     ('Before April 25, 2016, Sabaini made deposits of over $2,000.', []),
     ('LYNCH, Circuit Judge. Before trial, Doe moved to suppress.', [])])
-def test_federal_rules_find_the_panel_in_the_opinion(
+def test_header_rules_find_the_panel_in_the_opinion(
     opening: str,
     expected: list[str]) -> None:
-    found = apply('federal', opinion = opening)
+    found = apply('header', opinion = opening)
     assert found['panel_judges'] == ('; '.join(expected) or None)
 
 
-def test_federal_rules_prefer_the_panel_in_the_opinion() -> None:
+def test_header_rules_prefer_the_panel_in_the_opinion() -> None:
     # CourtListener's "judges" may name only the author.
     found = apply(
-        'federal',
+        'courtlistener_header',
         judges = 'Brennan',
         opinion = 'Before SYKES, Chief Judge, and BRENNAN and ST. EVE, Circuit '
                   'Judges. BRENNAN, Circuit Judge.')
@@ -253,24 +269,144 @@ def test_federal_rules_prefer_the_panel_in_the_opinion() -> None:
      '(2005), the guidelines are advisory. The appellant argues that the '
      'district court erred. Appellee United States disagrees.',
      (False, False, False, False))])
-def test_federal_rules_find_the_caption_in_the_opinion(
+def test_courtlistener_rules_find_the_caption_in_the_opinion(
     opening: str,
     roles: tuple[bool, bool, bool, bool]) -> None:
-    found = apply('federal', party = 'United States v. Doe', opinion = opening)
+    found = apply('courtlistener_header', party = 'United States v. Doe', opinion = opening)
     assert (
         found['party1_appellant'], found['party1_appellee'],
         found['party2_appellant'], found['party2_appellee']) == roles
     assert (found['caption'] is None) == (roles == (False, False, False, False))
 
 
-def test_federal_rules_keep_the_caption_of_the_header() -> None:
+def test_courtlistener_rules_keep_the_caption_of_the_header() -> None:
     found = apply(
-        'federal',
+        'courtlistener_header',
         party = 'Mary SMITH, Plaintiff-Appellant, v. ACME CORP., Defendant-Appellee',
         opinion = 'ACME CORP., Plaintiff-Appellee, v. MARY SMITH, Defendant-Appellant.')
     assert found['caption'].startswith('Mary SMITH')
     assert found['party1_appellant'] and found['party2_appellee']
     assert not found['party1_appellee'] and not found['party2_appellant']
+
+
+@pytest.mark.parametrize(('court', 'number', 'name'), [
+    ('UNITED STATES COURT OF APPEALS FOR THE TENTH CIRCUIT', 10, 'tenth_circuit'),
+    # The D.C. Circuit is not the District of Columbia's district court.
+    ('UNITED STATES COURT OF APPEALS FOR THE DISTRICT OF COLUMBIA CIRCUIT', 12, 'dc_circuit'),
+    ('UNITED STATES BANKRUPTCY APPELLATE PANEL OF THE NINTH CIRCUIT', 110,
+     'bankruptcy_appellate_panel_ninth_circuit'),
+    ('TEMPORARY EMERGENCY COURT OF APPEALS', 105, 'temporary_emergency_court_of_appeals'),
+    ('UNITED STATES COURT OF APPEALS FOR THE STATE OF NOWHERE', None, None)])
+def test_lexis_rules_find_the_court(court: str, number: int | None, name: str | None) -> None:
+    found = apply('lexis_nexis_header', court = court)
+    assert (found['court_num'], found['court_name']) == (number, name)
+
+
+def test_court_rules_are_made_from_the_table_of_courts() -> None:
+    made = rules.make_court_rules()
+    assert {rule['name'] for rule in made} == {'court_num', 'court_name'}
+    assert {rule['column'] for rule in made} == {'court'}
+    lower = rules.make_court_rules(column = 'history', prefix = 'lower_', levels = ('trial',))
+    assert {rule['name'] for rule in lower} == {'lower_court_num', 'lower_court_name'}
+    assert 'tenth_circuit' not in {rule['value'] for rule in lower}
+    assert rules.make_court_rules('nowhere') == []
+
+
+@pytest.mark.parametrize(('history', 'name'), [
+    ('Appeal from the United States District Court for the District of Colorado.',
+     'district_of_colorado'),
+    # Lexis abbreviations, after an earlier appeal that is not the court below.
+    ('(D.C. No. CR 05-0916 JH). (D. New Mexico). United States v. Mora, 262 Fed. '
+     'Appx. 864, 2008 U.S. App. LEXIS 2334 (10th Cir. N.M., 2008)', 'district_of_new_mexico'),
+    ('(D. of Kan.). (D.C. No.08-CR-10010-WEB-1).', 'district_of_kansas'),
+    ('(W.D. Oklahoma). (D.C. No. 5:03-cr-00243-F-1).', 'western_district_of_oklahoma'),
+    ('(D. N.M.). (D.Ct. No. 1:06-CR-01622-MCA-1).', 'district_of_new_mexico'),
+    ('Logan v. Sabre, Inc., 2008 U.S. Dist. LEXIS 37749 (N.D. Okla., May 7, 2008)',
+     'northern_district_of_oklahoma'),
+    ('(BAP No. NO-07-057). (BAP). In re Tollefsen, 397 B.R. 545 (B.A.P. 10th Cir., 2008)',
+     'bankruptcy_appellate_panel_tenth_circuit'),
+    # Only an earlier appeal, or an agency.
+    ('United States v. Collins, 511 F.3d 1276, 2008 U.S. App. LEXIS 174 (10th Cir. Okla., 2008)',
+     None),
+    ('Petition for review of an order of the Board of Immigration Appeals.', None)])
+def test_header_rules_find_the_lower_court(history: str, name: str | None) -> None:
+    found = apply('header', history = history)
+    assert found['lower_court_name'] == name
+    assert (found['lower_court_num'] is None) == (name is None)
+
+
+@pytest.mark.parametrize(('party', 'history', 'expected'), [
+    ('ACME CORP., Petitioner, v. NATIONAL LABOR RELATIONS BOARD, Respondent.',
+     'Petition for review of an order of the National Labor Relations Board.',
+     (None, 'National Labor Relations Board', 'National Labor Relations Board')),
+    # A company named for an agency's abbreviation, and an agency before "et al.".
+    ('PACIFIC GAS COMPANY; FMC WYOMING CORPORATION, Petitioners, v. UNITED STATES '
+     'DEPARTMENT OF LABOR et al., Respondents', '',
+     (None, 'Department of Labor', None)),
+    # An agency between parties, and a judge's initials in a docket number.
+    ('JOHN DOE, Plaintiff-Appellant, v. UNITED STATES OF AMERICA; FEDERAL BUREAU OF '
+     'PRISONS; ERIC H. HOLDER, JR., Attorney General, Defendants-Appellees.',
+     'D.C. No. 2:08-cr-00021-FMC-1. (D.C. No. 06-CR-126-CAB).',
+     (None, 'Bureau of Prisons', None))])
+def test_header_rules_find_agencies_that_are_parties(
+    party: str,
+    history: str,
+    expected: tuple[str | None, str | None, str | None]) -> None:
+    found = apply('header', party = party, history = history)
+    assert (
+        found['party1_agencies'], found['party2_agencies'], found['history_agencies']) == expected
+
+
+@pytest.mark.parametrize(('party', 'expected'), [
+    ('UNITED STATES OF AMERICA, Plaintiff-Appellee, v. JOHN DOE', True),
+    ('United States v. Doe', True),
+    ('JOHN DOE; UNITED STATES OF AMERICA, Defendants-Appellees, v. JANE ROE', True),
+    ('UNITED STATES ex rel. RUTH RITCHIE, Plaintiff, v. ACME CORP.', True),
+    ('USA, Plaintiff, v. DOE', True),
+    ('U.S. BANK, N.A., Defendant, v. DOE', False),
+    ('UNITED STATES FIDELITY AND GUARANTY CO., Plaintiff, v. DOE', False),
+    ('ERIC H. HOLDER, Attorney General of the United States, Respondent, v. DOE', False),
+    ('JOHN SMITH, United States Marshal, Defendant, v. DOE', False)])
+def test_header_rules_find_the_united_states(party: str, expected: bool) -> None:
+    assert apply('header', party = party)['party1_united_states'] is expected
+
+
+@pytest.mark.parametrize(('history', 'criminal', 'civil'), [
+    ('(D.C. No. 06-CR-126-CAB). (D. Wyo.).', True, False),
+    ('USDC No. 2:08-CR-4-1.', True, False),
+    ('No. 4:07CR00123', True, False),
+    ('Criminal Action No. 07-123', True, False),
+    ('(D.C. No. 08-cv-1478-ZLW).', False, True),
+    ('CIV. 05-1234', False, True),
+    ('Civil Action No. 05-123', False, True),
+    ('(D.C. Nos. CIV-05-630 JP/KBM & CR-03-2570 JP).', True, True),
+    # Words, not docket numbers.
+    ('Crawford v. Washington; see Fed. R. Crim. P. 35(b).', False, False),
+    ('A civil rights claim under 42 U.S.C. 1983.', False, False)])
+def test_header_rules_find_kinds_of_dockets(history: str, criminal: bool, civil: bool) -> None:
+    found = apply('header', history = history)
+    assert (found['docket_criminal'], found['docket_civil']) == (criminal, civil)
+
+
+@pytest.mark.parametrize(('future', 'granted'), [
+    ('Rehearing, en banc, granted by Doe v. Roe, 590 F.3d 1 (2009)', True),
+    ('Vacated by, Motion granted by Pulido v. Chrones, 567 F.3d 1 (2009)', True),
+    ('US Supreme Court certiorari denied by Grantham v. United States', False),
+    ('Mandate issued', False)])
+def test_lexis_rules_find_what_was_granted(future: str, granted: bool) -> None:
+    assert apply('lexis_nexis_header', future = future)['future_grant'] is granted
+
+
+def test_lexis_rules_find_concurrences_and_dissents_in_capitals() -> None:
+    found = apply(
+        'lexis_nexis',
+        text = (
+            '\nA v. B\n\nJUDGES: Before SMITH, JONES, and LEE, Circuit Judges.\n'
+            'OPINION BY: SMITH\n\nCONCUR BY: JONES\n\nOPINION\n\nWe affirm.\n'
+            'concurring: LEE, who did not write.\nLee, dissenting: in part.\n'
+            'dissenting).\nCONCUR\n\nJONES, Circuit Judge, concurring.\n'))
+    assert found['concurring_lines'] == 'CONCUR BY: JONES; CONCUR'
+    assert found['dissenting_lines'] is None
 
 
 @pytest.mark.parametrize(('opinion', 'decision', 'rulings'), [

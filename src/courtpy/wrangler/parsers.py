@@ -8,10 +8,12 @@ Parsing has three stages:
    information that needs no parsing (such as CourtListener's date filed).
 2. For Lexis-Nexis, the "lexis_nexis" rules find the sections of the header
    (see `courtpy.lexis`). CourtListener's sections come from its data.
-3. Rules find variables in the sections. The "header" rules (the parties'
-   roles, the court, the disposition, and the judges) and the "general"
-   rules (the decision, procedure, and standards of review) are always
-   applied, and then the rulebooks that are named (by default, the
+3. Rules find variables in the sections. The source's header rules (its
+   `header`, such as "lexis_nexis_header": the parties, their roles, and
+   the agencies among them, the court, the disposition, and the judges; see
+   `courtpy.rules.make_header_rules`) and the "general" rules (the decision,
+   procedure, and standards of review) are always applied, and then the
+   rulebooks that are named (by default, the
    "federal" rules, which add citations, civil (with tort, contract, and
    intellectual property), constitutional, and criminal issues, and
    agencies; "citations", "civil", "constitutional", "criminal", and
@@ -26,7 +28,13 @@ once, a row for each case and a column for each section.
 Every section except those whose names end in "_lines" is collapsed onto one
 line between stages 2 and 3, so that phrases broken across lines are found.
 
+With "keep_text", the table keeps the text of every section, so that
+`parse_all` (`ParseAll`) can parse the cases again after the rules change,
+without reading the saved files again.
+
 Contents:
+    ParseAll: finds information in text with rules, or parses cases again
+        from their kept text with every rulebook that fits them.
     Parser: parses cases with rulebooks.
     find_files: returns the saved cases of a source in a folder.
     parse: parses a folder of saved cases into a table.
@@ -55,9 +63,139 @@ from ..sources import base, courtlistener, lexis  # noqa: F401
 
 # Importing `rules` adds courtpy's rulebooks to the `amos` library, so that
 # rulebooks can be named (such as "federal").
-from . import rules  # noqa: F401
+from . import rules as _rules  # noqa: F401
 
 logger = logging.getLogger(__name__)
+# Sections that are not kept with "keep_text": a Lexis-Nexis case's whole
+# text, whose parts ("header", "opinion", and the parts of the header) are.
+_NOT_KEPT: frozenset[str] = frozenset({'text'})
+
+
+@dataclasses.dataclass
+class ParseAll(amos.parsers.ParseAll):
+    """Finds information in text with rules, or parses cases again.
+
+    This is `amos`'s `parse_all`, which it replaces in the `amos` library:
+    given "rules", it applies them as `amos.parsers.ParseAll` does. Given
+    none, it parses the cases of a table again from the text of their
+    sections, which the table has if they were loaded with "keep_text" (such
+    as after a change to the rules). Each case is parsed with every rulebook
+    that fits it: the header rules of its source (by its "source" column;
+    see `courtpy.sources.Source`), the rules of
+    `options._REQUIRED_RULEBOOKS`, and "rulebooks" (by default, those of the
+    jurisdiction, `options._DEFAULT_JURISDICTION`). Then "author",
+    "panel_size", "concurrences", "dissents", and "word_count" are made
+    again.
+
+    A value that the rules find replaces the table's. Where the rules find
+    nothing, the table's value is kept, such as a CourtListener case's court
+    from CourtListener's id for it.
+
+    """
+
+    """ Required Methods """
+
+    def parse(
+        self,
+        data: pd.DataFrame,
+        *,
+        rules: Any = None,
+        column: str = 'text',
+        rulebooks: Any = None,
+        source: str | None = None,
+        **kwargs: Any) -> pd.DataFrame:
+        """Applies rules to the text of `data`, or parses its cases again.
+
+        Args:
+            data: the data to parse.
+            rules: the rules to apply (see `amos.parsers.Rulebook.create`).
+                Defaults to `None`, which parses the cases again with every
+                rulebook that fits them.
+            column: the column of text that rules with a blank `column`
+                search, if `rules` is given. Defaults to "text".
+            rulebooks: names of rulebooks (such as "federal" or "civil") or
+                paths to CSV files of rules, applied to every case after its
+                source's header rules and `options._REQUIRED_RULEBOOKS`, if
+                `rules` is not given. Defaults to `None`, which applies
+                `options._DEFAULT_JURISDICTION`.
+            source: the source of cases with no "source" column (or a blank
+                one), such as "courtlistener". Defaults to `None`, in which
+                case they get only the header rules that fit every source.
+            **kwargs: passed to `amos.parsers.ParseAll.parse` if `rules` is
+                given.
+
+        Returns:
+            The data, with the columns that the rules make.
+
+        """
+        if rules is not None:
+            return super().parse(data, rules = rules, column = column, **kwargs)
+        return self._parse_again(data, rulebooks, source)
+
+    """ Private Methods """
+
+    def _parse_again(
+        self,
+        data: pd.DataFrame,
+        rulebooks: Any,
+        source: str | None) -> pd.DataFrame:
+        """Parses the cases of a table again from their sections' text.
+
+        Args:
+            data: the cases, with the text of their sections.
+            rulebooks: the rulebooks applied after the header rules and
+                `options._REQUIRED_RULEBOOKS`, or `None` for
+                `options._DEFAULT_JURISDICTION`.
+            source: the source of cases with no "source", or `None`.
+
+        Raises:
+            ValueError: if the cases have no "opinion" column, as when they
+                were not loaded with "keep_text".
+
+        Returns:
+            The cases, with what the rules find and the columns that
+                summarize them.
+
+        """
+        if 'opinion' not in data.columns:
+            message = (
+                "parse_all needs the text of the cases' sections: load them "
+                'with "keep_text" (or pass "rules")')
+            raise ValueError(message)
+        named = (
+            utilities.listify(rulebooks) if rulebooks
+            else [options._DEFAULT_JURISDICTION])
+        sources = (
+            data['source'].astype('string').fillna(source or '')
+            if 'source' in data.columns
+            else pd.Series(source or '', index = data.index, dtype = 'string'))
+        found: list[pd.DataFrame] = []
+        for name, rows in sources.groupby(sources, sort = False).groups.items():
+            known = base.SOURCES.get(str(name))
+            header = known.header if known is not None else base.Source.header
+            rulebook = amos.parsers.Rulebook.create(
+                header, *options._REQUIRED_RULEBOOKS, *named)
+            texts = [c for c in rulebook.columns if c in data.columns]
+            sections = data.loc[rows, texts].astype('str')
+            _, made = _apply(rulebook, sections)
+            found.append(made)
+        if not found:
+            return data
+        made = pd.concat(found).reindex(data.index)
+        # The columns are made all at once, since adding hundreds of columns
+        # one at a time fragments the table.
+        updated = pd.DataFrame({
+            name: (
+                made[name].combine_first(data[name]) if name in data.columns
+                else made[name])
+            for name in made.columns}, index = data.index)
+        order = [
+            *data.columns, *(c for c in updated.columns if c not in data)]
+        data = pd.concat(
+            [data.drop(columns = updated.columns, errors = 'ignore'), updated],
+            axis = 1)[order]
+        return cases.tidy(_derive(data, data))
+
 
 
 @dataclasses.dataclass
@@ -65,17 +203,21 @@ class Parser:
     """Parses cases with rulebooks.
 
     Args:
-        rulebook: the rules of the jurisdiction, applied to every case.
-        structures: the rules that find the sections of each source's cases,
-            by the name of the source. Defaults to an empty `dict`, in which
-            case they are loaded when first needed.
-        keep_text: whether to keep the text of the opinions (and of the
-            Lexis-Nexis header) in the table. Defaults to `False`.
+        rulebook: the rules of the jurisdiction, applied to every case after
+            its source's header rules.
+        source_rules: the rulebooks of the sources (those that find the
+            sections of their cases and those of their headers), by name.
+            Defaults to an empty `dict`, in which case they are loaded when
+            first needed.
+        keep_text: whether to keep the text of every section of each case
+            (such as "party", "history", "judges", and "opinion") in the
+            table, except a Lexis-Nexis case's whole "text", whose parts are
+            kept instead. Defaults to `False`.
 
     """
 
     rulebook: amos.parsers.Rulebook
-    structures: dict[str, amos.parsers.Rulebook] = dataclasses.field(
+    source_rules: dict[str, amos.parsers.Rulebook] = dataclasses.field(
         default_factory = dict)
     keep_text: bool = False
 
@@ -90,15 +232,16 @@ class Parser:
         keep_text: bool = False) -> Parser:
         """Returns a parser with the rules in `rulebooks`.
 
-        The rules of `options._REQUIRED_RULEBOOKS` are always applied first,
-        whether or not they are named.
+        The rules of `options._REQUIRED_RULEBOOKS` are always applied first
+        (after the header rules of each case's source), whether or not they
+        are named.
 
         Args:
             rulebooks: names of rulebooks (such as "federal" or "civil") or
                 paths to CSV files or folders of them, applied in order.
                 Defaults to `options._DEFAULT_JURISDICTION`.
-            keep_text: whether to keep the text of the opinions in the table.
-                Defaults to `False`.
+            keep_text: whether to keep the text of the cases' sections in the
+                table. Defaults to `False`.
 
         Raises:
             FileNotFoundError: if a rulebook is not the name of one, a CSV
@@ -170,7 +313,7 @@ class Parser:
 
         Args:
             path: path of the saved case.
-            source: the name of its source, such as "court_listener".
+            source: the name of its source, such as "courtlistener".
 
         Returns:
             The case's id and its row of the table.
@@ -199,15 +342,17 @@ class Parser:
         found = pd.DataFrame(index = sections.index)
         if source is not None and source.structure:
             sections, found = _apply(
-                self._structure(source.structure), sections)
+                self._source_rulebook(source.structure), sections)
         for column in sections.columns:
             if not str(column).endswith('_lines'):
                 sections[column] = sections[column].str.replace(
                     r'\s+', ' ', regex = True).str.strip()
-        sections, made = _apply(self.rulebook, sections)
-        found = pd.concat(
-            [found.drop(columns = made.columns, errors = 'ignore'), made],
-            axis = 1)
+        header = source.header if source is not None else base.Source.header
+        for rulebook in (self._source_rulebook(header), self.rulebook):
+            sections, made = _apply(rulebook, sections)
+            found = pd.concat(
+                [found.drop(columns = made.columns, errors = 'ignore'), made],
+                axis = 1)
         table = pd.DataFrame(
             [case.metadata for case in group], index = sections.index)
         shared = [c for c in found.columns if c in table.columns]
@@ -228,38 +373,41 @@ class Parser:
             c for c in table.columns
             if c in options._LARGE_SECTIONS or str(c).endswith('_lines')])
         if self.keep_text:
-            for name in ('header', 'opinion'):
-                table[name] = sections.get(name)
+            kept = [
+                c for c in sections.columns
+                if c not in table.columns and c not in _NOT_KEPT]
+            table = pd.concat([table, sections[kept]], axis = 1)
         return table
 
-    def _structure(self, name: str) -> amos.parsers.Rulebook:
-        """Returns the rulebook that finds the sections of a source's cases.
+    def _source_rulebook(self, name: str) -> amos.parsers.Rulebook:
+        """Returns a rulebook of a source.
 
         The rulebook is loaded the first time it is needed and kept in
-        `structures`, so its CSV files are read only once.
+        `source_rules`, so its CSV files are read only once.
 
         Args:
             name: the name of a rulebook or the path to a CSV file (a
-                `Source`'s `structure`, such as "lexis_nexis").
+                `Source`'s `structure` or `header`, such as "lexis_nexis" or
+                "lexis_nexis_header").
 
         Returns:
             The rulebook.
 
         """
-        if name not in self.structures:
-            self.structures[name] = amos.parsers.Rulebook.create(name)
-        return self.structures[name]
+        if name not in self.source_rules:
+            self.source_rules[name] = amos.parsers.Rulebook.create(name)
+        return self.source_rules[name]
 
 
 def find_files(
     folder: pathlib.Path | str,
-    source: str = 'court_listener') -> list[pathlib.Path]:
+    source: str = 'courtlistener') -> list[pathlib.Path]:
     """Returns the saved cases of a source in a folder and its subfolders.
 
     Args:
         folder: the folder.
         source: the name of the source (see `courtpy.sources.SOURCES`).
-            Defaults to "court_listener".
+            Defaults to "courtlistener".
 
     Raises:
         ValueError: if there is no source named `source`.
@@ -274,7 +422,7 @@ def find_files(
 
 def parse(
     files: pathlib.Path | str | Iterable[pathlib.Path | str],
-    source: str = 'court_listener',
+    source: str = 'courtlistener',
     rulebooks: str | pathlib.Path | Sequence[str | pathlib.Path] = (
         options._DEFAULT_JURISDICTION),
     *,
@@ -292,13 +440,13 @@ def parse(
         files: a folder of saved cases (searched with its subfolders), or the
             paths of saved cases.
         source: the name of the source the cases came from, such as
-            "court_listener" (the default) or "lexis_nexis" (see
+            "courtlistener" (the default) or "lexis_nexis" (see
             `courtpy.sources.SOURCES`).
         rulebooks: names of rulebooks (such as "federal") or paths to CSV
             files or folders of them. Defaults to
             `options._DEFAULT_JURISDICTION`.
-        keep_text: whether to keep the text of the opinions in the table.
-            Defaults to `False`.
+        keep_text: whether to keep the text of the cases' sections in the
+            table (see `ParseAll`). Defaults to `False`.
         limit: most cases to parse, for trying out rules. Defaults to `None`
             (every case).
         workers: number of processes to parse with. Defaults to 1.
