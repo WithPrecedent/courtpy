@@ -253,5 +253,3 @@ def _read(
         column for column in table.columns
         if str(column) == '' or str(column).startswith('Unnamed:')]
     return table.drop(columns = numbered)
-
-
