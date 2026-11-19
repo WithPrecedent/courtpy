@@ -23,3 +23,6 @@ opinion,standard_clear_error,flags,clearly erro(r|neous),,,,
 opinion,standard_abuse_disc,flags,abused? (of|its|his|her) discretion,,,,
 opinion,standard_arb_cap,flags,arbitrary and capricious,,,,
 opinion,standard_mixed_question,flags,mixed question,,,,
+opinion,standard_substantial_evidence,flags,substantial\s+evidence,,ignorecase,,"Deferential: findings of a jury, an agency, or an administrative law judge reviewed for substantial evidence."
+opinion,standard_plain_error,flags,plain[\s-]+error,,ignorecase,,Deferential: an error that was not raised below.
+opinion,standard_named,flags,standard\s+of\s+review|we\s+review\b|(?:is|are)\s+reviewed\s+(?:de\s+novo|for),,ignorecase,,"Words that announce a standard of review (""standard of review"", ""we review"", or ""is reviewed de novo"")."

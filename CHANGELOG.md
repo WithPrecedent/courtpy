@@ -6,6 +6,96 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+* courtpy requires amos 0.10.1, chrisjen 0.5.0, fjc-idb 0.0.4, and nagata
+  0.2.1. amos brings pyarrow and indexed-bzip2, so the "parquet" extra is
+  gone: parquet files always work.
+* courtpy uses amos's file tools in place of its own. **Breaking:**
+  `utilities.download_file`, `utilities.page_links`, and
+  `utilities.html_to_text` are gone; use `amos.loaders.download_file`,
+  `amos.loaders.page_links`, and `amos.mungers.html_to_text`.
+  `utilities.open_session` stays, to identify courtpy to servers.
+* `BulkData` reads the bulk files with `amos.loaders.read_chunks`, which
+  decompresses and parses them on every core and drops the rows of other
+  courts and cases before they become Python objects. `BulkData.chunks`
+  yields chosen rows and columns of a file as tables, and `BulkData.rows`
+  takes the same `columns` and `keep`. `BulkData.fetch` downloads with
+  `amos.loaders.download_file`, which resumes a stopped download, and no
+  longer asks the bucket for the file's size first.
+* The Supreme Court Database's files are downloaded with
+  `amos.loaders.download_file`, which checks that each archive has the
+  right file before saving it.
+* The modules are in a folder for each part, as `amos` keeps its modules in
+  a folder for each stage: `core` (`cases`, `options`, `secrets`, and
+  `utilities`), `sources` (`courtlistener`, `bulk`, and `lexis`),
+  `wrangler` (`rules`, `parsers`, `coders`, and `loaders`), and
+  `references` (`judges`, `scdb`, `fjc_idb`, `jcs`, and `politics`). Each
+  can still be imported from `courtpy` itself (such as `courtpy.judges`),
+  but its full name has changed (such as `courtpy.references.judges`), and
+  so have the names of the modules' loggers (such as
+  `courtpy.wrangler.parsers`). The tests are in the same folders.
+* **Breaking:** the data folder is "courts" in the data folder of the
+  `amos` workspace (`options._DATA_SUBFOLDER`), as every `amos` project
+  keeps its data, whether courtpy runs from its repository or is installed.
+  `options._DATA_FOLDER` is gone. `COURTPY_DATA_DIR` still names another
+  folder.
+* **Breaking:** the agencies of "agencies" are separated by "; " (not
+  ", "), as every other column with several values in a case is, and
+  `split_values` splits "agencies" by default.
+* **Breaking:** courtpy's rulebooks are made by `rules.register_rulebooks`
+  from the folders of rule files, and are in `rules.RULEBOOKS` by name (such
+  as `rules.RULEBOOKS["federal"]`). The classes `ParseFederal`,
+  `ParseCivil`, and the rest are no longer attributes of `courtpy.rules`,
+  but every rulebook and technique keeps its name ("federal",
+  "parse_civil", and so on). A study makes rulebooks of its own folders the
+  same way, so its settings can name them (`rulebooks = federal, review`),
+  with a `prefix` for another jurisdiction's topics and a `combined`
+  rulebook of them all.
+* The "review" rulebook (`federal/review.csv`, part of "federal") finds the
+  kind of review of an appeal ("review_district", "review_agency", and
+  "review_immigration") and the district judge of an appeal from a district
+  court ("district_text" and "district_judges"). The "general" rules find
+  three more standards of review: "standard_substantial_evidence",
+  "standard_plain_error", and "standard_named" (words that announce a
+  standard). These rules come from coa_judicial_behavior's "review.csv".
+* `courtpy.cases` has helpers for the columns of case tables that studies
+  had each written: `split_cell`, `column_as_flags`, `flags_as_numbers`,
+  `select_whole_cases`, and `require_columns`. courtpy's own techniques use
+  them in place of their private copies.
+* `column_as_flags` (formerly the coders' private `_flags`) reads "TRUE" and
+  "FALSE" in text columns as pandas 3 types them, so coders of a table
+  loaded from a CSV file read its flags.
+* `utilities.is_none_setting` says whether a setting such as "none" or
+  "false" turns something off, in place of two private copies.
+* `courtpy judges` makes and saves the roster of judges (with
+  "--update", "--no-jcs", "--martin-quinn", "--rulebook", and "--output").
+  `cli.main` takes a program name and a function that adds a study's own
+  commands, so a study's program has courtpy's commands and its own, and
+  errors from downloads are shown as one line.
+* Sources and ways to download can be added by a study. A
+  `courtpy.Source` reads saved cases, and a `courtpy.Download` collects
+  them into a folder; each adds itself to `courtpy.sources.SOURCES` or
+  `courtpy.sources.DOWNLOADS` when it is subclassed, as `amos` techniques
+  do. courtpy's own are `CourtListenerSource`, `LexisNexisSource`,
+  `BulkDownload` ("bulk"), and `ApiDownload` ("api"). A new
+  `courtpy.SourceLoader` downloads (if asked) and parses any source, and
+  `load_court_listener` and `load_lexis_nexis` are built on it, so a
+  study's "download" (such as "opinions") needs no loader of its own, and
+  a loader for a new source needs only its name. Options that a loader
+  does not know (such as "parties") go to the way to download.
+* **Breaking:** `parsers.Source` and `parsers.SOURCES` are gone (see
+  `courtpy.sources`), and so is `options._SOURCES`. `courtpy download`
+  has a subcommand for each way to download, with its own options (such
+  as `courtpy download bulk --stream`); "--courts" is no longer required
+  by the command itself, and "--folder" defaults to the name of the source.
+  `utilities.to_date` and `utilities.to_integer` replace the loaders'
+  private `_date` and `_integer`.
+* `courtpy.judges` is a folder of private modules (`_names`, `_roster`,
+  `_biographies`, and `_panels`), with the same public names.
+* The documentation has a guide to building a study on courtpy and a
+  catalog of its techniques and of the columns of each rulebook, which is
+  built from courtpy itself.
+* Strings use single quotes throughout, and lines of code are at most 80
+  characters.
 * The rules in the "instructions" folder are divided by jurisdiction. The
   "general" folder has the rules that fit opinions of any jurisdiction, and
   the "federal" folder has only the rules that fit federal opinions alone.
