@@ -260,6 +260,8 @@ def select_whole_cases(
 
     Raises:
         KeyError: if `data` has no `case_column`.
+        ValueError: if the query does not say whether each row is selected
+            (such as "year + 1", which makes a number for each row).
 
     Returns:
         Whether each row is selected: every row without a query, and the
@@ -269,9 +271,18 @@ def select_whole_cases(
     if not query:
         return pd.Series(True, index = data.index)
     require_columns(data, [case_column], 'select_whole_cases')
-    selected = column_as_flags(
-        pd.DataFrame({'selected': data.eval(query)}, index = data.index),
-        'selected')
+    message = (
+        f'the query {query!r} must say whether each row is selected (true '
+        f'or false), as "year >= 2010" does')
+    found = data.eval(query)
+    if not isinstance(found, pd.Series) or len(found) != len(data):
+        raise ValueError(message)
+    try:
+        selected = column_as_flags(
+            pd.DataFrame({'selected': found}, index = data.index),
+            'selected')
+    except (TypeError, ValueError) as error:
+        raise ValueError(message) from error
     whole: pd.Series = selected.groupby(data[case_column]).transform('all')
     return whole
 

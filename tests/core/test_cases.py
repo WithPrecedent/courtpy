@@ -47,3 +47,10 @@ def test_select_whole_cases() -> None:
     assert cases.select_whole_cases(votes, 'year > 2011').tolist() == [False, False, True, True]
     with pytest.raises(KeyError, match = 'docket'):
         cases.select_whole_cases(votes, 'year > 0', case_column = 'docket')
+    for query in ('year + 1', '1 > 0'):
+        with pytest.raises(ValueError, match = 'must say whether each row'):
+            cases.select_whole_cases(votes, query)
+    # Flags read from a CSV file as text still select rows.
+    text = votes.assign(dissent = ['TRUE', 'TRUE', 'FALSE', 'TRUE'])
+    assert cases.select_whole_cases(text, 'dissent').tolist() == [
+        True, True, False, False]

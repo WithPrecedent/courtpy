@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.4.1
+
+* `cases.select_whole_cases` raises a `ValueError` that names the query
+  when the query does not say whether each row is selected (such as
+  "year + 1"), in place of pandas' "Need to pass bool-like values".
+
 ## 0.4.0
 
 * courtpy requires amos 0.10.1, chrisjen 0.5.0, fjc-idb 0.0.4, and nagata
