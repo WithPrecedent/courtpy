@@ -7,7 +7,7 @@
 | | |
 | --- | --- |
 | Version | [![PyPI Latest Release](https://img.shields.io/pypi/v/courtpy.svg?style=for-the-badge&color=cornflowerblue&label=PyPI&logo=PyPI&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Latest Release](https://img.shields.io/github/v/tag/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=GitHub&logo=github)](https://github.com/WithPrecedent/courtpy/releases) |
-| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?style=for-the-badge&branch=main&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Code Coverage](https://img.shields.io/codecov/c/github/WithPrecedent/courtpy?style=for-the-badge&color=cadetblue&label=Coverage&logo=codecov)](https://app.codecov.io/gh/WithPrecedent/courtpy) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=for-the-badge&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=for-the-badge&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
+| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?style=for-the-badge&branch=main&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Code Coverage](https://img.shields.io/codecov/c/github/WithPrecedent/courtpy/main?style=for-the-badge&color=cadetblue&label=Coverage&logo=codecov)](https://app.codecov.io/gh/WithPrecedent/courtpy) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=for-the-badge&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=for-the-badge&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
 | Documentation | [![Hosted By](https://img.shields.io/badge/Hosted_by-Github_Pages-blue?style=for-the-badge&color=forestgreen&logo=github)](https://WithPrecedent.github.io/courtpy) |
 | Tools | [![Documentation](https://img.shields.io/badge/MkDocs-magenta?style=for-the-badge&color=deepskyblue&logo=markdown&labelColor=gray)](https://squidfunk.github.io/mkdocs-material/) [![Linter](https://img.shields.io/endpoint?style=for-the-badge&url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Type Checker](https://img.shields.io/badge/mypy-steelblue?style=for-the-badge&logo=python&logoColor=white&labelColor=gray)](https://mypy-lang.org/) [![Dependency Manager](https://img.shields.io/badge/uv-mediumpurple?style=for-the-badge&logo=uv&labelColor=gray)](https://docs.astral.sh/uv/) [![Pre-commit](https://img.shields.io/badge/pre--commit-darkolivegreen?style=for-the-badge&logo=pre-commit&logoColor=white&labelColor=gray)](https://pre-commit.com/) [![CI](https://img.shields.io/badge/GitHub_Actions-forestgreen?style=for-the-badge&logo=githubactions&labelColor=gray&logoColor=white)](https://github.com/features/actions) [![Editor Settings](https://img.shields.io/badge/Editor_Config-paleturquoise?style=for-the-badge&logo=editorconfig&labelColor=gray)](https://editorconfig.org/) [![Repository Template](https://img.shields.io/badge/snickerdoodle-bisque?style=for-the-badge&logo=cookiecutter&labelColor=gray)](https://www.github.com/WithPrecedent/snickerdoodle) [![Dependency Maintainer](https://img.shields.io/badge/dependabot-forestgreen?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=gray)](https://github.com/dependabot) |
 | Compatibility | [![Compatible Python Versions](https://img.shields.io/pypi/pyversions/courtpy?style=for-the-badge&color=cornflowerblue&label=Python&logo=python&logoColor=yellow)](https://pypi.org/project/courtpy/) [![Linux](https://img.shields.io/badge/Linux-lightseagreen?style=for-the-badge&logo=linux&labelColor=gray&logoColor=white)](https://www.linux.org/) [![MacOS](https://img.shields.io/badge/MacOS-antiquewhite?style=for-the-badge&logo=apple&labelColor=gray)](https://www.apple.com/macos/) [![Windows](https://img.shields.io/badge/Windows-blue?style=for-the-badge)](https://www.microsoft.com/en-us/windows?r=1) |
@@ -54,8 +54,7 @@ new fields, and wrapping custom tools.
 
 ## Techniques and datasets
 
-`courtpy` is built on [amos](https://github.com/WithPrecedent/amos), so anyone
-who knows `amos` already knows how to use it. A study is an `amos` project,
+`courtpy` is built on [amos](https://github.com/WithPrecedent/amos). A study is an `amos` project,
 described in one settings file that names **techniques** in **steps** of the
 project's **workers**. `courtpy` adds these techniques to those of `amos`, and
 a settings file can name them like any other:
@@ -192,7 +191,7 @@ cases = courtpy.Cases.load("cases.csv")
 
 The rules are in the CSV files in `courtpy`'s
 [instructions folder](https://github.com/WithPrecedent/courtpy/tree/main/src/courtpy/instructions),
-with a guide to writing your own. The "federal" rules make more than 250
+with a guide to writing your own. For example, the rules for federal cases may make more than 250
 variables, including:
 
 | Variables | Meaning |
@@ -245,9 +244,9 @@ adding or losing a row, and records how many rows it matched.
 | `add_biography` | What the roster says about each judge. In `Cases`, the columns are numbered by each judge's seat on the panel (`judge_name1`, `judge_party1`, `judge_woman1`, ..., `judge_name2`, ...); in `Votes`, each row has its judge's (`judge_party`, ...). A function can take the place of the roster. |
 | `add_jcs` | Each judge's [Judicial Common Space](https://epstein.wustl.edu/jcs) score, numbered in the same way (`judge_jcs1`, ...). |
 | `code_panels` | The judges of each panel who were found in the roster (`panel_names` and `panel_found`, and each judge's Federal Judicial Center name and number in `judge_name1` and `judge_nid1`, `judge_name2` and `judge_nid2`, and so on) and the panel's composition, such as `panel_party` (the mean party of the presidents who appointed its judges, from -1 for Democrats to 1 for Republicans), `panel_woman`, `panel_age`, and `panel_prosecutor`. |
-| `add_executive` | The president on the day the case was decided (`executive_name`) and the president's party (`executive_ideology`, -1 or 1). |
-| `add_legislature` | The median [NOMINATE](https://voteview.com/data) score of each chamber of the Congress then sitting (`senate_ideology` and `house_ideology`). |
-| `add_high_court` | The [Martin-Quinn score](https://mqscores.wustl.edu/measures.php) of the median justice in the Supreme Court's term then sitting (`high_court_ideology`). |
+| `add_executive` | The executive (president for federal cases) on the day the case was decided (`executive_name`) and their political party (`executive_ideology`, -1 or 1). |
+| `add_legislature` | For federal cases, the median [NOMINATE](https://voteview.com/data) score of each chamber of the Congress then sitting (`senate_ideology` and `house_ideology`). |
+| `add_high_court` | For federal cases, [Martin-Quinn score](https://mqscores.wustl.edu/measures.php) of the median justice in the Supreme Court's term then sitting (`high_court_ideology`). |
 | `add_circuit` | The makeup of the whole circuit on the day the case was decided (for a district court, the circuit that hears its appeals): the median and total of the parties of the presidents who appointed its active judges (`circuit_median_party`, `circuit_total_party`) and of their Judicial Common Space scores (`circuit_median_jcs`, `circuit_total_jcs`). Senior judges, who do not sit en banc, are left out. |
 | `add_judge_scores`, `add_court_scores` | Behavioral scores of each judge or court computed from training data (such as a table of `Judges` or `Courts` made from the training cases), matched by the judge's or court's number. |
 | `cases_to_votes` | `Votes`: a table with one row for each judge on each case, with the judge's attributes (`judge_party`, ...), the other judges' (`colleagues_party`, ...), and the judge's vote (`vote_reversal`, the outcome or its opposite for a judge who dissented). |
@@ -372,7 +371,7 @@ repository" button reads the same information from
 @software{yung_courtpy,
   author  = {Yung, Corey Rayburn},
   title   = {courtpy: Accessible tools for collecting, parsing, and analyzing court opinions},
-  version = {0.4.1},
+  version = {0.5.0},
   year    = {2026},
   url     = {https://github.com/WithPrecedent/courtpy},
   license = {Apache-2.0}

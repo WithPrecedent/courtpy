@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
-## Unreleased
+## 0.5.0
+
+courtpy follows the `amos` way of working more closely: its data are `amos`
+datasets of one kind of row each, and everything it does to them is an
+`amos` technique that a settings file can name. Each source of cases has
+header rules of its own, which find courts and agencies with the tables in
+"courts.csv" and "agencies.csv", and courtpy has plots, checks, and an
+inferer for `amos`'s "artist" and "critic" stages. **Breaking** throughout;
+no old names are kept.
 
 * Upgraded locked dependencies with security fixes to clear Dependabot
   alerts: pillow 13.0.0, filelock 4.2.12, certifi 2026.10.23, virtualenv
@@ -86,6 +94,8 @@ All notable changes to this project will be documented in this file.
     standard errors clustered by case, and a randomization test.
   - CI installs the `analysis` extra, so the tests of the plots run there
     and mypy checks against the same packages as development.
+* The README's coverage badge reads the `main` branch, since Codecov's
+  default branch for the repository was still "master".
   - `courts.court_labels` labels each case's court in the table's order,
     and `judges.republican_appointees` and `judges.panel_compositions`
     describe each panel by its judges' parties.
@@ -106,14 +116,6 @@ All notable changes to this project will be documented in this file.
 * **Breaking:** the CourtListener source is named "courtlistener" (it was
   "court_listener"), and so is the default folder of its cases. The
   `load_court_listener` loader keeps its name.
-
-## 0.5.0
-
-courtpy follows the `amos` way of working more closely: its data are `amos`
-datasets of one kind of row each, and everything it does to them is an
-`amos` technique that a settings file can name. **Breaking** throughout; no
-old names are kept.
-
 * courtpy requires amos 0.10.2, for its savers.
 * `courtpy.datasets` has the kinds of `amos.Dataset` that courtpy makes, by
   what each row is: `Cases`, `Dockets`, `Votes`, `Judges`, `Courts`,
