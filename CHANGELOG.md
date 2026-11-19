@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
-## Unreleased
+## 0.4.0
 
 * courtpy requires amos 0.10.1, chrisjen 0.5.0, fjc-idb 0.0.4, and nagata
   0.2.1. amos brings pyarrow and indexed-bzip2, so the "parquet" extra is
