@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+* Upgraded locked dependencies with security fixes to clear Dependabot
+  alerts: pillow 13.0.0, filelock 4.2.12, certifi 2026.10.23, virtualenv
+  21.15.9, setuptools 84.2.1, gitpython 3.2.1, black 26.10.1, and uv 0.13.9.
 * "instructions/federal/courts.csv" uses levels that state courts can
   share. **Breaking:** the level "district" is now "trial" and "supreme" is
   now "high".
