@@ -94,8 +94,8 @@ All notable changes to this project will be documented in this file.
 * The documentation has a guide to building a study on courtpy and a
   catalog of its techniques and of the columns of each rulebook, which is
   built from courtpy itself.
-* Strings use single quotes throughout, and lines of code are at most 80
-  characters.
+* Strings use single quotes throughout, lines of code are at most 80
+  characters, and every file ends with a single newline.
 * The rules in the "instructions" folder are divided by jurisdiction. The
   "general" folder has the rules that fit opinions of any jurisdiction, and
   the "federal" folder has only the rules that fit federal opinions alone.
