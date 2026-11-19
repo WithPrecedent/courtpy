@@ -58,7 +58,7 @@ import amos
 import requests
 
 from . import __version__
-from .core import cases, options, secrets, utilities
+from .core import datasets, options, secrets, utilities
 from .references import judges
 
 # Importing the modules of the sources adds them and their ways to download
@@ -287,10 +287,11 @@ def _parse(arguments: argparse.Namespace) -> int:
         print(f'courtpy: no {arguments.source} cases in {arguments.folder}',
               file = sys.stderr)
         return 1
-    if not arguments.no_code:
-        data = coders.code(data).data
-    path = cases.save_cases(data, arguments.output)
-    print(f'{len(data)} cases parsed into {path}')
+    dataset = datasets.Cases.create(
+        data if arguments.no_code else coders.code(data))
+    path = pathlib.Path(arguments.output)
+    dataset.save(path)
+    print(f'{len(dataset.data)} cases parsed into {path}')
     return 0
 
 
@@ -459,7 +460,9 @@ def _parser(
             'header and general (default: federal)'))
     parse.add_argument(
         '--output', default = 'cases.csv',
-        help = 'file to save the table to (default: cases.csv)')
+        help = (
+            'file to save the table to, with the whole dataset beside it '
+            'in a .joblib file (default: cases.csv)'))
     parse.add_argument(
         '--keep-text', action = 'store_true', help = "keep the opinions' text")
     parse.add_argument('--limit', type = int, help = 'most cases to parse')

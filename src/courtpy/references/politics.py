@@ -1,50 +1,55 @@
-"""Adds the political context of each year to parsed cases.
+"""Adds the political context of each case: who held power when it was decided.
 
-`build_table` makes a table of years from three
-sources:
+Three mergers (`amos.Merger` techniques, which are added to the `amos`
+library as soon as courtpy is imported) add the ideology of the other
+branches and of the Supreme Court on the day each case was decided. Each
+matches the case's date to a table of date ranges with the `merge_ranges`
+technique of `amos`, so another table with the same columns (such as the
+governors of a state) can be its "source":
 
-| Columns | Meaning | Source |
+| Technique | Adds | Table |
 | --- | --- | --- |
-| `president_party` | The party of the president: -1 for Democratic and 1 for Republican. | courtpy (see `presidents`). |
-| `supreme_court_median`, `supreme_court_min`, `supreme_court_max` | The Martin-Quinn scores of the median justice and of the most liberal and most conservative justices in the term that began in the year. Higher scores are more conservative. | The "justices" file of https://mqscores.wustl.edu/measures.php (see `martin_quinn`). |
-| `senate_median`, `house_median` | The median NOMINATE score of the members of each chamber of Congress. Higher scores are more conservative. | The file of members' ideology of https://voteview.com/data (see `nominate`). |
+| `add_executive` | `executive_name` and `executive_ideology` (the president's party: -1 for Democratic and 1 for Republican). | `executives`: each president's term, from "instructions/federal/presidents.csv". |
+| `add_legislature` | `senate_ideology` and `house_ideology`: the median DW-NOMINATE score of the members of each chamber of the Congress then sitting. Higher scores are more conservative. | `legislatures`: each Congress, from the file of members' ideology of https://voteview.com/data. |
+| `add_high_court` | `high_court_ideology`: the Martin-Quinn score of the median justice in the term of the Supreme Court then sitting (from October to September). Higher scores are more conservative. | `high_courts`: each term, from the "justices" file of https://mqscores.wustl.edu/measures.php. |
+
+Each takes "date" (the column with the date each case was decided, which is
+"date_filed" unless another is set) and the parameters of every merger of
+`amos` ("source", "columns", "prefix", and "indicator").
 
 The sources' current files are downloaded by the judicial-common-space
 package when they are first needed (see `download`), and kept outside of
 projects (in "politics" in `courtpy.utilities.data_folder()`), where it and
-fjc-biographies look for them too. The tables are combined by their years
-with the `merge_keys` technique of `amos`, which adds the columns of another
-table's row that has the same keys.
+fjc-biographies look for them too.
 
-`add_politics` (an `amos.Merger`, which is added to the `amos` library as
-soon as courtpy is imported) is that technique with the year of each case as
-its key: it adds the table's columns to each case, with "politics_" before
-their names. With no table, it adds only "politics_president_party", which
-needs no file. Any table with a "year" column can be used, so other measures
-can be added in a spreadsheet:
-
-```python
-import courtpy
-
-courtpy.politics.build_table().to_csv("politics.csv", index = False)
-dataset = courtpy.code(cases, "add_politics", parameters = {
-    "add_politics": {"source": "politics.csv"}})
-```
-
-`load_politics` and `download_politics` (reference loaders, see
-`courtpy.loaders.ReferenceLoader`) start a study of the years themselves,
-with a saved table or one that `build_table` makes.
+`build_table` makes a table of the political context of each year, with
+the columns of `presidents` ("president_party"), `martin_quinn`
+("supreme_court_median", ...), and `nominate` ("senate_median" and
+"house_median"). `load_politics` and `download_politics` (reference loaders,
+see `courtpy.loaders.ReferenceLoader`) start a study of the years
+themselves with a saved table or one that `build_table` makes.
 
 Contents:
-    AddPolitics: adds the columns of a table of years to each case.
+    AddExecutive: adds the executive in power when each case was decided.
+    AddHighCourt: adds the ideology of the Supreme Court when each case was
+        decided.
+    AddLegislature: adds the ideology of Congress when each case was
+        decided.
+    ByDate: makes a merger add the row of a table of date ranges that has
+        each case's date.
     DownloadPolitics: downloads the sources of the political context and
         loads its table.
     LoadPolitics: loads a table of the political context of each year.
     build_table: makes a table of the political context of each year.
     download: downloads the files of Martin-Quinn and NOMINATE scores with
         judicial-common-space.
+    executives: returns the term of each president.
+    high_courts: returns the Martin-Quinn score of the median justice in
+        each term of the Supreme Court.
     justices: returns the Martin-Quinn and Judicial Common Space scores of
         each justice in each term.
+    legislatures: returns the median NOMINATE scores of each chamber in each
+        Congress.
     martin_quinn: returns the Martin-Quinn scores of the Supreme Court in
         each year.
     nominate: returns the median NOMINATE scores of the Senate and the House
@@ -54,6 +59,9 @@ Contents:
         of Congress in the file of members.
     _COURT: the columns that `martin_quinn` makes, by the summary of the
         justices' scores that each is.
+    _FIRST_JANUARY_CONGRESS: the first Congress that met in January (under
+        the Twentieth Amendment).
+    _PRESIDENTS_FILE: the file of the presidents' terms.
     _SOURCES: the files that `download` gets, by what judicial-common-space
         calls each.
 
@@ -64,13 +72,13 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 import amos
 import judicial_common_space
 import pandas as pd
 
-from ..core import cases, options, utilities
+from ..core import cases, utilities
 from ..wrangler import loaders
 from . import jcs
 
@@ -80,34 +88,33 @@ _COURT: dict[str, str] = {
     'median': 'supreme_court_median',
     'min': 'supreme_court_min',
     'max': 'supreme_court_max'}
+_FIRST_JANUARY_CONGRESS: int = 74
+_PRESIDENTS_FILE: pathlib.Path = (
+    utilities.instructions_folder() / 'federal' / 'presidents.csv')
 _SOURCES: dict[str, str] = {'justices': 'martin_quinn', 'congress': 'congress'}
 
 
-@dataclasses.dataclass
-class AddPolitics(amos.mergers.MergeKeys):
-    """Adds the columns of a table of years to each case.
+class ByDate:
+    """Makes a merger add the row of a table of date ranges with each date.
 
-    Every column of the table (see `build_table`) is added to the cases, with
-    a prefix before its name: each case gets the values of its year. A case
-    whose year is missing, or is not in the table, gets missing values.
+    A merger of courtpy subclasses it before `amos.Merger` (as in
+    `class AddExecutive(ByDate, amos.Merger)`). Each row of its table is a
+    range of dates ("start_date" and "end_date"), and each case gets the
+    columns of the row whose range has the case's date, as the
+    `merge_ranges` technique of `amos` finds it. A date on which one range
+    ends and the next begins (such as the day of an inauguration) gets the
+    later row. It is a mixin rather than a base class so that the merger
+    stays a merger in the `amos` library.
 
-    It is the `merge_keys` technique of `amos`, with the year as the key. So
-    it takes that merger's parameters, never adds, removes, or reorders
-    rows, and records how many cases it matched in the dataset's history:
-
-    | Parameter | Meaning |
-    | --- | --- |
-    | `source` | The table of years: the path of a data file (looked for in the current folder and then in the clerk's input folder), or a table. Without it, the table is the party of the president in each year (see `presidents`). |
-    | `on` | The column of the cases to match by. It is "year" unless another is set. |
-    | `other_on` | The column of the table to match by, if it has another name there. |
-    | `prefix` | Text to put before the names of the table's columns. It is "politics_" unless another is set. |
-    | `columns` | The columns of the table to add. By default, they are all of them. |
-    | `indicator` | The name of a column to make that says whether each case's year was in the table. |
-    | `duplicates` | What to do if the table has more than one row for a year: "error" (the default), "first", or "last". |
-
-    Needs "year" (or the column named by "on").
+    Attributes:
+        added: the columns of the table that are added unless "columns" names
+            others.
 
     """
+
+    added: ClassVar[tuple[str, ...]]
+
+    """ Public Methods """
 
     def apply(
         self,
@@ -115,43 +122,167 @@ class AddPolitics(amos.mergers.MergeKeys):
         *,
         source: Any = None,
         columns: Sequence[str] | str | None = None,
-        prefix: str | None = 'politics_',
-        on: Sequence[str] | str = 'year',
+        date: str = 'date_filed',
         **kwargs: Any) -> amos.Dataset:
-        """Adds the political context of each case's year to `item`.
+        """Adds the columns of the row of the table that has each case's date.
 
         Args:
-            item: the dataset of parsed cases.
-            source: a table with a row for each year, or the path of a data
-                file of one. Defaults to `None`, in which case it is the
-                party of the president in each year (see `presidents`).
-            columns: the columns of the table to add, as a list or as text
-                with commas between their names. Defaults to `None`, for
-                all of them.
-            prefix: text to put before the names of the table's columns.
-                Defaults to "politics_".
-            on: name of the column of the cases by which they are matched to
-                the table. Defaults to "year".
-            **kwargs: other parameters of the `merge_keys` technique of
-                `amos`, such as "other_on", "indicator", and "duplicates".
+            item: the dataset of cases (or of votes).
+            source: the table of date ranges: a table, or the path of a data
+                file of one, with "start_date" and "end_date". Defaults to
+                `None`, in which case it is `default_table`.
+            columns: the columns of the table to add. Defaults to `None`, for
+                `added`.
+            date: the column of `item` with the date each case was decided.
+                Defaults to "date_filed".
+            **kwargs: other parameters of the merger, such as "prefix" and
+                "indicator".
 
         Raises:
-            KeyError: if the cases or the table lack the column to match by.
-            TypeError: if the column is numbers in one and text in the other.
-            ValueError: if the table has more than one row for a year (and
-                "duplicates" is "error").
+            KeyError: if `item` lacks `date`, or the table lacks a column.
 
         Returns:
             The dataset, with the new columns.
 
         """
-        return super().apply(
+        return super().apply(  # type: ignore[misc, no-any-return]
             item,
-            source = presidents() if source is None else source,
-            columns = None if columns is None else utilities.listify(columns),
-            prefix = prefix,
-            on = on,
+            source = self.default_table() if source is None else source,
+            columns = (
+                list(self.added) if columns is None
+                else utilities.listify(columns)),
+            date = date,
             **kwargs)
+
+    def default_table(self) -> pd.DataFrame:
+        """Returns the table of date ranges that is used without a "source".
+
+        Returns:
+            The table, with "start_date", "end_date", and the columns of
+                `added`.
+
+        Raises:
+            NotImplementedError: unless a subclass writes it.
+
+        """
+        raise NotImplementedError
+
+    def match(
+        self,
+        data: pd.DataFrame,
+        other: pd.DataFrame,
+        *,
+        date: str = 'date_filed',
+        **kwargs: Any) -> Any:
+        """Returns the row of the table whose range has each case's date.
+
+        Args:
+            data: the cases.
+            other: the table of date ranges.
+            date: the column of `data` with the date each case was decided.
+                Defaults to "date_filed".
+            **kwargs: not used.
+
+        Raises:
+            KeyError: if `data` lacks `date` or `other` lacks "start_date"
+                or "end_date".
+
+        Returns:
+            The position of the matching row of `other` for each case, or -1
+                if its date is missing or in no range.
+
+        """
+        name = repr(getattr(self, 'name', type(self).__name__))
+        cases.require_columns(data, [date], name)
+        cases.require_columns(
+            other, ['start_date', 'end_date'], f'the table of {name}')
+        dates = pd.DataFrame({
+            'date': pd.to_datetime(data[date], errors = 'coerce')})
+        ranges = pd.DataFrame({
+            'start_date': pd.to_datetime(other['start_date']),
+            'end_date': pd.to_datetime(other['end_date'])})
+        return amos.mergers.MergeRanges().match(
+            dates, ranges, column = 'date', start = 'start_date',
+            end = 'end_date', duplicates = 'last')
+
+
+@dataclasses.dataclass
+class AddExecutive(ByDate, amos.Merger):
+    """Adds the executive in power when each case was decided.
+
+    Each case gets "executive_name" (the president, such as "Barack Obama")
+    and "executive_ideology" (the president's party: -1 for Democratic and 1
+    for Republican), from the term of the president on the case's date (see
+    `executives`). A case decided on the day of an inauguration gets the new
+    president. Another table of executives (such as a state's governors)
+    with the same columns can be its "source". See `ByDate` for its
+    parameters.
+
+    """
+
+    added: ClassVar[tuple[str, ...]] = (
+        'executive_name', 'executive_ideology')
+
+    def default_table(self) -> pd.DataFrame:
+        """Returns the term of each president.
+
+        Returns:
+            The table of `executives`.
+
+        """
+        return executives()
+
+
+@dataclasses.dataclass
+class AddLegislature(ByDate, amos.Merger):
+    """Adds the ideology of Congress when each case was decided.
+
+    Each case gets "senate_ideology" and "house_ideology": the median
+    DW-NOMINATE score (the first dimension, on which higher scores are more
+    conservative) of the members of each chamber of the Congress that was
+    sitting on the case's date (see `legislatures`). The file of members'
+    ideology is downloaded the first time it is needed. Another table of
+    legislatures (such as a state's) with the same columns can be its
+    "source". See `ByDate` for its parameters.
+
+    """
+
+    added: ClassVar[tuple[str, ...]] = ('senate_ideology', 'house_ideology')
+
+    def default_table(self) -> pd.DataFrame:
+        """Returns the median scores of each chamber in each Congress.
+
+        Returns:
+            The table of `legislatures`.
+
+        """
+        return legislatures()
+
+
+@dataclasses.dataclass
+class AddHighCourt(ByDate, amos.Merger):
+    """Adds the ideology of the Supreme Court when each case was decided.
+
+    Each case gets "high_court_ideology": the Martin-Quinn score of the
+    median justice (higher is more conservative) in the term of the Supreme
+    Court that was sitting on the case's date, from October 1 to September
+    30 (see `high_courts`). The file of Martin-Quinn scores is downloaded the
+    first time it is needed. Another table of high courts (such as a state's
+    supreme court) with the same columns can be its "source". See `ByDate`
+    for its parameters.
+
+    """
+
+    added: ClassVar[tuple[str, ...]] = ('high_court_ideology',)
+
+    def default_table(self) -> pd.DataFrame:
+        """Returns the Martin-Quinn score of the median justice in each term.
+
+        Returns:
+            The table of `high_courts`.
+
+        """
+        return high_courts()
 
 
 @dataclasses.dataclass
@@ -163,8 +294,8 @@ class LoadPolitics(loaders.ReferenceLoader):
     Without one, the table is made from the sources' current files (see
     `build_table`), which are downloaded first if they are missing, and
     "supreme_court", "congress", "score", and "common_space" are passed to
-    `build_table`. To add the table's columns to parsed cases, use
-    `add_politics` instead.
+    `build_table`. To add the political context to parsed cases, use
+    `add_executive`, `add_legislature`, and `add_high_court` instead.
 
     """
 
@@ -484,18 +615,7 @@ def nominate(
             its medians.
 
     """
-    members = _read(source, 'congress')
-    cases.require_columns(
-        members, ['congress', 'chamber', score],
-        'the file of the ideology of members of Congress')
-    members = members[members['chamber'].isin(list(_CHAMBERS))]
-    medians = members.assign(
-        congress = members['congress'].astype(int),
-        score = pd.to_numeric(members[score], errors = 'coerce')).pivot_table(
-            index = 'congress', columns = 'chamber', values = 'score',
-            aggfunc = 'median')
-    medians = medians.reindex(columns = list(_CHAMBERS)).rename(
-        columns = _CHAMBERS)
+    medians = _chamber_medians(source, score)
     # The first Congress met in 1789, and each sits for two years.
     first = medians.index.to_numpy() * 2 + 1787
     years = pd.concat([
@@ -509,9 +629,10 @@ def presidents(start: int | None = None, end: int | None = None) -> (
         pd.DataFrame):
     """Returns the party of the president in each year.
 
-    The parties are in `options._PRESIDENTS`, by year, where a year can be
-    added. A president who takes office in a year (in January) is the
-    president of that year.
+    The president of a year is the one in office at its end, so a president
+    who takes office in a year (in January) is the president of that year.
+    The terms are in "instructions/federal/presidents.csv" (see
+    `executives`), where a president can be added.
 
     Args:
         start: the first year. Defaults to `None`, in which case it is the
@@ -529,8 +650,13 @@ def presidents(start: int | None = None, end: int | None = None) -> (
             for Republican).
 
     """
-    parties = pd.Series(options._PRESIDENTS, dtype = 'Int64')
-    earliest, latest = int(parties.index.min()), int(parties.index.max())
+    terms = executives()
+    starts = pd.to_datetime(terms['start_date'])
+    ends = pd.to_datetime(terms['end_date'])
+    earliest = int(starts.min().year)
+    # The last term ends during its last year, so the year before is the
+    # last that a president is in office at the end of.
+    latest = int(ends.max().year) - 1
     start = earliest if start is None else start
     end = latest if end is None else end
     if start < earliest or end > latest:
@@ -540,9 +666,109 @@ def presidents(start: int | None = None, end: int | None = None) -> (
         )
         raise ValueError(message)
     years = list(range(start, end + 1))
+    last_day = pd.to_datetime([f'{year}-12-31' for year in years])
+    chosen = starts.searchsorted(last_day, side = 'right') - 1
+    parties = terms['executive_ideology'].astype('Int64').to_numpy()[chosen]
     return pd.DataFrame({
         'year': years,
-        'president_party': parties.reindex(years).array})
+        'president_party': pd.array(parties, dtype = 'Int64')})
+
+
+def executives(source: pathlib.Path | str | None = None) -> pd.DataFrame:
+    """Returns the term of each president.
+
+    Args:
+        source: a CSV file of terms, with "president", "party", "start_date",
+            and "end_date". Defaults to `None`, for
+            "instructions/federal/presidents.csv".
+
+    Raises:
+        KeyError: if `source` lacks a column that is needed.
+
+    Returns:
+        A table with "executive_name" (the president), "executive_ideology"
+            (the president's party: -1 for Democratic and 1 for Republican),
+            "start_date", and "end_date" (the days the term began and ended,
+            as dates), sorted by the start of the terms.
+
+    """
+    terms = utilities.read_csv(source or _PRESIDENTS_FILE)
+    cases.require_columns(
+        terms, ['president', 'party', 'start_date', 'end_date'],
+        'the table of presidents')
+    table = pd.DataFrame({
+        'executive_name': terms['president'].astype(str),
+        'executive_ideology': pd.to_numeric(
+            terms['party'], errors = 'coerce').astype('Int64'),
+        'start_date': pd.to_datetime(terms['start_date']),
+        'end_date': pd.to_datetime(terms['end_date'])})
+    return table.sort_values('start_date').reset_index(drop = True)
+
+
+def high_courts(
+    source: pd.DataFrame | pathlib.Path | str | None = None) -> pd.DataFrame:
+    """Returns the Martin-Quinn score of the median justice in each term.
+
+    Args:
+        source: the "justices" file of the Martin-Quinn scores (see
+            `justices`), as a path or a table. Defaults to `None`, in which
+            case the current file is used, which is downloaded unless it was
+            before (see `download`).
+
+    Raises:
+        KeyError: if `source` lacks a column that is needed.
+
+    Returns:
+        A table with "term" (the year in which the term began),
+            "start_date" (October 1 of that year), "end_date" (September 30
+            of the next), and "high_court_ideology" (the score of the median
+            justice; see `martin_quinn`).
+
+    """
+    terms = martin_quinn(source)
+    years = terms['year'].astype(int)
+    return pd.DataFrame({
+        'term': years,
+        'start_date': pd.to_datetime(years.astype(str) + '-10-01'),
+        'end_date': pd.to_datetime((years + 1).astype(str) + '-09-30'),
+        'high_court_ideology': terms['supreme_court_median'].to_numpy()})
+
+
+def legislatures(
+    source: pd.DataFrame | pathlib.Path | str | None = None,
+    *,
+    score: str = 'nominate_dim1') -> pd.DataFrame:
+    """Returns the median NOMINATE scores of each chamber in each Congress.
+
+    Args:
+        source: the file of the ideology of every member of every Congress
+            (see `nominate`), as a path or a table. Defaults to `None`, in
+            which case the current file is used, which is downloaded unless
+            it was before (see `download`).
+        score: the column with the score to use. Defaults to "nominate_dim1"
+            (see `nominate`).
+
+    Raises:
+        KeyError: if `source` lacks a column that is needed.
+
+    Returns:
+        A table with "congress" (its number), "start_date" and "end_date"
+            (the day it first met and the day the next one did: January 3
+            since the 74th, in 1935, and March 4 before), and
+            "senate_ideology" and "house_ideology" (the median score of the
+            members of each chamber).
+
+    """
+    medians = _chamber_medians(source, score)
+    numbers = medians.index.to_numpy()
+    starts = pd.to_datetime([_first_day(number) for number in numbers])
+    ends = pd.to_datetime([_first_day(number + 1) for number in numbers])
+    return pd.DataFrame({
+        'congress': numbers,
+        'start_date': starts,
+        'end_date': ends,
+        'senate_ideology': medians['senate_median'].to_numpy(),
+        'house_ideology': medians['house_median'].to_numpy()})
 
 
 """ Private Functions """
@@ -568,3 +794,54 @@ def _read(
     if source is None:
         source = download(kinds = kind)[kind]
     return utilities.read_csv(source)
+
+
+def _chamber_medians(
+    source: pd.DataFrame | pathlib.Path | str | None,
+    score: str) -> pd.DataFrame:
+    """Returns the median score of each chamber of each Congress.
+
+    Args:
+        source: the file of the ideology of every member of every Congress,
+            as a path or a table, or `None` for the current file.
+        score: the column with the score to use.
+
+    Raises:
+        KeyError: if `source` lacks a column that is needed.
+
+    Returns:
+        A table labeled by the number of each Congress, with
+            "senate_median" and "house_median".
+
+    """
+    members = _read(source, 'congress')
+    cases.require_columns(
+        members, ['congress', 'chamber', score],
+        'the file of the ideology of members of Congress')
+    members = members[members['chamber'].isin(list(_CHAMBERS))]
+    medians = members.assign(
+        congress = members['congress'].astype(int),
+        score = pd.to_numeric(members[score], errors = 'coerce')).pivot_table(
+            index = 'congress', columns = 'chamber', values = 'score',
+            aggfunc = 'median')
+    medians = medians.reindex(columns = list(_CHAMBERS)).rename(
+        columns = _CHAMBERS)
+    medians.columns.name = None
+    return medians
+
+
+def _first_day(congress: int) -> str:
+    """Returns the day a Congress first met, as the Constitution set it.
+
+    Args:
+        congress: the number of the Congress.
+
+    Returns:
+        The date, as "YYYY-MM-DD": January 3 of its first year since the
+            74th Congress (under the Twentieth Amendment), and March 4
+            before.
+
+    """
+    year = congress * 2 + 1787
+    day = '01-03' if congress >= _FIRST_JANUARY_CONGRESS else '03-04'
+    return f'{year}-{day}'

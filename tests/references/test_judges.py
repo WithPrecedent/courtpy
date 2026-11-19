@@ -103,11 +103,11 @@ def found(roster: judges.Roster, name: str, court: Any, year: Any) -> tuple[int,
 
 def test_techniques_are_in_the_library() -> None:
     # Each is the genre of `amos` that says what it does to the cases.
-    assert amos.library.classify('merge_biographies') == 'merger'
+    assert amos.library.classify('add_biography') == 'merger'
     assert amos.library.classify('code_panels') == 'munger'
-    assert amos.library.classify('reshape_by_votes') == 'shaper'
-    assert amos.library.classify('reshape_by_panel') == 'shaper'
-    assert amos.library.classify('reshape_by_judge') == 'shaper'
+    assert amos.library.classify('cases_to_votes') == 'shaper'
+    assert amos.library.classify('votes_to_cases') == 'shaper'
+    assert amos.library.classify('cases_to_judges') == 'shaper'
     assert amos.library.classify('load_roster') == 'reference_loader'
     assert amos.library.classify('download_biographies') == 'reference_loader'
 
@@ -464,14 +464,14 @@ def test_from_fjc_scores(website: Website, monkeypatch: pytest.MonkeyPatch, tmp_
     assert calls[0][2]['martin_quinn'] is None
 
 
-def test_merge_biographies(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+def test_add_biography(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # A row for each judge on each case, as `lists_to_rows` makes them.
     data = pd.DataFrame({
         'judge': ['LYNCH', 'WOODS', 'NOBODY', None, 'SMITH', 'M. SMITH'],
         'court_num': [1, 1, 1, 1, 9, 9],
         'year': [2016, 2016, 2016, 2016, 2010, 2010],
         'reversed': [True, True, True, False, False, False]}, index = list('abcdef'))
-    dataset = judges.MergeBiographies().apply(
+    dataset = judges.AddBiography().apply(
         amos.Dataset(data.copy(), label = 'reversed'), source = roster, indicator = 'found')
     merged = dataset.data
     # A merger never adds, removes, or reorders rows.
@@ -483,13 +483,13 @@ def test_merge_biographies(roster: judges.Roster, tmp_path: pathlib.Path) -> Non
     assert merged.loc[['c', 'd', 'e'], 'judge_party'].isna().all()
     assert all(merged[c].dtype == 'float64' for c in merged.columns[4:-1])
     record = dataset.history[0]
-    assert (record['technique'], record['source'], record['rows'], record['matched']) == ('merge_biographies', 'Roster', 6, 3)
+    assert (record['technique'], record['source'], record['rows'], record['matched']) == ('add_biography', 'Roster', 6, 3)
     assert record['created'] == list(merged.columns[4:])
     # Other columns of the roster can be added, under another prefix, and
     # the judge can be named by another column, such as a case's author.
     cases = data.rename(columns = {'judge': 'author'})
     path = roster.save(tmp_path / 'roster.csv')
-    dataset = judges.MergeBiographies().apply(
+    dataset = judges.AddBiography().apply(
         amos.Dataset(cases), source = str(path), name = 'author', prefix = 'author_',
         columns = 'judge, nid, president, party, age')
     merged = dataset.data
@@ -498,19 +498,19 @@ def test_merge_biographies(roster: judges.Roster, tmp_path: pathlib.Path) -> Non
         'Smith, Milton Dale, Jr.', 104, 'George W. Bush']
     assert pd.isna(merged.loc['c', 'author_judge'])
     assert dataset.history[0]['source'] == str(path)
-    assert judges.MergeBiographies().match(data, roster).tolist() == [0, 5, -1, -1, -1, 3]
+    assert judges.AddBiography().match(data, roster).tolist() == [0, 5, -1, -1, -1, 3]
 
 
-def test_merge_biographies_fails_clearly(roster: judges.Roster) -> None:
+def test_add_biography_fails_clearly(roster: judges.Roster) -> None:
     data = pd.DataFrame({'judge': ['LYNCH'], 'court_num': [1], 'year': [2016], 'judge_party': [0]})
     with pytest.raises(ValueError, match = 'prefix'):
-        judges.MergeBiographies().apply(amos.Dataset(data), source = roster)
+        judges.AddBiography().apply(amos.Dataset(data), source = roster)
     with pytest.raises(KeyError, match = 'no_such'):
-        judges.MergeBiographies().apply(amos.Dataset(data), source = roster, columns = ['party', 'no_such'])
-    with pytest.raises(KeyError, match = 'merge_biographies'):
-        judges.MergeBiographies().apply(amos.Dataset(data.drop(columns = 'year')), source = roster)
+        judges.AddBiography().apply(amos.Dataset(data), source = roster, columns = ['party', 'no_such'])
+    with pytest.raises(KeyError, match = 'add_biography'):
+        judges.AddBiography().apply(amos.Dataset(data.drop(columns = 'year')), source = roster)
     with pytest.raises(FileNotFoundError, match = 'no roster'):
-        judges.MergeBiographies().apply(amos.Dataset(data))
+        judges.AddBiography().apply(amos.Dataset(data))
 
 
 def test_code_panels(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
@@ -521,9 +521,9 @@ def test_code_panels(court_listener_folder: pathlib.Path, roster: judges.Roster)
     assert data.loc['1', 'panel_names'] == ['Lynch, Mary Ann', 'Howard, John Q.', 'Thompson, Rita Mae']
     assert list(data['panel_found']) == [3, 3, 3]
     # Each judge who is found has the center's name and number.
-    assert [data.loc['1', f'judge{n}'] for n in (1, 2, 3)] == data.loc['1', 'panel_names']
-    assert [data.loc['1', f'judge{n}_nid'] for n in (1, 2, 3)] == [101, 102, 103]
-    assert data['judge1_nid'].dtype == 'Int64' and 'judge4' not in data.columns
+    assert [data.loc['1', f'judge_name{n}'] for n in (1, 2, 3)] == data.loc['1', 'panel_names']
+    assert [data.loc['1', f'judge_nid{n}'] for n in (1, 2, 3)] == [101, 102, 103]
+    assert data['judge_nid1'].dtype == 'Int64' and 'judge_name4' not in data.columns
     assert list(data['panel_found']) == list(data['panel_size'])
     assert data.loc['1', 'author_name'] == 'Lynch, Mary Ann'
     assert data.loc['1', 'dissenting_names'] == []
@@ -547,9 +547,9 @@ def test_code_panels_with_little(roster: judges.Roster, tmp_path: pathlib.Path) 
     path = roster.save(tmp_path / 'roster.csv')
     result = judges.CodePanels().apply(amos.Dataset(data), roster = str(path)).data
     assert list(result['panel_found']) == [2, 0, 0, 1]
-    assert [c for c in result.columns if c.startswith('judge')] == ['judge1', 'judge1_nid', 'judge2', 'judge2_nid']
-    assert list(result['judge1_nid'].astype(object).where(result['judge1_nid'].notna(), None)) == [101, None, None, 102]
-    assert result.loc[0, 'judge2'] == 'Woods, Dana Paul' and pd.isna(result.loc[3, 'judge2'])
+    assert [c for c in result.columns if c.startswith('judge')] == ['judge_name1', 'judge_nid1', 'judge_name2', 'judge_nid2']
+    assert list(result['judge_nid1'].astype(object).where(result['judge_nid1'].notna(), None)) == [101, None, None, 102]
+    assert result.loc[0, 'judge_name2'] == 'Woods, Dana Paul' and pd.isna(result.loc[3, 'judge_name2'])
     # A name that is not matched leaves its place empty, so the judges after
     # it keep their places.
     gaps = pd.DataFrame({
@@ -557,10 +557,10 @@ def test_code_panels_with_little(roster: judges.Roster, tmp_path: pathlib.Path) 
         'court_num': [1, 1], 'year': [2016, 2016]})
     seated = judges.CodePanels().apply(amos.Dataset(gaps), roster = roster).data
     assert [c for c in seated.columns if c.startswith('judge')] == [
-        'judge1', 'judge1_nid', 'judge2', 'judge2_nid', 'judge3', 'judge3_nid']
-    assert pd.isna(seated.loc[0, 'judge1']) and pd.isna(seated.loc[0, 'judge1_nid'])
-    assert (seated.loc[0, 'judge2_nid'], seated.loc[0, 'judge3_nid']) == (101, 102)
-    assert seated.loc[1, 'judge1'] == 'Lynch, Mary Ann' and seated.loc[1, ['judge2', 'judge3']].isna().all()
+        'judge_name1', 'judge_nid1', 'judge_name2', 'judge_nid2', 'judge_name3', 'judge_nid3']
+    assert pd.isna(seated.loc[0, 'judge_name1']) and pd.isna(seated.loc[0, 'judge_nid1'])
+    assert (seated.loc[0, 'judge_nid2'], seated.loc[0, 'judge_nid3']) == (101, 102)
+    assert seated.loc[1, 'judge_name1'] == 'Lynch, Mary Ann' and seated.loc[1, ['judge_name2', 'judge_name3']].isna().all()
     assert list(seated['panel_found']) == [2, 1]
     assert result.loc[0, 'panel_district_judge'] == 0.5
     assert pd.isna(result.loc[1, 'panel_party']) and pd.isna(result.loc[3, 'panel_age'])
@@ -624,30 +624,30 @@ def test_vote_table_options(roster: judges.Roster) -> None:
     assert judges.vote_table(data.iloc[1:3], roster).empty
 
 
-def test_reshape_by_votes_in_a_loader(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_cases_to_votes_in_a_loader(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     # With a roster saved where the techniques look for it, a loader can make
     # the judges' votes, and a vote can be the label of a study.
     roster.save()
     dataset = loaders.LoadCourtListener().apply(
         None, source = court_listener_folder,
-        coders = 'code_parties, code_case_type, code_outcome, code_panels, reshape_by_votes',
+        coders = 'code_parties, code_case_type, code_outcome, code_panels, cases_to_votes',
         label = 'vote_reversal', groups = 'case_id')
     assert dataset.label == 'vote_reversal'
     assert dataset.groups == ['case_id']
     assert dataset.data.shape[0] == 9
-    assert [e['technique'] for e in dataset.history][-2:] == ['code_panels', 'reshape_by_votes']
+    assert [e['technique'] for e in dataset.history][-2:] == ['code_panels', 'cases_to_votes']
     assert dataset.history[-1]['rows'] == [3, 9]
     assert {'panel_party', 'judge_party', 'colleagues_party'} <= set(dataset.data.columns)
-    shaped = judges.ReshapeByVotes().apply(
+    shaped = judges.CasesToVotes().apply(
         amos.Dataset(courtpy.code(courtpy.parse(court_listener_folder)).data),
         outcomes = 'outcome_reversal')
     assert [c for c in shaped.data.columns if c.startswith('vote_')] == ['vote_reversal']
 
 
-def test_reshape_by_votes_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_cases_to_votes_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     coded = courtpy.code(courtpy.parse(court_listener_folder)).data
     # Like every shaper, it names the label and groups of the table it makes.
-    dataset = judges.ReshapeByVotes().apply(
+    dataset = judges.CasesToVotes().apply(
         amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
         label = 'vote_reversal', groups = 'case_id')
     assert (dataset.label, dataset.task, dataset.groups) == ('vote_reversal', 'classify', ['case_id'])
@@ -656,9 +656,9 @@ def test_reshape_by_votes_is_a_shaper(court_listener_folder: pathlib.Path, roste
     # It changes what a row is, so it must come before the data is split.
     split = amos.Dataset(coded.copy(), label = 'outcome_reversal', test = coded.index[:1])
     with pytest.raises(ValueError, match = 'before the data is split'):
-        judges.ReshapeByVotes().apply(split, roster = roster)
+        judges.CasesToVotes().apply(split, roster = roster)
     with pytest.raises(KeyError, match = 'no_such'):
-        judges.ReshapeByVotes().apply(amos.Dataset(coded.copy()), roster = roster, label = 'no_such')
+        judges.CasesToVotes().apply(amos.Dataset(coded.copy()), roster = roster, label = 'no_such')
 
 
 def test_build_roster_merges_by_judge() -> None:
@@ -683,7 +683,7 @@ def test_build_roster_merges_by_judge() -> None:
     assert by_nid.loc[101, 'party'] == -1
 
 
-def test_reshape_by_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
+def test_cases_to_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -> None:
     # The example study of judges' votes, on invented cases.
     rng = random.Random(7)
     folder = tmp_path / 'data' / 'court_listener'
@@ -707,18 +707,18 @@ def test_reshape_by_votes_example(roster: judges.Roster, tmp_path: pathlib.Path)
                 date_filed = f'{rng.randint(2011, 2014)}-06-15'),
             opinions)
     roster.save()
-    idea = chrisjen.Idea.create(EXAMPLES / 'reshape_by_votes.ini')
+    idea = chrisjen.Idea.create(EXAMPLES / 'cases_to_votes.ini')
     idea['load_court_listener_parameters']['download'] = 'none'
     project = courtpy.Project.create(idea, clerk = tmp_path)
     result = project.result
     assert result.label == 'vote_reversal' and result.groups == ['case_id']
     assert [e['technique'] for e in result.history][:7] == [
         'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome',
-        'code_panels', 'add_politics', 'reshape_by_votes']
+        'code_panels', 'add_executive', 'cases_to_votes']
     assert (tmp_path / 'data' / 'votes.csv').is_file()
     assert len(result.data) == 270
     assert {'vote_reversal', 'case_id', 'judge_party', 'colleagues_woman',
-            'politics_president_party'} <= set(result.data.columns)
+            'executive_ideology'} <= set(result.data.columns)
     assert 'outcome_reversal' not in result.data.columns
     assert set(result.tables) >= {'summarize', 'label_balance', 'analyst_comparison', 'scorecard'}
     assert 0 <= result.metrics['roc_auc'] <= 1
@@ -732,7 +732,7 @@ def test_reshape_by_votes_example(roster: judges.Roster, tmp_path: pathlib.Path)
     assert (dissents['vote_reversal'] != dissents['outcome_reversal']).all()
     # A second run loads the saved table of votes instead of making it again.
     again = courtpy.Project.create(idea, clerk = tmp_path).result
-    assert 'reused' in again.history[0] and len(again.data) == 270
+    assert any('reused' in entry for entry in again.history) and len(again.data) == 270
     assert list(again.train) == list(result.train)
     assert again.metrics['roc_auc'] == result.metrics['roc_auc']
 
@@ -749,7 +749,8 @@ def test_techniques_in_a_wrangler(
     # The mergers find the files that their "source" names as the clerk finds
     # files: in the current folder, and then in the input folder.
     named = roster.save(tmp_path / 'data' / 'my_roster.csv')
-    (tmp_path / 'data' / 'years.csv').write_text('year,chief\n2020,Roberts\n', encoding = 'utf-8')
+    (tmp_path / 'data' / 'executives.csv').write_text(
+        'executive_name,executive_ideology,start_date,end_date\nChief,1,1900-01-01,2100-01-01\n', encoding = 'utf-8')
     settings = tmp_path / 'study.ini'
     settings.write_text(
         '[general]\n'
@@ -759,8 +760,8 @@ def test_techniques_in_a_wrangler(
         '[panels_project]\n'
         'panels_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, merge_biographies, code_panels, add_politics, reshape_by_votes\n'
-        '[merge_biographies_parameters]\n'
+        'techniques = load_court_listener, add_biography, code_panels, add_executive, cases_to_votes\n'
+        '[add_biography_parameters]\n'
         'source = my_roster.csv\n'
         'name = author\n'
         'prefix = author_\n'
@@ -768,39 +769,40 @@ def test_techniques_in_a_wrangler(
         'indicator = author_found\n'
         '[code_panels_parameters]\n'
         f'roster = {named.as_posix()}\n'
-        '[add_politics_parameters]\n'
-        'source = years.csv\n'
-        'prefix = court_\n'
-        '[reshape_by_votes_parameters]\n'
+        '[add_executive_parameters]\n'
+        'source = executives.csv\n'
+        'prefix = state_\n'
+        '[cases_to_votes_parameters]\n'
         f'roster = {named.as_posix()}\n'
         'outcomes = outcome_reversal\n'
         'label = vote_reversal\n'
         'groups = case_id\n', encoding = 'utf-8')
     result = courtpy.Project.create(settings, clerk = tmp_path).result
     history = {e['technique']: e for e in result.history}
-    assert list(history)[-4:] == ['merge_biographies', 'code_panels', 'add_politics', 'reshape_by_votes']
+    assert list(history)[-4:] == ['add_biography', 'code_panels', 'add_executive', 'cases_to_votes']
     # Each merger records its source and how many rows it matched.
-    assert (history['merge_biographies']['source'], history['merge_biographies']['matched']) == ('my_roster.csv', 3)
-    assert (history['add_politics']['source'], history['add_politics']['matched']) == ('years.csv', 3)
-    assert history['reshape_by_votes']['rows'] == [3, 9]
+    assert (history['add_biography']['source'], history['add_biography']['matched']) == ('my_roster.csv', 3)
+    assert (history['add_executive']['source'], history['add_executive']['matched']) == ('executives.csv', 3)
+    assert history['cases_to_votes']['rows'] == [3, 9]
     # The shaper names the label and groups of the table that it makes.
     assert (result.label, result.task, result.groups) == ('vote_reversal', 'classify', ['case_id'])
     assert len(result.data) == 9
-    assert list(result.data['court_chief'].unique()) == ['Roberts']
+    assert list(result.data['state_executive_name'].unique()) == ['Chief']
+    assert isinstance(result, courtpy.Votes)
     assert list(result.data['author_judge'].unique()) == ['Lynch, Mary Ann']
     assert result.data['author_found'].all() and result.data.loc['1-1', 'author_age'] == 74.0
     assert result.data.loc['1-1', 'panel_found'] == 3
     assert [c for c in result.data.columns if c.startswith('vote_')] == ['vote_reversal']
 
 
-def test_reshape_by_panel(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_votes_to_cases(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     coded = courtpy.code(courtpy.parse(court_listener_folder)).data
-    votes = judges.ReshapeByVotes().apply(
+    votes = judges.CasesToVotes().apply(
         amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
         label = 'vote_reversal', groups = 'case_id')
     table = votes.data.copy()
-    # It undoes `reshape_by_votes`: the cases come back as they were.
-    dataset = judges.ReshapeByPanel().apply(votes)
+    # It undoes `cases_to_votes`: the cases come back as they were.
+    dataset = judges.VotesToCases().apply(votes)
     pd.testing.assert_frame_equal(dataset.data, coded)
     # The label of the votes becomes the outcome it was made from, and the
     # groups of the votes are dropped.
@@ -809,22 +811,22 @@ def test_reshape_by_panel(court_listener_folder: pathlib.Path, roster: judges.Ro
     # Columns added to the votes about each judge are removed, and others
     # are kept from each case's first row.
     extra = table.assign(judge_extra = 1.0, colleagues_extra = 2.0, note = 'x')
-    shaped = judges.ReshapeByPanel().shape(extra)
+    shaped = judges.VotesToCases().shape(extra)
     assert 'judge_extra' not in shaped and 'colleagues_extra' not in shaped
     assert list(shaped['note']) == ['x'] * 3
     # A case with no judge who was found is not in the table of votes.
     some = pd.DataFrame({
         'panel_judges': [['LYNCH'], ['NOBODY']], 'court_num': [1, 1],
         'year': [2016, 2016]}, index = pd.Index(['a', 'b'], name = 'case_id'))
-    assert list(judges.ReshapeByPanel().shape(judges.vote_table(some, roster)).index) == ['a']
+    assert list(judges.VotesToCases().shape(judges.vote_table(some, roster)).index) == ['a']
     with pytest.raises(KeyError, match = 'case_id'):
-        judges.ReshapeByPanel().shape(coded.reset_index(drop = True))
+        judges.VotesToCases().shape(coded.reset_index(drop = True))
 
 
-def test_reshape_by_judge(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_cases_to_judges(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     coded = courtpy.code(courtpy.parse(court_listener_folder)).data
     votes = judges.vote_table(coded, roster)
-    table = judges.ReshapeByJudge().shape(votes.copy())
+    table = judges.CasesToJudges().shape(votes.copy())
     assert table.index.name == 'judge_nid'
     assert list(table.index) == [101, 102, 103]
     assert list(table.columns[:2]) == ['judge', 'cases']
@@ -836,42 +838,45 @@ def test_reshape_by_judge(court_listener_folder: pathlib.Path, roster: judges.Ro
     assert table.loc[101, 'judge_woman'] == 1
     # Lynch wrote every opinion, so the column has one value for each judge.
     assert list(table['judge_author']) == [True, False, False]
-    # Text that is the same in each judge's cases is kept, and text that
-    # differs, lists, and ids are left out.
-    assert list(table['court']) == ['ca1'] * 3
+    # Nothing about any one case is kept: text (even text that is the same
+    # in each judge's cases) and ids are left out unless "keep" names them.
+    assert 'court' not in table and 'panel_judges' not in table
     assert 'case_id' not in table and 'case_name' not in table
     assert 'panel_ids' not in table
-    assert list(table['panel_judges']) == ['LYNCH; HOWARD; THOMPSON'] * 3
+    # The shares of the judge's cases of each type are kept.
+    assert table.loc[101, 'type_criminal'] == pytest.approx(coded['type_criminal'].mean())
+    kept = judges.CasesToJudges().shape(votes.copy(), keep = ['judge', 'court'])
+    assert list(kept['court']) == ['ca1'] * 3
     # "how" chooses other summaries, and "count" another name or none.
-    listed = judges.ReshapeByJudge().shape(
+    listed = judges.CasesToJudges().shape(
         votes.copy(), how = {'case_id': 'list'}, count = None)
     assert listed.loc[101, 'case_id'] == ['1', '2', '3']
     assert 'cases' not in listed
     # A table of cases is made a table of votes first.
     pd.testing.assert_frame_equal(
-        judges.ReshapeByJudge().shape(coded.copy(), roster = roster), table)
+        judges.CasesToJudges().shape(coded.copy(), roster = roster), table)
 
 
-def test_reshape_by_judge_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+def test_cases_to_judges_is_a_shaper(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
     coded = courtpy.code(courtpy.parse(court_listener_folder)).data
-    votes = judges.ReshapeByVotes().apply(
+    votes = judges.CasesToVotes().apply(
         amos.Dataset(coded.copy(), label = 'outcome_reversal'), roster = roster,
         label = 'vote_reversal', groups = 'case_id')
     assert votes.task == 'classify'
     # A vote is a share of votes for a judge, so the task is inferred again,
     # and the groups of the votes are not columns of the judges.
-    dataset = judges.ReshapeByJudge().apply(votes)
+    dataset = judges.CasesToJudges().apply(votes)
     assert (dataset.label, dataset.task, dataset.groups) == ('vote_reversal', 'regress', [])
     assert dataset.history[-1]['rows'] == [9, 3]
     roster.save()
     project = courtpy.code(
-        coded.copy(), ['reshape_by_judge'],
-        parameters = {'reshape_by_judge': {'outcomes': 'outcome_reversal'}})
+        coded.copy(), ['cases_to_judges'],
+        parameters = {'cases_to_judges': {'outcomes': 'outcome_reversal'}})
     assert list(project.data.index) == [101, 102, 103]
     # As in the recipe, a loader's coders can make a table of judges.
     dataset = loaders.LoadCourtListener().apply(
         None, source = court_listener_folder,
-        coders = 'code_parties, code_case_type, code_outcome, reshape_by_votes, reshape_by_judge',
+        coders = 'code_parties, code_case_type, code_outcome, cases_to_votes, cases_to_judges',
         label = 'judge_dissented')
     assert (dataset.label, dataset.task) == ('judge_dissented', 'regress')
     assert dataset.data.loc[103, 'judge_dissented'] == pytest.approx(1 / 3)
@@ -904,3 +909,126 @@ def test_download_biographies(website: Website, tmp_path: pathlib.Path) -> None:
         save = str(tmp_path / 'saved.csv'))
     assert len(website.urls) == 6
     assert (tmp_path / 'saved.csv').is_file()
+
+
+def test_add_biography_numbers_the_judges_of_cases(roster: judges.Roster) -> None:
+    frame = pd.DataFrame({
+        'case_id': ['a', 'b', 'c'],
+        'panel_judges': ['LYNCH; NOBODY; HOWARD', 'THOMPSON', None],
+        'court_num': [1, 1, 1], 'year': [2016, 2016, 2016]})
+    cases = courtpy.Cases.create(frame.copy())
+    data = judges.AddBiography().apply(
+        cases, source = roster, columns = ['party', 'woman'], indicator = 'found').data
+    assert [c for c in data.columns if c.startswith('judge_')] == [
+        'judge_name1', 'judge_nid1', 'judge_party1', 'judge_woman1',
+        'judge_name2', 'judge_nid2', 'judge_party2', 'judge_woman2',
+        'judge_name3', 'judge_nid3', 'judge_party3', 'judge_woman3']
+    assert data.loc['a', 'judge_name1'] == 'Lynch, Mary Ann' and data.loc['a', 'judge_party1'] == -1
+    # A name that is not matched leaves its seat missing.
+    assert pd.isna(data.loc['a', 'judge_name2']) and pd.isna(data.loc['a', 'judge_party2'])
+    assert data.loc['a', 'judge_nid3'] == 102 and data.loc['a', 'judge_party3'] == 1
+    assert data.loc['b', 'judge_woman1'] == 1 and pd.isna(data.loc['b', 'judge_name2'])
+    assert list(data['found']) == [2, 1, 0]
+    assert data['judge_nid1'].dtype == 'Int64'
+    # With the judges' names and numbers from code_panels, only the rest are
+    # added.
+    paneled = judges.CodePanels().apply(courtpy.Cases.create(frame.copy()), roster = roster)
+    data = judges.AddBiography().apply(paneled, source = roster, columns = 'party').data
+    assert [c for c in data.columns if c.startswith('judge_party')] == ['judge_party1', 'judge_party2', 'judge_party3']
+    # A named column of one judge in each case is not numbered.
+    data = judges.AddBiography().apply(
+        courtpy.Cases.create(frame.assign(author = ['LYNCH', None, None])), source = roster,
+        name = 'author', prefix = 'author_', columns = 'party').data
+    assert list(data['author_party'].fillna(0)) == [-1, 0, 0]
+
+
+def test_add_biography_with_a_lookup() -> None:
+    known = {'LYNCH': {'party': -1, 'school': 'Harvard'}, 'HOWARD': {'party': 1}}
+    def lookup(name: str, court: int | None, year: int | None) -> dict[str, Any] | None:
+        return known.get(name)
+    cases = courtpy.Cases.create(pd.DataFrame({
+        'case_id': ['a'], 'panel_judges': ['LYNCH; NOBODY; HOWARD'], 'court_num': [1], 'year': [2016]}))
+    data = judges.AddBiography().apply(cases, lookup = lookup).data
+    assert data.loc['a', 'judge_name1'] == 'LYNCH' and pd.isna(data.loc['a', 'judge_name2'])
+    assert (data.loc['a', 'judge_party1'], data.loc['a', 'judge_party3']) == (-1, 1)
+    assert data.loc['a', 'judge_school1'] == 'Harvard' and pd.isna(data.loc['a', 'judge_school3'])
+    assert 'judge_nid1' not in data
+    votes = amos.Dataset(pd.DataFrame({'judge': ['HOWARD'], 'court_num': [1], 'year': [2016]}))
+    assert judges.AddBiography().apply(votes, lookup = lookup, columns = 'party').data.loc[0, 'judge_party'] == 1
+
+
+def test_add_jcs(roster: judges.Roster) -> None:
+    assert amos.library.classify('add_jcs') == 'merger'
+    scored = judges.Roster(roster.data.assign(jcs = [-0.4, 0.3, -0.2, 0.5, 0.4, 0.2, 0.1, 0.1, -0.3, -0.3, -0.5, 0.4, -0.1, None]))
+    votes = amos.Dataset(pd.DataFrame({'judge': ['LYNCH', 'HOWARD'], 'court_num': [1, 1], 'year': [2016, 2016]}))
+    data = judges.AddJcs().apply(votes, source = scored).data
+    assert list(data.columns) == ['judge', 'court_num', 'year', 'judge_jcs']
+    assert list(data['judge_jcs']) == [-0.4, 0.3]
+    cases = courtpy.Cases.create(pd.DataFrame({
+        'case_id': ['a'], 'panel_judges': ['LYNCH; HOWARD'], 'court_num': [1], 'year': [2016]}))
+    data = judges.AddJcs().apply(cases, source = scored).data
+    assert (data.loc['a', 'judge_jcs1'], data.loc['a', 'judge_jcs2']) == (-0.4, 0.3)
+    with pytest.raises(KeyError, match = r'jcs = True'):
+        judges.AddJcs().apply(votes, source = roster)
+
+
+def test_add_circuit(roster: judges.Roster) -> None:
+    assert amos.library.classify('add_circuit') == 'merger'
+    frame = pd.DataFrame({
+        'case_id': ['a', 'b', 'c', 'd', 'e'],
+        'date_filed': ['2016-06-15', '2000-01-01', '2016-06-15', None, '2016-06-15'],
+        'court_num': pd.array([1, 1, pd.NA, 1, 99], dtype = 'Int64'),
+        # A district court's case is in the circuit of its district.
+        'court': ['ca1', 'ca1', 'mad', 'ca1', 'scotus']})
+    cases = courtpy.Cases.create(frame.copy())
+    with pytest.warns(amos.AmosWarning, match = 'jcs = True'):
+        data = judges.AddCircuit().apply(cases, source = roster).data
+    # On June 15, 2016, Lynch, Howard, and Thompson were active, and Stone
+    # had taken senior status. In 2000, Lynch and Stone were active.
+    assert list(data.loc[['a', 'c'], 'circuit_median_party']) == [-1, -1]
+    assert list(data.loc[['a', 'c'], 'circuit_total_party']) == [-1, -1]
+    assert list(data.loc[['a', 'b', 'c'], 'circuit_judges']) == [3, 2, 3]
+    assert (data.loc['b', 'circuit_median_party'], data.loc['b', 'circuit_total_party']) == (0, 0)
+    # A case with no date, or in no circuit, gets missing values.
+    assert data.loc[['d', 'e'], ['circuit_median_party', 'circuit_judges']].isna().all().all()
+    assert 'circuit_median_jcs' not in data
+    scored = judges.Roster(roster.data.assign(jcs = [-0.4, 0.3, -0.2, 0.5, 0.4, 0.2, 0.1, 0.1, -0.3, -0.3, -0.5, 0.4, -0.1, None]))
+    data = judges.AddCircuit().apply(courtpy.Cases.create(frame.iloc[:2].copy()), source = scored).data
+    assert data.loc['a', 'circuit_median_jcs'] == pytest.approx(-0.2)
+    assert data.loc['a', 'circuit_total_jcs'] == pytest.approx(-0.3)
+    assert data.loc['b', 'circuit_total_jcs'] == pytest.approx(-0.3)
+    with pytest.raises(KeyError, match = 'summarizes'):
+        judges.AddCircuit().apply(courtpy.Cases.create(frame.copy()), source = scored, columns = 'woman')
+
+
+def test_conversions_make_their_kinds(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+    coded = courtpy.code(courtpy.parse(court_listener_folder))
+    assert isinstance(coded, courtpy.Cases)
+    votes = judges.CasesToVotes().apply(coded, roster = roster)
+    assert isinstance(votes, courtpy.Votes) and votes.data.index.name == 'vote_id'
+    back = judges.VotesToCases().apply(courtpy.Votes.create(votes.data.copy()))
+    assert isinstance(back, courtpy.Cases) and back.data.index.name == 'case_id'
+    judged = judges.CasesToJudges().apply(courtpy.Votes.create(votes.data.copy()))
+    assert isinstance(judged, courtpy.Judges) and judged.data.index.name == 'judge_nid'
+
+
+def test_dockets_to_votes(court_listener_folder: pathlib.Path, roster: judges.Roster) -> None:
+    assert amos.library.classify('dockets_to_votes') == 'shaper'
+    coded = courtpy.code(courtpy.parse(court_listener_folder)).data
+    coded['docket_numbers'] = ['17-1; 17-2', '18-5', None]
+    dockets = courtpy.code(courtpy.Cases.create(coded), ['cases_to_dockets'])
+    votes = judges.DocketsToVotes().apply(dockets, roster = roster, label = 'vote_reversal', groups = 'case_id')
+    assert isinstance(votes, courtpy.Votes)
+    data = votes.data
+    # Each judge votes once on each docket of a case.
+    assert list(data.index[:4]) == ['1-1-1', '1-1-2', '1-1-3', '1-2-1']
+    assert len(data) == 3 * 4
+    assert list(data['case_docket'].unique()) == ['1-1', '1-2', '2-1', '3-1']
+    assert set(data.loc[data['case_docket'] == '1-2', 'case_id']) == {'1'}
+    assert {'docket', 'judge_party', 'vote_reversal'} <= set(data.columns)
+    # Made cases again, the dockets' columns are removed.
+    back = judges.VotesToCases().apply(votes)
+    assert list(back.data.index) == ['1', '2', '3']
+    assert not {'case_docket', 'docket'} & set(back.data.columns)
+    with pytest.raises(KeyError, match = 'cases_to_dockets'):
+        judges.DocketsToVotes().shape(pd.DataFrame({'x': [1]}), roster = roster)

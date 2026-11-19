@@ -54,6 +54,26 @@ def test_code_case_type(coded: amos.Dataset) -> None:
     assert list(data['type_criminal']) == [True, False, False]
     assert data.loc['1', 'party1_prosecution'] and data.loc['1', 'party2_criminal_defendant']
     assert data.loc['2', 'party1_civil_plaintiff'] and data.loc['2', 'party2_civil_defendant']
+    # Every case that is not criminal is civil, and each other prefix of the
+    # rules of the topics of cases is a type too.
+    assert list(data['type_civil']) == [False, True, True]
+    assert isinstance(coded, courtpy.Cases)
+    types = [c for c in data.columns if c.startswith('type_')]
+    assert types[:2] == ['type_criminal', 'type_civil']
+    assert {'type_tort', 'type_contract', 'type_ip', 'type_constitutional'} <= set(types)
+
+
+def test_code_case_type_prefixes() -> None:
+    data = pd.DataFrame({
+        'party1_united_states': [False, False], 'party2_united_states': [False, False],
+        'party1_plaintiff': [True, False], 'party2_plaintiff': [False, False],
+        'party1_defendant': [False, False], 'party2_defendant': [True, False],
+        'immigration_asylum': [False, True], 'immigration_removal': [False, False],
+        'tort_negligence': [True, False]})
+    data = coders.CodeCaseType().apply(amos.Dataset(data), prefixes = 'immigration, tort').data
+    # A prefix added to the rules is a type once the cases have its columns.
+    assert list(data['type_immigration']) == [False, True]
+    assert list(data['type_tort']) == [True, False]
 
 
 def test_code_outcome(coded: amos.Dataset) -> None:

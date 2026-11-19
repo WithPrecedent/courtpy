@@ -13,7 +13,7 @@ which courtpy uses in three ways:
   adds to a roster with judicial-common-space
   (`courtpy.judges.Roster.from_fjc(jcs = True)`) as "jcs", an attribute of
   each judge like "party": `code_panels` adds "panel_jcs" (the mean score of
-  each case's panel), and `merge_biographies` adds "judge_jcs". Unlike the
+  each case's panel), and `add_biography` adds "judge_jcs". Unlike the
   published scores, which are of the judges of the courts of appeals and the
   justices, the computed scores are of district judges too.
 * Each justice has a score in each term, which `courtpy.politics.justices`
@@ -22,8 +22,8 @@ which courtpy uses in three ways:
 * Each year has the scores of the president and of the medians of the House,
   the Senate, the Supreme Court, and each court of appeals, which its authors
   publish at https://epstein.wustl.edu/jcs. `medians` reads them, so they can
-  be the table of `add_politics` (or a part of
-  `courtpy.politics.build_table`).
+  be added to cases by "year" with the `merge_keys` technique of `amos` (or
+  be a part of `courtpy.politics.build_table`).
 
 The published files are downloaded by judicial-common-space (see `download`)
 into "jcs" in `courtpy.utilities.data_folder()`, where it looks for them too:

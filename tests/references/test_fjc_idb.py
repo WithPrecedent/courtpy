@@ -58,11 +58,11 @@ def save(folder: pathlib.Path, number: int, court: str, docket: str, date: str) 
         'opinions': [courtpy.courtlistener.slim_opinion(make_opinion(number * 10, number))]})
 
 
-def test_merge_idb_is_a_merger() -> None:
-    assert amos.library.classify('merge_idb') == 'merger'
+def test_add_idb_is_a_merger() -> None:
+    assert amos.library.classify('add_idb') == 'merger'
 
 
-def test_merge_idb() -> None:
+def test_add_idb() -> None:
     dataset = cases(
         court = ['ca1', 'ca5', 'ca11', 'ca2', 'cafc', 'scotus', 'ca1'],
         docket_number = [
@@ -71,7 +71,7 @@ def test_merge_idb() -> None:
         date_filed = [
             '2018-05-01', '2019-07-03', '2019-05-09', '2019-06-03',
             '2019-01-01', '2019-01-01', '2018-05-01'])
-    result = idb.MergeIdb().apply(dataset, source = table(), indicator = 'found')
+    result = idb.AddIdb().apply(dataset, source = table(), indicator = 'found')
     data = result.data
     assert list(data['found']) == [True, True, True, True, False, False, False]
     assert list(data['idb_circuit'].iloc[:4]) == [
@@ -83,7 +83,31 @@ def test_merge_idb() -> None:
     assert [c for c in data.columns if c.startswith('idb_')] == [f'idb_{c}' for c in COLUMNS]
     record = result.history[-1]
     assert (record['technique'], record['source'], record['rows'], record['matched']) == (
-        'merge_idb', 'DataFrame', 7, 4)
+        'add_idb', 'DataFrame', 7, 4)
+
+
+def test_add_idb_to_dockets() -> None:
+    cases = courtpy.Cases.create(pd.DataFrame({
+        'case_id': ['a', 'b'],
+        'court': ['ca2', 'ca1'],
+        'docket_number': ['18-9999-cv, 18-3701-cv', '17-1234'],
+        'date_filed': ['2019-06-03', '2018-05-01']}))
+    dockets = courtpy.code(cases, ['cases_to_dockets'])
+    assert isinstance(dockets, courtpy.Dockets)
+    assert list(dockets.data['docket']) == ['18-9999', '18-3701', '17-1234']
+    result = idb.AddIdb().apply(dockets, source = table(), indicator = 'found')
+    data = result.data
+    # Each docket is matched by its own number only, so the docket that the
+    # database lacks is not given its sibling's record.
+    assert list(data['found']) == [False, True, True]
+    assert data.loc['a-2', 'idb_docket_number'] == 'No. 18-3701'
+    assert pd.isna(data.loc['a-1', 'idb_docket_number'])
+    assert result.history[-1]['matched'] == 2
+    # Made cases again, each case has its first docket's record.
+    back = courtpy.code(result, ['dockets_to_cases'])
+    assert isinstance(back, courtpy.Cases)
+    assert back.data.loc['a', 'docket_numbers'] == '18-9999; 18-3701'
+    assert pd.isna(back.data.loc['a', 'idb_docket_number'])
 
 
 def test_reopened_appeals() -> None:
@@ -91,18 +115,18 @@ def test_reopened_appeals() -> None:
         court = ['cadc'] * 4,
         docket_number = ['15-7034'] * 4,
         date_filed = ['2016-01-01', '2019-05-14', '2020-08-18', '2021-03-01'])
-    result = idb.MergeIdb().apply(dataset, source = table(), columns = 'judgment_date')
+    result = idb.AddIdb().apply(dataset, source = table(), columns = 'judgment_date')
     # The record whose judgment is nearest the decision is used.
     assert [str(d.date()) for d in result.data['idb_judgment_date']] == [
         '2019-05-14', '2019-05-14', '2020-08-18', '2020-08-18']
     # A record of an appeal docketed after the decision is never used.
     remand = table().drop(index = 2)
-    result = idb.MergeIdb().apply(
+    result = idb.AddIdb().apply(
         cases(court = ['cadc'], docket_number = ['15-7034'], date_filed = ['2019-05-14']),
         source = remand, indicator = 'found')
     assert list(result.data['found']) == [False]
     # Without dates, the latest record is used.
-    result = idb.MergeIdb().apply(
+    result = idb.AddIdb().apply(
         cases(court = ['cadc'], docket_number = ['15-7034']),
         source = table(), columns = 'reopened_or_remanded')
     assert result.data['idb_reopened_or_remanded'].iloc[0] == 'Remanded from the Supreme Court'
@@ -115,7 +139,7 @@ def test_rules_columns() -> None:
         court_num = [12, 1, 13, None],
         docket_numbers = [['15-7034'], ['17-1234', '17-1235'], ['18-1234'], ['17-1234']],
         year = [2019, 2018, 2019, 2018])
-    result = idb.MergeIdb().apply(
+    result = idb.AddIdb().apply(
         dataset, source = table(), columns = ['judgment_date'], indicator = 'found')
     assert list(result.data['found']) == [True, True, False, False]
     assert str(result.data['idb_judgment_date'].iloc[0].date()) == '2019-05-14'
@@ -123,11 +147,11 @@ def test_rules_columns() -> None:
 
 def test_needed_columns() -> None:
     with pytest.raises(KeyError, match = 'courts'):
-        idb.MergeIdb().apply(cases(docket_number = ['17-1234']), source = table())
+        idb.AddIdb().apply(cases(docket_number = ['17-1234']), source = table())
     with pytest.raises(KeyError, match = 'docket numbers'):
-        idb.MergeIdb().apply(cases(court = ['ca1']), source = table())
+        idb.AddIdb().apply(cases(court = ['ca1']), source = table())
     with pytest.raises(KeyError, match = 'docket_num_idb'):
-        idb.MergeIdb().apply(
+        idb.AddIdb().apply(
             cases(court = ['ca1'], docket_number = ['17-1234']),
             source = table().drop(columns = ['docket_number', 'docket_num_idb']))
 
@@ -137,10 +161,10 @@ def test_a_csv_file(tmp_path: pathlib.Path) -> None:
     # that begin with 0, and its dates are read as dates.
     path = tmp_path / 'fjc_idb_appellate_data_2008_2026.csv'
     table().drop(columns = 'docket_number').to_csv(path, index = False)
-    read = idb.MergeIdb().read(path)
+    read = idb.AddIdb().read(path)
     assert read['docket_num_idb'].iloc[0] == '0801234'
     assert pd.api.types.is_datetime64_any_dtype(read['judgment_date'])
-    result = idb.MergeIdb().apply(
+    result = idb.AddIdb().apply(
         cases(court = ['ca1'], docket_number = ['08-1234'], date_filed = ['2009-05-01']),
         source = path, columns = 'appeal_type', indicator = 'found')
     assert list(result.data['found']) == [True]
@@ -159,18 +183,18 @@ def test_years_of_the_cases(monkeypatch: pytest.MonkeyPatch) -> None:
         court = ['ca1', 'cadc', 'scotus'],
         docket_number = ['17-1234', '15-7034', '1'],
         date_filed = ['2018-05-01', '2019-05-14', '1950-01-01'])
-    result = idb.MergeIdb().apply(dataset, district = 'false', download = 'no')
+    result = idb.AddIdb().apply(dataset, district = 'false', download = 'no')
     # The years begin with the database's first and end with the year after
     # the latest decision.
     assert calls[-1] == (2008, 2020, None, {'district': False, 'download': False})
     assert result.history[-1]['source'] == 'FJC IDB appeals, 2008-2020'
-    idb.MergeIdb().apply(
+    idb.AddIdb().apply(
         cases(court = ['ca1'], docket_number = ['17-1234'], date_filed = ['2018-05-01']),
         district = True, folder = '~/idb')
     assert calls[-1][:3] == (2018, 2019, pathlib.Path('~/idb').expanduser())
     assert calls[-1][3]['district'] is True
     with pytest.raises(ValueError, match = 'begin in 2008'):
-        idb.MergeIdb().apply(
+        idb.AddIdb().apply(
             cases(court = ['ca1'], docket_number = ['05-1234'], date_filed = ['2005-06-01']))
 
 
@@ -240,7 +264,7 @@ def test_appeals(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> Non
         ('merge', 2017, 2018, tmp_path, {'fix_city_spellings': True, 'export': False})]
 
 
-def test_merge_idb_in_a_wrangler(tmp_path: pathlib.Path) -> None:
+def test_add_idb_in_a_wrangler(tmp_path: pathlib.Path) -> None:
     # A file of the database that the settings name is found as the clerk
     # finds files: in the input folder.
     folder = tmp_path / 'data' / 'court_listener'
@@ -255,8 +279,8 @@ def test_merge_idb_in_a_wrangler(tmp_path: pathlib.Path) -> None:
         '[court_project]\n'
         'court_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, merge_idb\n'
-        '[merge_idb_parameters]\n'
+        'techniques = load_court_listener, add_idb\n'
+        '[add_idb_parameters]\n'
         'source = appeals.csv\n'
         'columns = appeal_type, judgment_date\n'
         'indicator = in_idb\n', encoding = 'utf-8')

@@ -583,7 +583,7 @@ class LoadRoster(loaders.ReferenceLoader):
     served on, starts a study of the judges themselves. Its "source" is the
     path of a saved roster. Without one, the roster saved in "judges" in
     `courtpy.utilities.data_folder()` is used (see `Roster.load`). To add
-    what a roster says about judges to cases, use `merge_biographies` or
+    what a roster says about judges to cases, use `add_biography` or
     `code_panels` instead.
 
     """

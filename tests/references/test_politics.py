@@ -59,9 +59,10 @@ def site(scores: pd.DataFrame, members: pd.DataFrame) -> Site:
         VOTEVIEW: members.to_csv(index = False)})
 
 
-def test_technique_is_in_the_library() -> None:
-    assert amos.library.classify('add_politics') == 'merger'
-    assert issubclass(politics.AddPolitics, amos.mergers.MergeKeys)
+def test_techniques_are_in_the_library() -> None:
+    for name in ('add_executive', 'add_legislature', 'add_high_court'):
+        assert amos.library.classify(name) == 'merger'
+    assert issubclass(politics.AddExecutive, politics.ByDate)
 
 
 def test_presidents() -> None:
@@ -79,12 +80,96 @@ def test_presidents() -> None:
         politics.presidents(end = parties.index[-1] + 1)
 
 
-def test_presidents_reads_its_option(monkeypatch: pytest.MonkeyPatch) -> None:
-    # The parties come from an option, to which a project can add years.
-    monkeypatch.setitem(courtpy.options._PRESIDENTS, 2029, -1)
+def test_presidents_reads_its_file(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    # The terms come from a file, to which a president can be added.
+    terms = pd.read_csv(politics._PRESIDENTS_FILE)
+    added = pd.DataFrame({'president': ['Next'], 'party': [-1], 'start_date': ['2029-01-20'], 'end_date': ['2033-01-20']})
+    path = tmp_path / 'presidents.csv'
+    pd.concat([terms, added]).to_csv(path, index = False)
+    monkeypatch.setattr(politics, '_PRESIDENTS_FILE', path)
     table = politics.presidents(2028)
-    assert table.to_dict('list') == {'year': [2028, 2029], 'president_party': [1, -1]}
+    assert table.to_dict('list') == {'year': [2028, 2029, 2030, 2031, 2032], 'president_party': [1, -1, -1, -1, -1]}
     assert table['president_party'].dtype == 'Int64'
+
+
+def test_executives() -> None:
+    table = politics.executives()
+    assert list(table.columns) == ['executive_name', 'executive_ideology', 'start_date', 'end_date']
+    assert table['start_date'].is_monotonic_increasing
+    # Each term ends when the next begins.
+    assert (table['end_date'].iloc[:-1].to_numpy() == table['start_date'].iloc[1:].to_numpy()).all()
+    assert table.iloc[0]['executive_name'] == 'Franklin D. Roosevelt'
+    assert set(table['executive_ideology']) == {-1, 1}
+
+
+def test_legislatures(members: pd.DataFrame) -> None:
+    table = politics.legislatures(members)
+    assert list(table.columns) == ['congress', 'start_date', 'end_date', 'senate_ideology', 'house_ideology']
+    assert list(table['congress']) == [97, 98]
+    assert list(table['start_date'].dt.strftime('%Y-%m-%d')) == ['1981-01-03', '1983-01-03']
+    assert list(table['end_date'].dt.strftime('%Y-%m-%d')) == ['1983-01-03', '1985-01-03']
+    assert list(table['senate_ideology']) == pytest.approx([0.1, 0.2])
+    assert list(table['house_ideology']) == pytest.approx([0.1, -0.3])
+    # Before the Twentieth Amendment, a Congress first met on March 4.
+    assert politics._first_day(73) == '1933-03-04'
+
+
+def test_high_courts(scores: pd.DataFrame) -> None:
+    table = politics.high_courts(scores)
+    assert list(table.columns) == ['term', 'start_date', 'end_date', 'high_court_ideology']
+    assert list(table['start_date'].dt.strftime('%Y-%m-%d')) == ['2020-10-01', '2021-10-01']
+    assert list(table['end_date'].dt.strftime('%Y-%m-%d')) == ['2021-09-30', '2022-09-30']
+    assert list(table['high_court_ideology']) == [0.961, 1.004]
+
+
+def test_add_executive() -> None:
+    cases = pd.DataFrame({
+        'date_filed': ['2009-01-19', '2009-01-20', '2017-06-01', None, '1900-01-01'],
+        'x': [1, 2, 3, 4, 5]}, index = pd.Index(list('abcde'), name = 'case_id'))
+    dataset = courtpy.code(cases.copy(), 'add_executive')
+    assert isinstance(dataset, courtpy.Cases)
+    data = dataset.data
+    # The day of an inauguration has the new president.
+    assert list(data['executive_name'].iloc[:3]) == ['George W. Bush', 'Barack Obama', 'Donald J. Trump']
+    assert list(data['executive_ideology'].iloc[:3]) == [1, -1, 1]
+    assert data['executive_name'].iloc[3:].isna().all()
+    assert list(data.index) == list('abcde')
+    record = dataset.history[-1]
+    assert (record['rows'], record['matched']) == (5, 3)
+    # Another table of executives, and another column of dates.
+    governors = pd.DataFrame({
+        'executive_name': ['A', 'B'], 'executive_ideology': [1, -1],
+        'start_date': ['2000-01-01', '2004-01-01'], 'end_date': ['2004-01-01', '2008-01-01']})
+    data = politics.AddExecutive().apply(
+        amos.Dataset(pd.DataFrame({'decided': ['2005-05-05']})), source = governors, date = 'decided',
+        prefix = 'state_', indicator = 'known').data
+    assert data.iloc[0].to_dict() == {
+        'decided': '2005-05-05', 'state_executive_name': 'B', 'state_executive_ideology': -1, 'known': True}
+    with pytest.raises(KeyError, match = 'date_filed'):
+        politics.AddExecutive().apply(amos.Dataset(pd.DataFrame({'x': [1]})))
+    with pytest.raises(KeyError, match = 'start_date'):
+        politics.AddExecutive().apply(
+            amos.Dataset(pd.DataFrame({'date_filed': ['2000-01-01']})), source = governors.drop(columns = 'start_date'))
+
+
+def test_add_legislature_and_high_court(scores: pd.DataFrame, members: pd.DataFrame) -> None:
+    cases = pd.DataFrame({'date_filed': ['1981-06-01', '1983-01-02', '1983-01-03', '2021-09-30', '2021-10-01']})
+    data = politics.AddLegislature().apply(amos.Dataset(cases.copy()), source = politics.legislatures(members)).data
+    # A Congress sits until the next one first meets.
+    assert list(data['senate_ideology']) == pytest.approx([0.1, 0.1, 0.2, float('nan'), float('nan')], nan_ok = True)
+    assert list(data['house_ideology'].iloc[:3]) == pytest.approx([0.1, 0.1, -0.3])
+    data = politics.AddHighCourt().apply(amos.Dataset(cases.copy()), source = politics.high_courts(scores)).data
+    # A term runs from October to September.
+    assert pd.isna(data['high_court_ideology'].iloc[0])
+    assert list(data['high_court_ideology'].iloc[3:]) == [0.961, 1.004]
+
+
+def test_add_legislature_downloads_its_source(site: Site, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(courtpy.utilities.requests, 'Session', lambda: site)
+    cases = pd.DataFrame({'date_filed': ['1984-05-01']})
+    data = courtpy.code(cases, ['add_legislature', 'add_high_court']).data
+    assert data.loc[0, 'house_ideology'] == pytest.approx(-0.3)
+    assert pd.isna(data.loc[0, 'high_court_ideology'])
 
 
 def test_martin_quinn(scores: pd.DataFrame) -> None:
@@ -195,59 +280,6 @@ def test_build_table_downloads_its_sources(site: Site, monkeypatch: pytest.Monke
     assert politics.build_table(True, True).set_index('year').equals(table)
     assert len(site.urls) == asked
     assert list(politics.justices()['justice']) == [117, 117, 111, 108]
-
-
-def test_add_politics(scores: pd.DataFrame, members: pd.DataFrame, tmp_path: pathlib.Path) -> None:
-    cases = pd.DataFrame({'year': pd.array([1981, 2020, pd.NA, 2100], dtype = 'Int64'), 'x': [1, 2, 3, 4]})
-    # With no table, only the party of the president is added.
-    dataset = politics.AddPolitics().apply(amos.Dataset(cases.copy()))
-    record = dataset.history[0]
-    assert record['created'] == ['politics_president_party']
-    assert (record['rows'], record['matched']) == (4, 2)
-    assert list(dataset.data['politics_president_party'].iloc[:2]) == [1, 1]
-    assert dataset.data['politics_president_party'].iloc[2:].isna().all()
-    assert list(dataset.data.index) == list(cases.index)
-    path = tmp_path / 'politics.csv'
-    politics.build_table(scores, members).to_csv(path, index = False)
-    dataset = courtpy.code(cases.copy(), 'add_politics', parameters = {
-        'add_politics': {'source': str(path)}})
-    data = dataset.data
-    assert data.loc[1, 'politics_supreme_court_median'] == 0.961
-    assert data.loc[0, 'politics_house_median'] == pytest.approx(0.1)
-    assert pd.isna(data.loc[0, 'politics_supreme_court_max'])
-    assert len(dataset.history[0]['created']) == 6
-    assert dataset.history[0]['source'] == str(path)
-
-
-def test_add_politics_parameters() -> None:
-    # It takes the parameters of the merge_keys technique of amos.
-    cases = pd.DataFrame({'term': pd.array([1981, 2005, pd.NA, 2100], dtype = 'Int64')})
-    mine = pd.DataFrame({'began': [2005, 1981], 'chief': ['Roberts', 'Burger'], 'seats': [9, 9]})
-    data = politics.AddPolitics().apply(
-        amos.Dataset(cases.copy()), source = mine, on = 'term', other_on = 'began',
-        prefix = 'court_', columns = 'chief', indicator = 'known').data
-    assert list(data.columns) == ['term', 'court_chief', 'known']
-    assert list(data['court_chief'].iloc[:2]) == ['Burger', 'Roberts']
-    assert list(data['known']) == [True, True, False, False]
-    # A table with a year twice says two things about its cases, which the
-    # earlier version's table of Martin-Quinn scores did.
-    twice = pd.DataFrame({'term': [2005, 2005, 1981], 'chief': ['Roberts', 'Other', 'Burger']})
-    with pytest.raises(ValueError, match = 'duplicates'):
-        politics.AddPolitics().apply(amos.Dataset(cases.copy()), source = twice, on = 'term')
-    data = politics.AddPolitics().apply(
-        amos.Dataset(cases.copy()), source = twice, on = 'term', duplicates = 'first').data
-    assert list(data['politics_chief'].iloc[:2]) == ['Burger', 'Roberts']
-
-
-def test_add_politics_missing_columns() -> None:
-    with pytest.raises(KeyError, match = 'the data'):
-        politics.AddPolitics().apply(amos.Dataset(pd.DataFrame({'x': [1]})))
-    with pytest.raises(KeyError, match = 'the other table'):
-        politics.AddPolitics().apply(
-            amos.Dataset(pd.DataFrame({'year': [2000]})), source = pd.DataFrame({'term': [2000]}))
-    # Years that are text are not matched to years that are numbers.
-    with pytest.raises(TypeError, match = 'clean_numbers'):
-        politics.AddPolitics().apply(amos.Dataset(pd.DataFrame({'year': ['2000']})))
 
 
 def test_load_and_download_politics(site: Site, monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:

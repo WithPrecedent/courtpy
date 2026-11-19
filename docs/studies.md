@@ -197,7 +197,7 @@ output_folder = "results"
 my_study_workers = "wrangler, analyst"
 
 [wrangler]
-techniques = "load_court_listener, code_panels, reshape_by_votes"
+techniques = "load_court_listener, code_panels, cases_to_votes"
 
 [load_court_listener_parameters]
 source = "court_listener"
@@ -208,7 +208,7 @@ rulebooks = "federal, review"
 save = "cases.parquet"
 reuse = true
 
-[reshape_by_votes_parameters]
+[cases_to_votes_parameters]
 label = "vote_reversal"
 groups = "case_id"
 ```

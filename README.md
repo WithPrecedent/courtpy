@@ -52,6 +52,47 @@ new fields, and wrapping custom tools.
   and how they were analyzed) fits in one settings file, and `amos` records
   every step and the version of every package.
 
+## Techniques and datasets
+
+`courtpy` is built on [amos](https://github.com/WithPrecedent/amos), so anyone
+who knows `amos` already knows how to use it. A study is an `amos` project,
+described in one settings file that names **techniques** in **steps** of the
+project's **workers**. `courtpy` adds these techniques to those of `amos`, and
+a settings file can name them like any other:
+
+<table>
+<thead>
+<tr><th>Stage</th><th>Steps</th><th>Techniques</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="6" valign="middle">wrangler</td><td>Loaders</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.DownloadBiographies"><code>download_biographies</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.DownloadIdb"><code>download_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/jcs/#courtpy.references.jcs.DownloadJcs"><code>download_jcs</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.DownloadPolitics"><code>download_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.DownloadScdb"><code>download_scdb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCases"><code>load_cases</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCourtListener"><code>load_court_listener</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.LoadIdb"><code>load_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadLexisNexis"><code>load_lexis_nexis</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.LoadPolitics"><code>load_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.LoadRoster"><code>load_roster</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.LoadScdb"><code>load_scdb</code></a></td></tr>
+<tr><td>Parsers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseAgencies"><code>parse_agencies</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCitations"><code>parse_citations</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCivil"><code>parse_civil</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseConstitutional"><code>parse_constitutional</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCriminal"><code>parse_criminal</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseFederal"><code>parse_federal</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseGeneral"><code>parse_general</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseHeader"><code>parse_header</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseLexisNexis"><code>parse_lexis_nexis</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseReview"><code>parse_review</code></a></td></tr>
+<tr><td>Cleaners</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.DropText"><code>drop_text</code></a></td></tr>
+<tr><td>Mungers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeCaseType"><code>code_case_type</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeOutcome"><code>code_outcome</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.CodePanels"><code>code_panels</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeParties"><code>code_parties</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.SplitValues"><code>split_values</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.TidyCases"><code>tidy_cases</code></a></td></tr>
+<tr><td>Mergers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.AddBiography"><code>add_biography</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.AddCircuit"><code>add_circuit</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scores/#courtpy.references.scores.AddCourtScores"><code>add_court_scores</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.AddExecutive"><code>add_executive</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.AddHighCourt"><code>add_high_court</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.AddIdb"><code>add_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.AddJcs"><code>add_jcs</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scores/#courtpy.references.scores.AddJudgeScores"><code>add_judge_scores</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.AddLegislature"><code>add_legislature</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.AddScdb"><code>add_scdb</code></a></td></tr>
+<tr><td>Shapers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/shapers/#courtpy.wrangler.shapers.CasesToCaseTypes"><code>cases_to_case_types</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/shapers/#courtpy.wrangler.shapers.CasesToCourts"><code>cases_to_courts</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/shapers/#courtpy.wrangler.shapers.CasesToDockets"><code>cases_to_dockets</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.CasesToJudges"><code>cases_to_judges</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/shapers/#courtpy.wrangler.shapers.CasesToPartyTypes"><code>cases_to_party_types</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.CasesToVotes"><code>cases_to_votes</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/shapers/#courtpy.wrangler.shapers.DocketsToCases"><code>dockets_to_cases</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.DocketsToVotes"><code>dockets_to_votes</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.VotesToCases"><code>votes_to_cases</code></a></td></tr>
+</tbody>
+</table>
+
+Each of `courtpy`'s datasets is an `amos.Dataset` whose rows are one kind of
+thing. The loaders make `Cases`, and the shapers turn one kind into another:
+
+| Dataset | One row for each | Made by |
+| --- | --- | --- |
+| `Cases` | Case, with its information and the text of its sections. | the loaders, `votes_to_cases`, `dockets_to_cases` |
+| `Dockets` | Docket number of each case (a case that consolidated several appeals has a row for each), with the case's columns. | `cases_to_dockets` |
+| `Votes` | Judge on each case (or on each docket), with the case's columns and the judge's vote. | `cases_to_votes`, `dockets_to_votes` |
+| `Judges` | Judge, with what is known about the judge and summaries of the judge's votes. | `cases_to_judges` |
+| `Courts` | Court, with summaries of its cases and judges. | `cases_to_courts` |
+| `CaseTypes` | Case type (such as criminal, civil, tort, or contract), with summaries of its cases. | `cases_to_case_types` |
+| `PartyTypes` | Party type, with summaries of the cases of parties of that type. | `cases_to_party_types` |
+
+`Cases`, `Dockets`, and `Votes` can be made from each other. The others
+summarize many cases and keep nothing about any one of them (such as its
+docket number or date), so a researcher can see, for example, the mix of
+case types that each court decides, but there is no going back. Every dataset can be saved and
+loaded whole (with `save` and `load`), as `amos`'s `save_data` saves it.
+
 ## Getting started
 
 ### Requirements
@@ -136,12 +177,14 @@ table = courtpy.parse("lexis_nexis", source = "lexis_nexis")
 #### Parsing and coding
 
 `courtpy.parse` reads a folder of saved cases and returns a
-`pandas.DataFrame`, one row for each case, labeled by its id:
+`pandas.DataFrame`, one row for each case, labeled by its id. `courtpy.code`
+codes it and makes it `Cases`:
 
 ```python
 table = courtpy.parse("court_listener")
-dataset = courtpy.code(table)  # parties, case types, and outcomes
-courtpy.save_cases(dataset.data, "cases.csv")
+cases = courtpy.code(table)  # parties, case types, and outcomes
+cases.save("cases.csv")  # and the whole dataset in "cases.joblib"
+cases = courtpy.Cases.load("cases.csv")
 ```
 
 The rules are in the CSV files in `courtpy`'s
@@ -163,9 +206,11 @@ variables, including:
 | `citations_case`, `citations_statute`, ... | Citations in the opinion. |
 | `published`, `year`, `date_filed`, `word_count` | Other information. |
 
-The coders (which are `amos` techniques) add `type_criminal`, each party's
-role in the appeal and in the case (such as `party2_criminal_defendant`), and
-the outcomes: `outcome_reversal`, `outcome_party1_won`,
+The coders (which are `amos` techniques) add each party's role in the appeal
+and in the case (such as `party2_criminal_defendant`), the case types
+(`type_criminal`, `type_civil`, and one for each other prefix of the civil,
+criminal, and constitutional rules, such as `type_tort` and
+`type_contract`), and the outcomes: `outcome_reversal`, `outcome_party1_won`,
 `outcome_criminal_defendant_won`, and others.
 
 #### Adding the judges and the politics of the day
@@ -180,9 +225,9 @@ judge's Judicial Common Space score, computed by
 
 ```python
 courtpy.judges.Roster.from_fjc(jcs = True).save()
-dataset = courtpy.code(table, [
-    "code_parties", "code_case_type", "code_outcome",
-    "code_panels", "add_politics", "reshape_by_votes"])
+votes = courtpy.code(table, [
+    "code_parties", "code_case_type", "code_outcome", "code_panels",
+    "add_executive", "add_legislature", "add_circuit", "cases_to_votes"])
 ```
 
 Cases, judges, years, and other researchers' data are tables whose rows are
@@ -193,14 +238,21 @@ adding or losing a row, and records how many rows it matched.
 
 | Coder | Adds |
 | --- | --- |
-| `merge_biographies` | What the roster says about the judge that each row names, such as the author of each opinion (`author_party`, `author_woman`, `author_age`, ...). |
-| `code_panels` | The judges of each panel who were found in the roster (`panel_names` and `panel_found`, and each judge's Federal Judicial Center name and number in `judge1` and `judge1_nid`, `judge2` and `judge2_nid`, and so on) and the panel's composition, such as `panel_party` (the mean party of the presidents who appointed its judges, from -1 for Democrats to 1 for Republicans), `panel_woman`, `panel_age`, and `panel_prosecutor`. |
-| `reshape_by_votes` | A table with one row for each judge on each case, with the judge's attributes (`judge_party`, ...), the other judges' (`colleagues_party`, ...), and the judge's vote (`vote_reversal`, the outcome or its opposite for a judge who dissented). |
-| `reshape_by_panel` | Undoes `reshape_by_votes`: the table of votes becomes a table of cases again. |
-| `reshape_by_judge` | A table with one row for each judge, with how many cases the judge decided (`cases`), the judge's attributes, and the shares of the judge's votes (`vote_reversal`, `judge_dissented`, ...). |
-| `add_politics` | The party of the president in the case's year (`politics_president_party`) and, from a table that `courtpy.politics.build_table` makes, the Supreme Court's [Martin-Quinn scores](https://mqscores.wustl.edu/measures.php) and the median [NOMINATE](https://voteview.com/data) scores of the Senate and House. |
-| `merge_scdb` | For cases of the Supreme Court, the coding of the [Supreme Court Database](https://scdb.la.psu.edu/data/), such as `scdb_issueArea`, `scdb_decisionDirection`, and `scdb_partyWinning`. |
-| `merge_idb` | For cases of the courts of appeals, the record of the appeal in the Federal Judicial Center's [Integrated Database](https://www.fjc.gov/research/idb), which [fjc-idb](https://github.com/WithPrecedent/fjc_idb) reads, such as `idb_appeal_type`, `idb_judgment_date`, `idb_pro_se_party`, and `idb_district_judge` (and, if asked, the district court's record of the case appealed). |
+| `add_biography` | What the roster says about each judge. In `Cases`, the columns are numbered by each judge's seat on the panel (`judge_name1`, `judge_party1`, `judge_woman1`, ..., `judge_name2`, ...); in `Votes`, each row has its judge's (`judge_party`, ...). A function can take the place of the roster. |
+| `add_jcs` | Each judge's [Judicial Common Space](https://epstein.wustl.edu/jcs) score, numbered in the same way (`judge_jcs1`, ...). |
+| `code_panels` | The judges of each panel who were found in the roster (`panel_names` and `panel_found`, and each judge's Federal Judicial Center name and number in `judge_name1` and `judge_nid1`, `judge_name2` and `judge_nid2`, and so on) and the panel's composition, such as `panel_party` (the mean party of the presidents who appointed its judges, from -1 for Democrats to 1 for Republicans), `panel_woman`, `panel_age`, and `panel_prosecutor`. |
+| `add_executive` | The president on the day the case was decided (`executive_name`) and the president's party (`executive_ideology`, -1 or 1). |
+| `add_legislature` | The median [NOMINATE](https://voteview.com/data) score of each chamber of the Congress then sitting (`senate_ideology` and `house_ideology`). |
+| `add_high_court` | The [Martin-Quinn score](https://mqscores.wustl.edu/measures.php) of the median justice in the Supreme Court's term then sitting (`high_court_ideology`). |
+| `add_circuit` | The makeup of the whole circuit on the day the case was decided (for a district court, the circuit that hears its appeals): the median and total of the parties of the presidents who appointed its active judges (`circuit_median_party`, `circuit_total_party`) and of their Judicial Common Space scores (`circuit_median_jcs`, `circuit_total_jcs`). Senior judges, who do not sit en banc, are left out. |
+| `add_judge_scores`, `add_court_scores` | Behavioral scores of each judge or court computed from training data (such as a table of `Judges` or `Courts` made from the training cases), matched by the judge's or court's number. |
+| `cases_to_votes` | `Votes`: a table with one row for each judge on each case, with the judge's attributes (`judge_party`, ...), the other judges' (`colleagues_party`, ...), and the judge's vote (`vote_reversal`, the outcome or its opposite for a judge who dissented). |
+| `votes_to_cases` | Undoes `cases_to_votes`: `Votes` become `Cases` again. |
+| `cases_to_judges` | `Judges`: a table with one row for each judge, with how many cases the judge decided (`cases`), the judge's attributes, and the shares of the judge's votes (`vote_reversal`, `judge_dissented`, ...) and of the judge's cases of each type (`type_criminal`, ...). |
+| `cases_to_courts`, `cases_to_case_types`, `cases_to_party_types` | `Courts`, `CaseTypes`, and `PartyTypes`: a row for each court, case type, or party type, with the number of cases and the means of their columns. |
+| `add_scdb` | For cases of the Supreme Court, the coding of the [Supreme Court Database](https://scdb.la.psu.edu/data/), such as `scdb_issueArea`, `scdb_decisionDirection`, and `scdb_partyWinning`. |
+| `cases_to_dockets`, `dockets_to_cases`, `dockets_to_votes` | `Dockets`: a row for each docket number of each case, as records kept by docket need, and `Cases` or `Votes` (a row for each judge on each docket) made from them. |
+| `add_idb` | For cases of the courts of appeals (best added to `Dockets`, so each docket of a consolidated case gets its own record), the record of the appeal in the Federal Judicial Center's [Integrated Database](https://www.fjc.gov/research/idb), which [fjc-idb](https://github.com/WithPrecedent/fjc_idb) reads, such as `idb_appeal_type`, `idb_judgment_date`, `idb_pro_se_party`, and `idb_district_judge` (and, if asked, the district court's record of the case appealed). |
 
 `courtpy` downloads the scores and the databases from their sources the first
 time they are needed. To study one of these tables by itself (such as each
@@ -209,7 +261,7 @@ justice's vote in each case), start with its loader instead: `load_roster`,
 (`download_biographies`, `download_scdb`, `download_idb`,
 `download_politics`, and `download_jcs`), which download the latest files
 first. See
-[examples/reshape_by_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/reshape_by_votes.ini)
+[examples/cases_to_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/cases_to_votes.ini)
 for a study of judges' votes.
 
 #### Describing a whole study in one file
@@ -257,8 +309,9 @@ techniques = scorecard
 ```
 
 The loader finds (and saves) the cases in the input folder ("data") and saves
-the coded table in the interim folder. With `reuse = true`, later runs load
-that table instead of parsing the cases again.
+the coded table in the interim folder, with the whole dataset beside it
+("cases.joblib"). With `reuse = true`, later runs load that dataset instead of
+parsing the cases again.
 
 Run it from a terminal with `courtpy run federal_appeals.ini --export`, or in
 Python:

@@ -79,7 +79,7 @@ def site() -> Site:
 
 
 def test_technique_is_in_the_library() -> None:
-    assert amos.library.classify('merge_scdb') == 'merger'
+    assert amos.library.classify('add_scdb') == 'merger'
 
 
 def test_download(site: Site, tmp_path: pathlib.Path) -> None:
@@ -157,14 +157,14 @@ def test_cases_and_votes(site: Site, tmp_path: pathlib.Path, monkeypatch: pytest
     assert len(site.urls) == asked + 3
 
 
-def test_merge_scdb() -> None:
+def test_add_scdb() -> None:
     data = pd.DataFrame({
         'scdb_id': ['2007-059', None, None, '1953-069', '9999-001', None],
         'citation': [
             'ignored', '74 S.Ct. 686; 98 L.Ed. 873', ['146 S. Ct. 1873'], None,
             '554 U.S. 570', '365 U.S. 1'],
         'year': [2008, 1954, 2026, 1954, 2008, 1961]}, index = list('abcdef'))
-    dataset = scdb.MergeScdb().apply(
+    dataset = scdb.AddScdb().apply(
         amos.Dataset(data.copy()), source = table(), indicator = 'in_scdb',
         columns = 'caseId, issueArea, decisionDirection')
     result = dataset.data
@@ -181,33 +181,33 @@ def test_merge_scdb() -> None:
     assert pd.isna(result.loc['f', 'scdb_issueArea'])
     assert result.loc['a', 'scdb_decisionDirection'] == 1
     record = dataset.history[0]
-    assert (record['technique'], record['rows'], record['matched']) == ('merge_scdb', 6, 5)
+    assert (record['technique'], record['rows'], record['matched']) == ('add_scdb', 6, 5)
     # By default, every column of the database is added.
-    everything = scdb.MergeScdb().apply(amos.Dataset(data.copy()), source = table()).data
+    everything = scdb.AddScdb().apply(amos.Dataset(data.copy()), source = table()).data
     assert [c for c in everything.columns if c.startswith('scdb_') and c != 'scdb_id'] == [
         f'scdb_{c}' for c in COLUMNS]
 
 
-def test_merge_scdb_keys() -> None:
+def test_add_scdb_keys() -> None:
     # Either the ids or the citations are enough, under any names.
     ids = pd.DataFrame({'spaeth': ['1953-069', None]})
-    result = scdb.MergeScdb().apply(
+    result = scdb.AddScdb().apply(
         amos.Dataset(ids), source = table(), on = 'spaeth', columns = 'term').data
     assert result['scdb_term'].tolist()[0] == 1953 and pd.isna(result['scdb_term'].iloc[1])
     cites = pd.DataFrame({'cites': [['1 F.2d 3', '347 U. S. 483'], [], None]})
-    result = scdb.MergeScdb().apply(
+    result = scdb.AddScdb().apply(
         amos.Dataset(cites), source = table(), citations = 'cites', columns = 'term',
         prefix = None).data
     assert result['term'].tolist()[0] == 1953 and result['term'].iloc[1:].isna().all()
     with pytest.raises(KeyError, match = 'scdb_id'):
-        scdb.MergeScdb().apply(amos.Dataset(pd.DataFrame({'year': [2000]})), source = table())
+        scdb.AddScdb().apply(amos.Dataset(pd.DataFrame({'year': [2000]})), source = table())
     with pytest.raises(KeyError, match = 'caseId'):
-        scdb.MergeScdb().apply(amos.Dataset(ids.rename(columns = {'spaeth': 'scdb_id'})), source = table()[['term']])
+        scdb.AddScdb().apply(amos.Dataset(ids.rename(columns = {'spaeth': 'scdb_id'})), source = table()[['term']])
     with pytest.raises(KeyError, match = 'no_such'):
-        scdb.MergeScdb().apply(amos.Dataset(ids), source = table(), on = 'spaeth', columns = 'no_such')
+        scdb.AddScdb().apply(amos.Dataset(ids), source = table(), on = 'spaeth', columns = 'no_such')
 
 
-def test_merge_scdb_with_court_listener(
+def test_add_scdb_with_court_listener(
     site: Site,
     tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch) -> None:
@@ -232,7 +232,7 @@ def test_merge_scdb_with_court_listener(
     # downloads, and the history records the release.
     monkeypatch.setattr(courtpy.utilities.requests, 'Session', lambda: site)
     dataset = courtpy.loaders.LoadCourtListener().apply(
-        None, source = folder, coders = 'code_outcome, merge_scdb', label = 'outcome_reversal')
+        None, source = folder, coders = 'code_outcome, add_scdb', label = 'outcome_reversal')
     assert list(dataset.data['scdb_caseName']) == ['D.C. v. HELLER', 'MCCARTHY v. HERNANDEZ']
     assert list(dataset.data['scdb_majVotes']) == [5, 6]
     record = dataset.history[-1]
@@ -244,7 +244,7 @@ def test_other_cases_have_no_id(court_listener_folder: pathlib.Path) -> None:
     assert 'scdb_id' not in courtpy.parse(court_listener_folder).columns
 
 
-def test_merge_scdb_in_a_wrangler(
+def test_add_scdb_in_a_wrangler(
     court_listener_folder: pathlib.Path,
     tmp_path: pathlib.Path) -> None:
     # A file of the database that the settings name is found as the clerk
@@ -263,8 +263,8 @@ def test_merge_scdb_in_a_wrangler(
         '[court_project]\n'
         'court_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, merge_scdb\n'
-        '[merge_scdb_parameters]\n'
+        'techniques = load_court_listener, add_scdb\n'
+        '[add_scdb_parameters]\n'
         'source = mine.zip\n'
         'columns = issueArea, majVotes\n'
         'indicator = found\n', encoding = 'utf-8')

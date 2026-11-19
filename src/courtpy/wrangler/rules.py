@@ -26,8 +26,8 @@ also a technique of its own (such as `parse_civil`), which searches the
 columns of text of a dataset (such as "opinion", which a case loader keeps
 with "keep_text"). A study can make rulebooks of its own folders of rules the
 same way. courtpy's own are in `RULEBOOKS`: "header", "general",
-"citations", "civil", "constitutional", "criminal", "torts", "review",
-"agencies", "federal" (all of those, in that order), and "lexis_nexis".
+"citations", "civil", "constitutional", "criminal", "review", "agencies",
+"federal" (all of those, in that order), and "lexis_nexis".
 
 Rules that make several values in one cell (`names`, `matches`, and
 `categories` rules, such as "panel_judges", "citations_case", and
@@ -37,11 +37,14 @@ such text into lists or columns.
 
 Contents:
     RULEBOOKS: courtpy's rulebooks, by their names.
+    case_type_prefixes: returns the prefixes of the names of the rules of
+        the topics of cases, each of which is a case type.
     find_rule_files: returns the files of rules of a topic in a jurisdiction.
     find_structure_file: returns the file of rules that finds the sections
         of a source's cases.
     register_rulebooks: makes a rulebook of each topic in folders of rule
         files.
+    _CASE_TYPE_TOPICS: the topics whose rules' prefixes are case types.
     _GENERAL: the folder of the rules that fit every jurisdiction.
     _INSTRUCTIONS: courtpy's "instructions" folder.
     _JURISDICTION: the jurisdiction of the cases that courtpy reads.
@@ -66,13 +69,46 @@ _GENERAL = _INSTRUCTIONS / 'general'
 # The folder of the rules of each jurisdiction is named for it. courtpy reads
 # only federal cases so far.
 _JURISDICTION = 'federal'
+# The topics whose rules find the subject of a case. The prefix of each rule's
+# name (such as "tort" in "tort_negligence") is a case type.
+_CASE_TYPE_TOPICS: tuple[str, ...] = ('criminal', 'civil', 'constitutional')
 # The topics of the built-in rules, in the order of the "federal" rulebook.
 _TOPICS: tuple[str, ...] = (
     'header', 'general', 'citations', 'civil', 'constitutional', 'criminal',
-    'torts', 'review', 'agencies')
+    'review', 'agencies')
 
 
 """ Public Functions """
+
+
+def case_type_prefixes(
+    jurisdiction: str | None = _JURISDICTION) -> list[str]:
+    """Returns the prefixes of the rules of the topics of cases.
+
+    Each rule of the "criminal", "civil", and "constitutional" files names a
+    column with a prefix (such as "criminal" in "criminal_firearm", or "tort"
+    in "tort_negligence"), and each prefix is a case type (see
+    `code_case_type`). A prefix added to a file (such as "immigration_") is
+    a case type too.
+
+    Args:
+        jurisdiction: the folder of the jurisdiction's rules, such as
+            "federal". Defaults to `_JURISDICTION`. If it is `None`, only
+            the general rules are read.
+
+    Returns:
+        The prefixes, in the order in which they first appear in the files.
+
+    """
+    prefixes: dict[str, None] = {}
+    for topic in _CASE_TYPE_TOPICS:
+        for path in find_rule_files(topic, jurisdiction):
+            names = utilities.read_csv(path, usecols = ['name'])['name']
+            for name in names.dropna().astype(str):
+                prefix, separator, _ = name.strip().partition('_')
+                if separator and prefix:
+                    prefixes.setdefault(prefix)
+    return list(prefixes)
 
 
 def find_rule_files(

@@ -43,8 +43,8 @@ Every loader takes these parameters, set in its "{name}_parameters" section:
 | --- | --- |
 | `source` | The folder of saved cases (or, for `load_cases`, a saved table). |
 | `coders` | Techniques to apply after parsing. Defaults to "code_parties, code_case_type, code_outcome" ("none" for `load_cases`). Use "none" for none. |
-| `save` | File to save the coded table to (".csv" or ".parquet"). A relative path is in the clerk's interim folder. |
-| `reuse` | Whether to load the saved table, if there is one, instead of collecting, parsing, and coding the cases again. Defaults to false. |
+| `save` | File to save the coded table to (".csv", ".parquet", or ".xlsx"), with the whole dataset beside it in a joblib file of the same name (see `Cases.save`). A relative path is in the clerk's interim folder. |
+| `reuse` | Whether to load the saved dataset, if there is one, instead of collecting, parsing, and coding the cases again. Defaults to false. |
 | `label`, `task`, `groups` | As in `amos`: they default to those in the "general" section. |
 
 Other modules add reference loaders (see `ReferenceLoader`), which load a
@@ -63,7 +63,8 @@ true:
 
 Contents:
     CaseLoader: base class for techniques that load court cases.
-    LoadCases: loads a table of cases saved by `courtpy.save_cases`.
+    LoadCases: loads a dataset of cases saved by `Cases.save`, or a table of
+        one.
     LoadCourtListener: collects, parses, and codes CourtListener cases.
     LoadLexisNexis: divides, parses, and codes Lexis-Nexis cases.
     ReferenceLoader: base class for techniques that load a table of
@@ -83,7 +84,7 @@ from typing import Any, ClassVar
 import amos
 import pandas as pd
 
-from ..core import cases, options, utilities
+from ..core import datasets, options, utilities
 
 # Importing the modules of the sources adds their ways to download to
 # `base.DOWNLOADS`.
@@ -106,8 +107,13 @@ class CaseLoader(amos.Loader, abc.ABC):
     "derive_columns") can still make it, and using it before then raises an
     error. The dataset's history records the loader and then each coder.
 
-    If "reuse" is true and the table was saved before (see "save"), the saved
-    table is loaded instead, and nothing is collected, parsed, or coded again.
+    The dataset is `Cases`, or the kind that the last of the coders makes
+    (such as `Votes`, if "cases_to_votes" is the last). If "save" is set, it
+    is saved with `CourtData.save`: whole, in a joblib file beside the table
+    (such as "cases.joblib" beside "cases.csv"), and as the table. If
+    "reuse" is true and it was saved before, the saved dataset is loaded
+    instead (from the joblib file, or else from the table), and nothing is
+    collected, parsed, or coded again.
 
     Args:
         name: name used to refer to the technique in a workflow. Defaults to
@@ -163,24 +169,31 @@ class CaseLoader(amos.Loader, abc.ABC):
         save = kwargs.pop('save', None)
         reuse = utilities.to_bool(kwargs.pop('reuse', False))
         saved = self._interim(save) if save else None
-        if saved is not None and reuse and saved.is_file():
-            dataset = amos.Dataset(
-                data = cases.load_cases(saved), seed = item.seed)
-            dataset.history = item.history
+        reused = _reusable(saved) if saved is not None and reuse else None
+        dataset: amos.Dataset
+        if reused is not None:
+            dataset = LoadCases().load(reused)
+            dataset.seed = item.seed
+            dataset.history = [*item.history, *dataset.history]
             dataset.record(
-                self.name, source = str(source), reused = str(saved),
+                self.name, source = str(source), reused = str(reused),
                 rows = len(dataset.data), columns = len(dataset.data.columns))
         else:
-            data = self.load(self._locate(source), **kwargs)
-            dataset = amos.Dataset(data = data, seed = item.seed)
-            dataset.history = item.history
+            loaded = self.load(self._locate(source), **kwargs)
+            if isinstance(loaded, amos.Dataset):
+                dataset = loaded
+                dataset.seed = item.seed
+                dataset.history = [*item.history, *dataset.history]
+            else:
+                dataset = datasets.Cases(data = loaded, seed = item.seed)
+                dataset.history = item.history
             dataset.record(
-                self.name, source = str(source), rows = len(data),
-                columns = len(data.columns))
-            coders.code(dataset, names)
-            if saved is not None:
-                cases.save_cases(dataset.data, saved)
-        return amos.Dataset.create(
+                self.name, source = str(source), rows = len(dataset.data),
+                columns = len(dataset.data.columns))
+            dataset = coders.code(dataset, names)
+            if saved is not None and isinstance(dataset, datasets.CourtData):
+                dataset.save(saved, clerk = self._get_clerk())
+        return type(dataset).create(
             dataset, label = label, task = task, groups = groups)
 
     """ Private Methods """
@@ -223,37 +236,38 @@ class CaseLoader(amos.Loader, abc.ABC):
 
 @dataclasses.dataclass
 class LoadCases(CaseLoader):
-    """Loads a table of cases saved by `courtpy.save_cases`.
+    """Loads a dataset of cases saved by `Cases.save`, or a table of one.
 
-    Columns that held lists are lists again, and columns of booleans and whole
-    numbers with missing values get types that allow them. A saved table is
-    usually coded already, so no coders are applied unless "coders" names
-    some.
+    A joblib file holds the whole dataset, of the kind that it was (so a
+    saved `Votes` is `Votes` again), with its history. A table (such as a
+    CSV or parquet file) becomes `Cases`, labeled by "case_id", and columns
+    of booleans and whole numbers with missing values get types that allow
+    them (see `CourtData.load`). A saved dataset is usually coded already,
+    so no coders are applied unless "coders" names some.
 
     """
 
     default_coders: ClassVar[tuple[str, ...]] = ()
 
-    def load(self, source: Any, **kwargs: Any) -> pd.DataFrame:
-        """Loads the table at `source`.
+    def load(self, source: Any, **kwargs: Any) -> amos.Dataset:
+        """Loads the dataset at `source`.
 
         Args:
-            source: path of a CSV or parquet file saved by
-                `courtpy.save_cases`, found with the clerk.
+            source: path of a joblib, CSV, or parquet file saved by
+                `CourtData.save`, found with the clerk.
             **kwargs: not used.
 
         Raises:
             FileNotFoundError: if there is no file at `source`.
 
         Returns:
-            The table, labeled by "case_id".
+            The dataset.
 
         """
-        path = pathlib.Path(source)
-        if not path.is_file():
-            message = f'there is no table of cases at {path}'
-            raise FileNotFoundError(message)
-        return cases.load_cases(path)
+        loaded = datasets.CourtData.load(pathlib.Path(source))
+        if type(loaded) is datasets.CourtData:
+            return datasets.Cases.adopt(loaded)
+        return loaded
 
 
 @dataclasses.dataclass
@@ -462,7 +476,7 @@ class ReferenceLoader(amos.Loader, abc.ABC):
     Like every loader, it starts a new dataset, so it usually begins a study
     whose rows are what the table describes (such as each justice's vote in
     each case). To add a table's columns to parsed cases, use a merger (such
-    as `merge_scdb`) instead.
+    as `add_scdb`) instead.
 
     Attributes:
         default_source: the source that is recorded when "source" is not
@@ -567,3 +581,20 @@ def _parse(
         message = f'no {source} cases were found in {folder}'
         raise ValueError(message)
     return data
+
+
+def _reusable(saved: pathlib.Path) -> pathlib.Path | None:
+    """Returns the file of a saved dataset that a loader can reuse.
+
+    Args:
+        saved: the path of the saved table (the loader's "save").
+
+    Returns:
+        The joblib file beside it (which holds the whole dataset), if there is
+            one, or else the table, if it exists, or else `None`.
+
+    """
+    whole = saved.with_suffix('.joblib')
+    if whole.is_file():
+        return whole
+    return saved if saved.is_file() else None

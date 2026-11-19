@@ -12,9 +12,10 @@ Parsing has three stages:
    roles, the court, the disposition, and the judges) and the "general"
    rules (the decision, procedure, and standards of review) are always
    applied, and then the rulebooks that are named (by default, the
-   "federal" rules, which add citations, civil, constitutional, criminal,
-   and tort issues, and agencies; "citations", "civil", "constitutional",
-   "criminal", "torts", and "agencies" can be named alone). Each rulebook
+   "federal" rules, which add citations, civil (with tort, contract, and
+   intellectual property), constitutional, and criminal issues, and
+   agencies; "citations", "civil", "constitutional", "criminal", and
+   "agencies" can be named alone). Each rulebook
    has the rules of its "general" file and then those of its "federal"
    file, if there is one (see `courtpy.rules`).
 

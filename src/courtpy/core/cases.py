@@ -5,15 +5,11 @@ Contents:
     column_as_flags: returns a column of a table of cases as plain booleans.
     flags_as_numbers: returns a column of flags as numbers, keeping missing
         values.
-    load_cases: loads a table of parsed cases.
     require_columns: raises an error if a table lacks columns.
-    save_cases: saves a table of parsed cases.
     select_whole_cases: returns which rows a query selects, keeping each
         case whole.
     split_cell: returns the values in a cell of a table of cases, as a list.
     tidy: gives columns with missing values the right type.
-    _LIST_COLUMNS_FILE: the name of the file beside a saved CSV file that
-        names its columns of lists.
     _SEPARATOR: the text between several values in one cell.
     _TRUE: text that `column_as_flags` reads as true.
     _WHOLE_NUMBERS: columns that hold whole numbers.
@@ -23,7 +19,6 @@ Contents:
 from __future__ import annotations
 
 import dataclasses
-import json
 import pathlib
 from collections.abc import Iterable
 from typing import Any
@@ -33,7 +28,6 @@ import pandas as pd
 
 _SEPARATOR: str = '; '
 _TRUE: frozenset[str] = frozenset({'true', 't', '1', 'yes'})
-_LIST_COLUMNS_FILE: str = '{stem}.lists.json'
 _WHOLE_NUMBERS: frozenset[str] = frozenset({
     'year', 'court_num', 'cluster_id', 'docket_id', 'author_id',
     'citation_count'})
@@ -66,71 +60,6 @@ class Case:
     sections: dict[str, str] = dataclasses.field(default_factory = dict)
     metadata: dict[str, Any] = dataclasses.field(default_factory = dict)
     path: pathlib.Path | None = None
-
-
-def load_cases(path: pathlib.Path | str) -> pd.DataFrame:
-    """Loads a table of parsed cases saved by `save_cases`.
-
-    Args:
-        path: path to a CSV or parquet file.
-
-    Returns:
-        The table, labeled by "case_id". Columns that held lists are lists
-            again, and the ids of cases are text, as they were (in the labels
-            and in a "case_id" column, which a table of judges' votes has).
-
-    """
-    path = pathlib.Path(path)
-    if path.suffix.lower() == '.parquet':
-        data = pd.read_parquet(path)
-        for column in data.columns:
-            if data[column].map(lambda v: hasattr(v, 'tolist')).any():
-                data[column] = data[column].map(
-                    lambda v: list(v) if hasattr(v, 'tolist') else v)
-        return data
-    data = pd.read_csv(
-        path, index_col = 0, encoding = 'utf-8', dtype = {'case_id': str})
-    data.index = data.index.astype(str)
-    record = path.with_name(_LIST_COLUMNS_FILE.format(stem = path.stem))
-    if record.is_file():
-        for column in json.loads(record.read_text(encoding = 'utf-8')):
-            if column in data.columns:
-                data[column] = data[column].map(_unjoin)
-    return tidy(data)
-
-
-def save_cases(data: pd.DataFrame, path: pathlib.Path | str) -> pathlib.Path:
-    """Saves a table of parsed cases.
-
-    A CSV file can be opened in a spreadsheet. Lists (such as the judges on a
-    panel, once `split_values` has made them lists) are written as text, with
-    "; " between the items, and the names of those columns are saved beside
-    the file (as "{name}.lists.json") so that `load_cases` can restore them.
-    A parquet file keeps lists and types as they are.
-
-    Args:
-        data: the table.
-        path: path to save it to, ending in ".csv" or ".parquet". Its folder
-            is created if needed.
-
-    Returns:
-        The path the table was saved to.
-
-    """
-    path = pathlib.Path(path)
-    path.parent.mkdir(parents = True, exist_ok = True)
-    if path.suffix.lower() == '.parquet':
-        data.to_parquet(path)
-        return path
-    lists = [c for c in data.columns if data[c].map(_is_list).any()]
-    copy = data.copy()
-    for column in lists:
-        copy[column] = copy[column].map(
-            lambda v: _SEPARATOR.join(map(str, v)) if _is_list(v) else v)
-    copy.to_csv(path, encoding = 'utf-8')
-    record = path.with_name(_LIST_COLUMNS_FILE.format(stem = path.stem))
-    record.write_text(json.dumps(lists), encoding = 'utf-8')
-    return path
 
 
 def tidy(data: pd.DataFrame) -> pd.DataFrame:
@@ -309,37 +238,3 @@ def split_cell(value: Any, separator: str = _SEPARATOR) -> list[Any]:
         return []
     pieces = (p.strip() for p in str(value).split(separator))
     return [p for p in pieces if p]
-
-
-""" Private Functions """
-
-
-def _is_list(value: Any) -> bool:
-    """Returns whether `value` is a `list` or `tuple`.
-
-    Args:
-        value: a value in a table of cases.
-
-    Returns:
-        Whether `value` is a `list` or `tuple` (such as the names made by a
-            `names` rule).
-
-    """
-    return isinstance(value, list | tuple)
-
-
-def _unjoin(value: Any) -> list[str]:
-    """Returns text saved by `save_cases` as a list again.
-
-    Args:
-        value: a cell of a column that held lists, read from a CSV file: the
-            items joined by `_SEPARATOR`, or a missing value for an empty
-            list.
-
-    Returns:
-        The items, or an empty `list` if `value` is not text or is blank.
-
-    """
-    if not isinstance(value, str) or not value:
-        return []
-    return value.split(_SEPARATOR)

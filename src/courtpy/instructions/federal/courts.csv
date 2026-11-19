@@ -1,0 +1,149 @@
+court_num,court,level,circuit_num,courtlistener,fjc_name,opinion_name
+1,first_circuit,appellate,1,ca1,U\.S\. Circuit Court for the First Circuit|U\.S\. Circuit Courts for the First Circuit|U\.S\. Court of Appeals for the First Circuit,
+2,second_circuit,appellate,2,ca2,U\.S\. Circuit Court for the Second Circuit|U\.S\. Circuit Courts for the Second Circuit|U\.S\. Court of Appeals for the Second Circuit,
+3,third_circuit,appellate,3,ca3,U\.S\. Circuit Court for the Third Circuit|U\.S\. Circuit Courts for the Third Circuit|U\.S\. Court of Appeals for the Third Circuit,
+4,fourth_circuit,appellate,4,ca4,U\.S\. Circuit Court for the Fourth Circuit|U\.S\. Circuit Courts for the Fourth Circuit|U\.S\. Court of Appeals for the Fourth Circuit,
+5,fifth_circuit,appellate,5,ca5,U\.S\. Circuit Court for the Fifth Circuit|U\.S\. Circuit Courts for the Fifth Circuit|U\.S\. Court of Appeals for the Fifth Circuit,
+6,sixth_circuit,appellate,6,ca6,U\.S\. Circuit Court for the Sixth Circuit|U\.S\. Circuit Courts for the Sixth Circuit|U\.S\. Court of Appeals for the Sixth Circuit,
+7,seventh_circuit,appellate,7,ca7,U\.S\. Circuit Courts for the Seventh Circuit|U\.S\. Court of Appeals for the Seventh Circuit,
+8,eighth_circuit,appellate,8,ca8,U\.S\. Circuit Courts for the Eighth Circuit|U\.S\. Court of Appeals for the Eighth Circuit,
+9,circuit_districts_of_california,appellate,9,,U\.S\. Circuit Court for the Districts of California,
+9,ninth_circuit,appellate,9,ca9,U\.S\. Circuit Courts for the Ninth Circuit|U\.S\. Court of Appeals for the Ninth Circuit,
+10,tenth_circuit,appellate,10,ca10,U\.S\. Court of Appeals for the Tenth Circuit,
+11,eleventh_circuit,appellate,11,ca11,U\.S\. Court of Appeals for the Eleventh Circuit,
+12,dc_circuit,appellate,12,cadc,U\.S\. Court of Appeals for the District of Columbia Circuit,
+13,federal_circuit,appellate,13,cafc,U\.S\. Court of Appeals for the Federal Circuit,
+13,court_of_customs_and_patent_appeals,appellate,13,ccpa,U\.S\. Court of Customs and Patent Appeals,
+13,court_of_customs_appeals,appellate,13,,U\.S\. Court of Customs Appeals \(later U\.S\. Court of Customs and Patent Appeals\),
+99,supreme_court,supreme,,scotus,Supreme Court of the United States,
+101,court_of_international_trade,specialty,13,cit,U\.S\. Court of International Trade,
+102,customs_court,specialty,13,cusc,U\.S\. Customs Court,
+103,circuit_court_of_the_district_of_columbia,district,12,,Circuit Court of the District of Columbia,
+104,court_of_claims,specialty,13,cc,Court of Claims,
+1001,albemarle_cape_fear_pamptico_districts_of_north_carolina,district,4,,"U\.S\. District Court for the Albemarle, Cape Fear & Pamptico Districts of North Carolina",
+1002,central_district_of_california,district,9,cacd,U\.S\. District Court for the Central District of California,CENTRAL DISTRICT OF CALIFORNIA|C\.D\. CAL\.
+1003,central_district_of_illinois,district,7,ilcd,U\.S\. District Court for the Central District of Illinois,CENTRAL DISTRICT OF ILLINOIS|C\.D\. ILL\.
+1004,district_of_alabama,district,11,,U\.S\. District Court for the District of Alabama,
+1005,district_of_alaska,district,9,akd,U\.S\. District Court for the District of Alaska,DISTRICT OF ALASKA|D\. ALASKA
+1006,district_of_arizona,district,9,azd,U\.S\. District Court for the District of Arizona,DISTRICT OF ARIZONA|D\. ARIZ\.
+1007,district_of_arkansas,district,8,,U\.S\. District Court for the District of Arkansas,
+1008,district_of_california,district,9,,U\.S\. District Court for the District of California,
+1009,district_of_colorado,district,10,cod,U\.S\. District Court for the District of Colorado,DISTRICT OF COLORADO|D\. COLO\.
+1010,district_of_columbia,district,12,dcd,U\.S\. District Court for the District of Columbia,DISTRICT OF COLUMBIA|D\.D\.C\.
+1011,supreme_court_of_the_district_of_columbia,district,12,,U\.S\. District Court for the District of Columbia \(Supreme Court of the District of Columbia\),
+1012,district_of_connecticut,district,2,ctd,U\.S\. District Court for the District of Connecticut,DISTRICT OF CONNECTICUT|D\. CONN\.
+1013,district_of_delaware,district,3,ded,U\.S\. District Court for the District of Delaware,DISTRICT OF DELAWARE|D\. DEL\.
+1014,district_of_florida,district,11,,U\.S\. District Court for the District of Florida,
+1015,district_of_georgia,district,11,,U\.S\. District Court for the District of Georgia,
+1016,district_of_hawaii,district,9,hid,U\.S\. District Court for the District of Hawaii,DISTRICT OF HAWAII|D\. HAW\.
+1017,district_of_idaho,district,9,idd,U\.S\. District Court for the District of Idaho,DISTRICT OF IDAHO|D\. IDAHO
+1018,district_of_illinois,district,7,,U\.S\. District Court for the District of Illinois,
+1019,district_of_indiana,district,7,,U\.S\. District Court for the District of Indiana,
+1020,district_of_iowa,district,8,,U\.S\. District Court for the District of Iowa,
+1021,district_of_kansas,district,10,ksd,U\.S\. District Court for the District of Kansas,DISTRICT OF KANSAS|D\. KAN\.
+1022,district_of_kentucky,district,6,,U\.S\. District Court for the District of Kentucky,
+1023,district_of_louisiana,district,5,,U\.S\. District Court for the District of Louisiana,
+1024,district_of_maine,district,1,med,U\.S\. District Court for the District of Maine,DISTRICT OF MAINE|D\. ME\.
+1025,district_of_maryland,district,4,mdd,U\.S\. District Court for the District of Maryland,DISTRICT OF MARYLAND|D\. MD\.
+1026,district_of_massachusetts,district,1,mad,U\.S\. District Court for the District of Massachusetts,DISTRICT OF MASSACHUSETTS|D\. MASS\.
+1027,district_of_michigan,district,6,,U\.S\. District Court for the District of Michigan,
+1028,district_of_minnesota,district,8,mnd,U\.S\. District Court for the District of Minnesota,DISTRICT OF MINNESOTA|D\. MINN\.
+1029,district_of_mississippi,district,5,,U\.S\. District Court for the District of Mississippi,
+1030,district_of_missouri,district,8,,U\.S\. District Court for the District of Missouri,
+1031,district_of_montana,district,9,mtd,U\.S\. District Court for the District of Montana,DISTRICT OF MONTANA|D\. MONT\.
+1032,district_of_nebraska,district,8,ned,U\.S\. District Court for the District of Nebraska,DISTRICT OF NEBRASKA|D\. NEB\.
+1033,district_of_nevada,district,9,nvd,U\.S\. District Court for the District of Nevada,DISTRICT OF NEVADA|D\. NEV\.
+1034,district_of_new_hampshire,district,1,nhd,U\.S\. District Court for the District of New Hampshire,DISTRICT OF NEW HAMPSHIRE|D\.N\.H\.
+1035,district_of_new_jersey,district,3,njd,U\.S\. District Court for the District of New Jersey,DISTRICT OF NEW JERSEY|D\.N\.J\.
+1036,district_of_new_mexico,district,10,nmd,U\.S\. District Court for the District of New Mexico,DISTRICT OF NEW MEXICO|D\.N\.M\.
+1037,district_of_new_york,district,2,,U\.S\. District Court for the District of New York,
+1038,district_of_north_carolina,district,4,,U\.S\. District Court for the District of North Carolina,
+1039,district_of_north_dakota,district,8,ndd,U\.S\. District Court for the District of North Dakota,DISTRICT OF NORTH DAKOTA|D\.N\.D\.
+1040,district_of_ohio,district,6,,U\.S\. District Court for the District of Ohio,
+1041,district_of_oregon,district,9,ord,U\.S\. District Court for the District of Oregon,DISTRICT OF OREGON|D\. OR\.
+1042,district_of_orleans,district,5,,U\.S\. District Court for the District of Orleans,
+1043,district_of_pennsylvania,district,3,,U\.S\. District Court for the District of Pennsylvania,
+1044,district_of_puerto_rico,district,1,prd,U\.S\. District Court for the District of Puerto Rico,DISTRICT OF PUERTO RICO|D\.P\.R\.
+1045,district_of_rhode_island,district,1,rid,U\.S\. District Court for the District of Rhode Island,DISTRICT OF RHODE ISLAND|D\.R\.I\.
+1046,district_of_south_carolina,district,4,scd,U\.S\. District Court for the District of South Carolina,DISTRICT OF SOUTH CAROLINA|D\.S\.C\.
+1047,district_of_south_dakota,district,8,sdd,U\.S\. District Court for the District of South Dakota,DISTRICT OF SOUTH DAKOTA|D\.S\.D\.
+1048,district_of_tennessee,district,6,,U\.S\. District Court for the District of Tennessee,
+1049,district_of_texas,district,5,,U\.S\. District Court for the District of Texas,
+1050,district_of_utah,district,10,utd,U\.S\. District Court for the District of Utah,DISTRICT OF UTAH|D\. UTAH
+1051,district_of_vermont,district,2,vtd,U\.S\. District Court for the District of Vermont,DISTRICT OF VERMONT|D\. VT\.
+1052,district_of_virginia,district,4,,U\.S\. District Court for the District of Virginia,
+1053,district_of_washington,district,9,,U\.S\. District Court for the District of Washington,
+1054,district_of_west_virginia,district,4,,U\.S\. District Court for the District of West Virginia,
+1055,district_of_wisconsin,district,7,,U\.S\. District Court for the District of Wisconsin,
+1056,district_of_wyoming,district,10,wyd,U\.S\. District Court for the District of Wyoming,DISTRICT OF WYOMING|D\. WYO\.
+1057,eastern_district_of_arkansas,district,8,ared,U\.S\. District Court for the Eastern District of Arkansas,EASTERN DISTRICT OF ARKANSAS|E\.D\. ARK\.
+1058,eastern_district_of_california,district,9,caed,U\.S\. District Court for the Eastern District of California,EASTERN DISTRICT OF CALIFORNIA|E\.D\. CAL\.
+1059,eastern_district_of_illinois,district,7,,U\.S\. District Court for the Eastern District of Illinois,
+1060,eastern_district_of_kentucky,district,6,kyed,U\.S\. District Court for the Eastern District of Kentucky,EASTERN DISTRICT OF KENTUCKY|E\.D\. KY\.
+1061,eastern_district_of_louisiana,district,5,laed,U\.S\. District Court for the Eastern District of Louisiana,EASTERN DISTRICT OF LOUISIANA|E\.D\. LA\.
+1062,eastern_district_of_michigan,district,6,mied,U\.S\. District Court for the Eastern District of Michigan,EASTERN DISTRICT OF MICHIGAN|E\.D\. MICH\.
+1063,eastern_district_of_missouri,district,8,moed,U\.S\. District Court for the Eastern District of Missouri,EASTERN DISTRICT OF MISSOURI|E\.D\. MO\.
+1064,eastern_district_of_new_jersey,district,3,,U\.S\. District Court for the Eastern District of New Jersey,
+1065,eastern_district_of_new_york,district,2,nyed,U\.S\. District Court for the Eastern District of New York,EASTERN DISTRICT OF NEW YORK|E\.D\.N\.Y\.
+1066,eastern_district_of_north_carolina,district,4,nced,U\.S\. District Court for the Eastern District of North Carolina,EASTERN DISTRICT OF NORTH CAROLINA|E\.D\.N\.C\.
+1067,eastern_district_of_oklahoma,district,10,oked,U\.S\. District Court for the Eastern District of Oklahoma,EASTERN DISTRICT OF OKLAHOMA|E\.D\. OKLA\.
+1068,eastern_district_of_pennsylvania,district,3,paed,U\.S\. District Court for the Eastern District of Pennsylvania,EASTERN DISTRICT OF PENNSYLVANIA|E\.D\. PA\.
+1069,eastern_district_of_south_carolina,district,4,,U\.S\. District Court for the Eastern District of South Carolina,
+1070,eastern_district_of_tennessee,district,6,tned,U\.S\. District Court for the Eastern District of Tennessee,EASTERN DISTRICT OF TENNESSEE|E\.D\. TENN\.
+1071,eastern_district_of_texas,district,5,txed,U\.S\. District Court for the Eastern District of Texas,EASTERN DISTRICT OF TEXAS|E\.D\. TEX\.
+1072,eastern_district_of_virginia,district,4,vaed,U\.S\. District Court for the Eastern District of Virginia,EASTERN DISTRICT OF VIRGINIA|E\.D\. VA\.
+1073,eastern_district_of_washington,district,9,waed,U\.S\. District Court for the Eastern District of Washington,EASTERN DISTRICT OF WASHINGTON|E\.D\. WASH\.
+1074,eastern_district_of_wisconsin,district,7,wied,U\.S\. District Court for the Eastern District of Wisconsin,EASTERN DISTRICT OF WISCONSIN|E\.D\. WIS\.
+1075,edenton_new_bern_wilmington_districts_of_north_carolina,district,4,,"U\.S\. District Court for the Edenton, New Bern & Wilmington Districts of North Carolina",
+1076,middle_district_of_alabama,district,11,almd,U\.S\. District Court for the Middle District of Alabama,MIDDLE DISTRICT OF ALABAMA|M\.D\. ALA\.
+1077,middle_district_of_florida,district,11,flmd,U\.S\. District Court for the Middle District of Florida,MIDDLE DISTRICT OF FLORIDA|M\.D\. FLA\.
+1078,middle_district_of_georgia,district,11,gamd,U\.S\. District Court for the Middle District of Georgia,MIDDLE DISTRICT OF GEORGIA|M\.D\. GA\.
+1079,middle_district_of_louisiana,district,5,lamd,U\.S\. District Court for the Middle District of Louisiana,MIDDLE DISTRICT OF LOUISIANA|M\.D\. LA\.
+1080,middle_district_of_north_carolina,district,4,ncmd,U\.S\. District Court for the Middle District of North Carolina,MIDDLE DISTRICT OF NORTH CAROLINA|M\.D\.N\.C\.
+1081,middle_district_of_pennsylvania,district,3,pamd,U\.S\. District Court for the Middle District of Pennsylvania,MIDDLE DISTRICT OF PENNSYLVANIA|M\.D\. PA\.
+1082,middle_district_of_tennessee,district,6,tnmd,U\.S\. District Court for the Middle District of Tennessee,MIDDLE DISTRICT OF TENNESSEE|M\.D\. TENN\.
+1083,northern_district_of_alabama,district,11,alnd,U\.S\. District Court for the Northern District of Alabama,NORTHERN DISTRICT OF ALABAMA|N\.D\. ALA\.
+1084,northern_district_of_california,district,9,cand,U\.S\. District Court for the Northern District of California,NORTHERN DISTRICT OF CALIFORNIA|N\.D\. CAL\.
+1085,northern_district_of_florida,district,11,flnd,U\.S\. District Court for the Northern District of Florida,NORTHERN DISTRICT OF FLORIDA|N\.D\. FLA\.
+1086,northern_district_of_georgia,district,11,gand,U\.S\. District Court for the Northern District of Georgia,NORTHERN DISTRICT OF GEORGIA|N\.D\. GA\.
+1087,northern_district_of_illinois,district,7,ilnd,U\.S\. District Court for the Northern District of Illinois,NORTHERN DISTRICT OF ILLINOIS|N\.D\. ILL\.
+1088,northern_district_of_indiana,district,7,innd,U\.S\. District Court for the Northern District of Indiana,NORTHERN DISTRICT OF INDIANA|N\.D\. IND\.
+1089,northern_district_of_iowa,district,8,iand,U\.S\. District Court for the Northern District of Iowa,NORTHERN DISTRICT OF IOWA|N\.D\. IOWA
+1090,northern_district_of_mississippi,district,5,msnd,U\.S\. District Court for the Northern District of Mississippi,NORTHERN DISTRICT OF MISSISSIPPI|N\.D\. MISS\.
+1091,northern_district_of_new_york,district,2,nynd,U\.S\. District Court for the Northern District of New York,NORTHERN DISTRICT OF NEW YORK|N\.D\.N\.Y\.
+1092,northern_district_of_ohio,district,6,ohnd,U\.S\. District Court for the Northern District of Ohio,NORTHERN DISTRICT OF OHIO|N\.D\. OHIO
+1093,northern_district_of_oklahoma,district,10,oknd,U\.S\. District Court for the Northern District of Oklahoma,NORTHERN DISTRICT OF OKLAHOMA|N\.D\. OKLA\.
+1094,northern_district_of_texas,district,5,txnd,U\.S\. District Court for the Northern District of Texas,NORTHERN DISTRICT OF TEXAS|N\.D\. TEX\.
+1095,northern_district_of_west_virginia,district,4,wvnd,U\.S\. District Court for the Northern District of West Virginia,NORTHERN DISTRICT OF WEST VIRGINIA|N\.D\.W\. VA\.
+1096,southern_district_of_alabama,district,11,alsd,U\.S\. District Court for the Southern District of Alabama,SOUTHERN DISTRICT OF ALABAMA|S\.D\. ALA\.
+1097,southern_district_of_california,district,9,casd,U\.S\. District Court for the Southern District of California,SOUTHERN DISTRICT OF CALIFORNIA|S\.D\. CAL\.
+1098,southern_district_of_florida,district,11,flsd,U\.S\. District Court for the Southern District of Florida,SOUTHERN DISTRICT OF FLORIDA|S\.D\. FLA\.
+1099,southern_district_of_georgia,district,11,gasd,U\.S\. District Court for the Southern District of Georgia,SOUTHERN DISTRICT OF GEORGIA|S\.D\. GA\.
+1100,southern_district_of_illinois,district,7,ilsd,U\.S\. District Court for the Southern District of Illinois,
+1101,southern_district_of_indiana,district,7,insd,U\.S\. District Court for the Southern District of Indiana,SOUTHERN DISTRICT OF INDIANA|S\.D\. IND\.
+1102,southern_district_of_iowa,district,8,iasd,U\.S\. District Court for the Southern District of Iowa,SOUTHERN DISTRICT OF IOWA|S\.D\. IOWA
+1103,southern_district_of_mississippi,district,5,mssd,U\.S\. District Court for the Southern District of Mississippi,SOUTHERN DISTRICT OF MISSISSIPPI|S\.D\. MISS\.
+1104,southern_district_of_new_york,district,2,nysd,U\.S\. District Court for the Southern District of New York,SOUTHERN DISTRICT OF NEW YORK|S\.D\.N\.Y\.
+1105,southern_district_of_ohio,district,6,ohsd,U\.S\. District Court for the Southern District of Ohio,SOUTHERN DISTRICT OF OHIO|S\.D\. OHIO
+1106,southern_district_of_texas,district,5,txsd,U\.S\. District Court for the Southern District of Texas,SOUTHERN DISTRICT OF TEXAS|S\.D\. TEX\.
+1107,southern_district_of_west_virginia,district,4,wvsd,U\.S\. District Court for the Southern District of West Virginia,SOUTHERN DISTRICT OF WEST VIRGINIA|S\.D\.W\. VA\.
+1108,western_district_of_arkansas,district,8,arwd,U\.S\. District Court for the Western District of Arkansas,WESTERN DISTRICT OF ARKANSAS|W\.D\. ARK\.
+1109,western_district_of_kentucky,district,6,kywd,U\.S\. District Court for the Western District of Kentucky,WESTERN DISTRICT OF KENTUCKY|W\.D\. KY\.
+1110,western_district_of_louisiana,district,5,lawd,U\.S\. District Court for the Western District of Louisiana,WESTERN DISTRICT OF LOUISIANA|W\.D\. LA\.
+1111,western_district_of_michigan,district,6,miwd,U\.S\. District Court for the Western District of Michigan,WESTERN DISTRICT OF MICHIGAN|W\.D\. MICH\.
+1112,western_district_of_missouri,district,8,mowd,U\.S\. District Court for the Western District of Missouri,WESTERN DISTRICT OF MISSOURI|W\.D\. MO\.
+1113,western_district_of_new_jersey,district,3,,U\.S\. District Court for the Western District of New Jersey,
+1114,western_district_of_new_york,district,2,nywd,U\.S\. District Court for the Western District of New York,WESTERN DISTRICT OF NEW YORK|W\.D\.N\.Y\.
+1115,western_district_of_north_carolina,district,4,ncwd,U\.S\. District Court for the Western District of North Carolina,WESTERN DISTRICT OF NORTH CAROLINA|W\.D\.N\.C\.
+1116,western_district_of_oklahoma,district,10,okwd,U\.S\. District Court for the Western District of Oklahoma,WESTERN DISTRICT OF OKLAHOMA|W\.D\. OKLA\.
+1117,western_district_of_pennsylvania,district,3,pawd,U\.S\. District Court for the Western District of Pennsylvania,WESTERN DISTRICT OF PENNSYLVANIA|W\.D\. PA\.
+1118,western_district_of_south_carolina,district,4,,U\.S\. District Court for the Western District of South Carolina,
+1119,western_district_of_tennessee,district,6,tnwd,U\.S\. District Court for the Western District of Tennessee,WESTERN DISTRICT OF TENNESSEE|W\.D\. TENN\.
+1120,western_district_of_texas,district,5,txwd,U\.S\. District Court for the Western District of Texas,WESTERN DISTRICT OF TEXAS|W\.D\. TEX\.
+1121,western_district_of_virginia,district,4,vawd,U\.S\. District Court for the Western District of Virginia,WESTERN DISTRICT OF VIRGINIA|W\.D\. VA\.
+1122,western_district_of_washington,district,9,wawd,U\.S\. District Court for the Western District of Washington,WESTERN DISTRICT OF WASHINGTON|W\.D\. WASH\.
+1123,western_district_of_wisconsin,district,7,wiwd,U\.S\. District Court for the Western District of Wisconsin,WESTERN DISTRICT OF WISCONSIN|W\.D\. WIS\.
+1124,district_of_guam,district,9,gud,,DISTRICT OF GUAM|D\. GUAM
+1125,district_of_the_northern_mariana_islands,district,9,nmid,,DISTRICT OF THE NORTHERN MARIANA ISLANDS|D\.N\. MAR\. IS\.
+1126,district_of_the_virgin_islands,district,3,vid,,DISTRICT OF THE VIRGIN ISLANDS|D\.V\.I\.
+1127,district_of_the_canal_zone,district,5,,,DISTRICT OF THE CANAL ZONE|D\.C\.Z\.

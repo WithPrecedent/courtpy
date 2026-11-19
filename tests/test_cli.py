@@ -31,8 +31,11 @@ def test_bad_rules(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -
 def test_parse(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
     output = tmp_path / 'cases.csv'
     assert cli.main(['-q', 'parse', str(court_listener_folder), '--output', str(output)]) == 0
-    table = courtpy.load_cases(output)
+    table = courtpy.Cases.load(output).data
     assert 'outcome_reversal' in table.columns
+    # The whole dataset is saved beside the table.
+    whole = courtpy.Cases.load(output.with_suffix('.joblib'))
+    assert [e['technique'] for e in whole.history][-1] == 'save_data'
 
 
 def test_split_and_parse_lexis(tmp_path: pathlib.Path) -> None:
@@ -43,7 +46,7 @@ def test_split_and_parse_lexis(tmp_path: pathlib.Path) -> None:
     assert cli.main([
         '-q', 'parse', str(folder), '--source', 'lexis_nexis', '--output', str(output),
         '--no-code']) == 0
-    assert len(courtpy.load_cases(output)) == 2
+    assert len(courtpy.Cases.load(output).data) == 2
 
 
 def test_key_commands(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:

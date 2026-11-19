@@ -4,6 +4,84 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.5.0
+
+courtpy follows the `amos` way of working more closely: its data are `amos`
+datasets of one kind of row each, and everything it does to them is an
+`amos` technique that a settings file can name. **Breaking** throughout; no
+old names are kept.
+
+* courtpy requires amos 0.10.2, for its savers.
+* `courtpy.datasets` has the kinds of `amos.Dataset` that courtpy makes, by
+  what each row is: `Cases`, `Dockets`, `Votes`, `Judges`, `Courts`,
+  `CaseTypes`, and `PartyTypes` (all importable from `courtpy`). Each names
+  the column that labels its rows, and `save` saves it whole (in a joblib
+  file, with `amos`'s `save_data`) and its data as a CSV, parquet, or Excel
+  table, with several values in a cell written as "; "-joined text. `load`
+  loads either file. **Breaking:** `load_cases` and `save_cases` are gone, and a CSV file
+  no longer has a ".lists.json" file beside it.
+* The loaders make `Cases` (or the kind that the last coder makes, such as
+  `Votes`), "save" saves the whole dataset beside the table, and "reuse"
+  loads it, history and all. `load_cases` loads a saved joblib file as the
+  kind it was. `courtpy.code` returns `Cases` for a table, and `courtpy
+  parse` saves the whole dataset beside its table.
+* The shapers that change what a row is return the kind they make.
+  **Breaking:** `reshape_by_votes`, `reshape_by_panel`, and
+  `reshape_by_judge` are now `cases_to_votes`, `votes_to_cases`, and
+  `cases_to_judges` (`CasesToVotes`, `VotesToCases`, and `CasesToJudges`).
+  `cases_to_judges` keeps nothing about any one case: columns of text are
+  left out unless "keep" or "how" names them (it used to keep text that was
+  the same in each judge's cases).
+* `Dockets` has a row for each docket number of each case, labeled by
+  "case_docket" (such as "4567890-2"), with "case_id" and "docket" (the
+  row's one docket number), so each appeal of a case that consolidated
+  several has its own row. CourtListener's "docket_id" is kept.
+  `cases_to_dockets` and `dockets_to_cases` make dockets of cases and cases
+  of dockets, and `dockets_to_votes` makes a row for each judge on each
+  docket. `vote_table` takes "label", the column of the labels of its rows.
+* `add_idb` matches each row of `Dockets` by its own docket number only, so
+  each appeal of a consolidated case gets its own record of the Integrated
+  Database (in `Cases`, a case still gets the record of the first of its
+  docket numbers that the database has).
+* `cases_to_courts`, `cases_to_case_types`, and `cases_to_party_types` (in
+  the new `courtpy.shapers`) summarize cases by court, case type, and party
+  type, with the means of their columns of numbers and booleans (so the
+  share of each court's or judge's cases of each case type and with each
+  party type), and "by" for more columns to group by. Party types come from
+  "party1_type" and "party2_type", which rules for them can make.
+* `code_case_type` adds "type_civil" (every case that is not criminal) and
+  "type_{prefix}" for each other prefix of the rules of the criminal, civil,
+  and constitutional files (`courtpy.rules.case_type_prefixes`): "type_tort",
+  "type_contract", "type_ip", "type_writ", and "type_constitutional", and
+  any prefix added later. **Breaking:** the "torts" rulebook is gone; its
+  rules are in "civil", with the prefixes "tort_" and "contract_".
+* **Breaking:** the mergers are named `add_...`: `merge_biographies`,
+  `merge_scdb`, and `merge_idb` are now `add_biography`, `add_scdb`, and
+  `add_idb`. In `Cases`, `add_biography` numbers its columns by each judge's
+  seat on the panel ("judge_name1", "judge_nid1", "judge_party1", ...), and
+  its "lookup" can be a function that takes the place of the roster.
+  `code_panels` numbers its columns the same way ("judge_name1" and
+  "judge_nid1", which were "judge1" and "judge1_nid").
+* New mergers: `add_jcs` (each judge's Judicial Common Space score),
+  `add_executive` (`executive_name` and `executive_ideology`),
+  `add_legislature` (`senate_ideology` and `house_ideology`, the chamber
+  medians of the Congress then sitting), `add_high_court`
+  (`high_court_ideology`, the median justice's Martin-Quinn score in the term
+  then sitting), `add_circuit` (the median and total of the appointing
+  presidents' parties and of the Judicial Common Space scores of the active,
+  non-senior judges of each case's circuit on the day it was decided), and
+  `add_judge_scores` and `add_court_scores` (scores from training data, in
+  the new `courtpy.scores`). The first four match each case's date, not its
+  year. **Breaking:** `add_politics` is gone; `build_table` still makes a
+  table of years, which `merge_keys` can add by "year".
+* The table of federal courts is "instructions/federal/courts.csv" again,
+  with each court's circuit and CourtListener id (read by the new
+  `courtpy.courts`), and the presidents' terms are
+  "instructions/federal/presidents.csv" (read by
+  `courtpy.politics.executives`). **Breaking:** `options._COURTS`,
+  `options._TRIAL_COURTS`, and `options._PRESIDENTS` are gone.
+* The README has a table of courtpy's techniques and datasets.
+
 ## 0.4.1
 
 * `cases.select_whole_cases` raises a `ValueError` that names the query

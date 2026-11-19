@@ -16,16 +16,26 @@ The rules are in three folders:
   with a file for each kind of court (`federal_appellate.csv`, for the
   federal courts of appeals).
 
+Two files of `federal` are tables rather than rules:
+
+* `courts.csv` has a row for each federal court: courtpy's number for it,
+  its name, its level, its circuit, CourtListener's id for it, and patterns
+  of the names that the Federal Judicial Center and opinions use for it (see
+  `courtpy.courts`). `add_circuit` finds each case's circuit with it.
+* `presidents.csv` has the term of each president, with the president's
+  party (-1 for Democratic and 1 for Republican). `add_executive` and
+  `courtpy.politics.presidents` read it, so a new president can be added to
+  it.
+
 | Topic | Files | What it does |
 | --- | --- | --- |
 | `lexis_nexis` | `lexis_nexis/federal_appellate.csv` | Divides a Lexis-Nexis case into its header and opinions, and finds each part of the header (the parties, court, docket number, dates, history, counsel, disposition, citation, judges, and author). CourtListener cases do not need it, because CourtListener stores those parts separately. |
 | `header` | `general/header.csv` | Finds variables in the parts of the header: the court's number, each party's role, the agency involved, the disposition, the counsel, publication, and the names of the judges. When a case has no roles or judges in its header (as recent CourtListener cases often do not), it reads them from the caption and the "Before ..." line at the start of the opinion. Always applied. |
 | `general` | `general/general.csv` | Finds the decision that the opinion states ("AFFIRMED." or "we reverse"), its words about dispositions anywhere, procedure (such as pro se, mandamus, and mootness), and standards of review. Always applied. |
 | `citations` | `general/citations.csv` | Finds citations to cases, statutes, regulations, the Constitution, legislative materials, and other sources (`citations_...`). |
-| `civil` | `general/civil.csv`, `federal/civil.csv` | Finds the civil issues discussed (`civil_...`). |
+| `civil` | `general/civil.csv`, `federal/civil.csv` | Finds the civil issues discussed: general civil issues (`civil_...`), torts (`tort_...`), contracts (`contract_...`), intellectual property (`ip_...`), and writs (`writ_...`). Each prefix is a case type (see `code_case_type`), so a new prefix (such as `immigration_`) is a case type too. |
 | `constitutional` | `general/constitutional.csv` | Finds the constitutional issues discussed (`constitutional_...`). |
 | `criminal` | `general/criminal.csv`, `federal/criminal.csv` | Finds the criminal issues discussed (`criminal_...`). |
-| `torts` | `general/torts.csv` | Finds torts and other private-law issues discussed (`torts_...`). |
 | `review` | `federal/review.csv` | Finds what kind of review an appeal is: from a federal district court (`review_district`), of an agency (`review_agency`), or of the Board of Immigration Appeals or an immigration judge (`review_immigration`). For an appeal from a district court, it finds the district judge as the opening names them (`district_text`) and their name (`district_judges`). |
 | `agencies` | `federal/agencies.csv` | Finds every federal agency that the caption, the history, or the opinion names (`agencies`), by its name or a common abbreviation, as the agencies' names separated by "; " (such as "Internal Revenue Service; United States Tax Court"). The agencies are those of the Federal Judicial Center's Integrated Database (as [fjc-idb](https://github.com/WithPrecedent/fjc_idb) lists them), and each rule's note gives fjc-idb's code. |
 

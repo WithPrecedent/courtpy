@@ -21,34 +21,41 @@ also has the district court's record of the case that was appealed (in
 columns that begin with "district_"), which fjc-idb's `merge_district`
 finds.
 
-`merge_idb` (an `amos.Merger`, which is added to the `amos` library as soon
-as courtpy is imported) adds the database's columns to parsed cases of the
-courts of appeals, with "idb_" before their names. A case is matched by its
-circuit and one of its docket numbers:
+`add_idb` (an `amos.Merger`, which is added to the `amos` library as soon
+as courtpy is imported) adds the database's columns, with "idb_" before
+their names, by circuit and docket number. The database has a record for
+each docket, so it is best added to `Dockets` (which `cases_to_dockets`
+makes), each of whose rows has one docket number ("docket"). A case that
+consolidated several appeals then has each appeal's record on its own row:
 
 ```python
 import courtpy
 
 cases = courtpy.parse("data/court_listener")
-dataset = courtpy.code(cases, "merge_idb", parameters = {
-    "merge_idb": {"columns": "appeal_type, judgment_date, published"}})
+dockets = courtpy.code(cases, ["cases_to_dockets", "add_idb"], parameters = {
+    "add_idb": {"columns": "appeal_type, judgment_date, published"}})
 ```
+
+Added to `Cases`, a case with several docket numbers gets the record of the
+first of them that the database has.
 
 `load_idb` and `download_idb` (reference loaders, see
 `courtpy.loaders.ReferenceLoader`) start a study of the appeals themselves,
 whether or not they have opinions.
 
 Contents:
+    AddIdb: adds the Integrated Database's record of each appeal to its
+        case.
     DownloadIdb: downloads the Integrated Database's files and loads its
         appeals.
     LoadIdb: loads the Integrated Database's table of appeals for a range of
         years.
-    MergeIdb: adds the Integrated Database's record of each appeal to its
-        case.
     appeals: returns the database's table of appeals for a range of years.
     download: downloads the database's yearly files that are missing.
     logger: the module's logger, which reports the files that are
         downloaded.
+    _DOCKET_COLUMN: the column of `Dockets` with each row's one docket
+        number.
 
 """
 
@@ -81,6 +88,7 @@ _COURT_NUMBERS: dict[int, str] = {
     **{number: str(number) for number in range(1, 12)}, 12: '0'}
 _DATES: tuple[str, ...] = ('date_filed', 'year')
 _DOCKET: re.Pattern[str] = re.compile(r'(?<!\d)(\d{2})-(\d{1,6})(?!\d)')
+_DOCKET_COLUMN: str = 'docket'
 _DOCKETS: tuple[str, ...] = ('docket_numbers', 'docket_number')
 _KINDS: tuple[str, ...] = ('appellate', 'civil', 'criminal')
 _TEXT_COLUMNS: tuple[str, ...] = (
@@ -90,13 +98,14 @@ _TEXT_COLUMNS: tuple[str, ...] = (
 
 
 @dataclasses.dataclass
-class MergeIdb(amos.Merger):
-    """Adds the Integrated Database's record of each appeal to its case.
+class AddIdb(amos.Merger):
+    """Adds the Integrated Database's record of each appeal by its docket.
 
-    Each case of a court of appeals is matched to the database's record of
-    the appeal with the same circuit and docket number. A case with several
-    docket numbers (as consolidated appeals have) is matched by the first of
-    them that the database has. An appeal that was reopened or remanded has
+    Each row of `Dockets` (see `cases_to_dockets`) is matched to the
+    database's record of the appeal with the same circuit and docket number
+    ("docket"), so each docket of a case that consolidated several appeals
+    gets its own record. Each row of `Cases` is matched by the first of its
+    docket numbers that the database has. An appeal that was reopened or remanded has
     a record for each time it ended, under the same docket number, so the
     record whose judgment is nearest the date of the decision is used (or
     the latest one, if there are no dates), and never a record of an appeal
@@ -123,7 +132,7 @@ class MergeIdb(amos.Merger):
     | `district` | Whether to add the district court's record of the case that was appealed, without a `source` (in columns that begin with "idb_district_"). It is false unless set, since the district courts' files are large. |
     | `folder` | The folder of the database's yearly files, without a `source` (looked for in the current folder and then in the clerk's input folder). It is "fjc_idb" in courtpy's data folder unless another is set. |
     | `download` | Whether to download the yearly files that are missing, without a `source`. It is true unless set. |
-    | `courts`, `dockets`, `dates` | The columns of the cases with their courts, docket numbers, and dates of decision. They are "court_num" (or else "court"), "docket_numbers" (or else "docket_number"), and "date_filed" (or else "year") unless others are set. |
+    | `courts`, `dockets`, `dates` | The columns of the cases with their courts, docket numbers, and dates of decision. They are "court_num" (or else "court"), "docket" (in `Dockets`, and otherwise "docket_numbers" or else "docket_number"), and "date_filed" (or else "year") unless others are set. |
 
     Needs a court (a CourtListener court id, such as "ca1", or the number
     that the federal rules give a court of appeals) and docket numbers (such
@@ -222,7 +231,7 @@ class MergeIdb(amos.Merger):
         other: pd.DataFrame,
         *,
         courts: Sequence[str] | str = _COURTS,
-        dockets: Sequence[str] | str = _DOCKETS,
+        dockets: Sequence[str] | str | None = None,
         dates: Sequence[str] | str = _DATES,
         **kwargs: Any) -> Any:
         """Returns the database's record of the appeal of each case.
@@ -236,7 +245,9 @@ class MergeIdb(amos.Merger):
                 `_COURTS`.
             dockets: the columns of `data` with the docket numbers of each
                 case, as lists or as text, tried in order. Defaults to
-                `_DOCKETS`.
+                `None`, in which case it is "docket" (the one docket number
+                of each row of `Dockets`) if `data` has it, so that a row is
+                matched only by its own docket, and otherwise `_DOCKETS`.
             dates: the columns of `data` with the date (or year) of each
                 decision, tried in order. Defaults to `_DATES`.
             **kwargs: not used.
@@ -250,6 +261,9 @@ class MergeIdb(amos.Merger):
 
         """
         courts = utilities.listify(courts)
+        if dockets is None:
+            dockets = [_DOCKET_COLUMN] if _DOCKET_COLUMN in data.columns else (
+                list(_DOCKETS))
         dockets = utilities.listify(dockets)
         for wanted, kind in ((courts, 'courts'), (dockets, 'docket numbers')):
             if not any(column in data.columns for column in wanted):
@@ -324,7 +338,7 @@ class LoadIdb(loaders.ReferenceLoader):
     `courtpy.utilities.data_folder()` unless another is set. The files that
     are missing are downloaded first unless "download" is false (see
     `appeals`). To add the database's records to parsed cases, use
-    `merge_idb` instead.
+    `add_idb` instead.
 
     """
 

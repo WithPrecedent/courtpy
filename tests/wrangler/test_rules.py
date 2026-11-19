@@ -131,7 +131,8 @@ def test_rules_that_ignore_case_do_not_list_both_cases() -> None:
     both = re.compile(r'\[([A-Za-z])([A-Za-z])\]')
     for path in sorted(rules._INSTRUCTIONS.glob('*/*.csv')):
         for row in read_rows(path):
-            if 'ignorecase' not in row['flags']:
+            # The tables of courts and presidents are not rules.
+            if 'flags' not in row or 'ignorecase' not in row['flags']:
                 continue
             for first, second in both.findall(row['pattern']):
                 assert first.lower() != second.lower(), (path, row['name'])
@@ -355,3 +356,10 @@ def test_agencies_are_those_of_fjc_idb() -> None:
     assert len(values) == 104
     assert all(',' not in value for value in values)
     assert {rule.kind for rule in book} == {'categories'}
+
+
+def test_case_type_prefixes() -> None:
+    prefixes = rules.case_type_prefixes()
+    assert prefixes[:2] == ['criminal', 'civil']
+    assert {'tort', 'contract', 'ip', 'writ', 'constitutional'} <= set(prefixes)
+    assert 'party1' not in prefixes and 'citations' not in prefixes

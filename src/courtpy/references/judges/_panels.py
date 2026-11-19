@@ -1,20 +1,22 @@
 """Techniques for the panels of cases and the votes of their judges.
 
 Contents:
+    CasesToJudges: makes a table with one row for each judge.
+    CasesToVotes: makes a table with one row for each judge on each case.
     CodePanels: adds the judges and the composition of each case's panel.
-    ReshapeByJudge: makes a table with one row for each judge.
-    ReshapeByPanel: makes a table of votes a table of cases again.
-    ReshapeByVotes: makes a table with one row for each judge on each case.
+    DocketsToVotes: makes a table with one row for each judge on each
+        docket.
+    VotesToCases: makes a table of votes a table of cases again.
     vote_table: returns a table with one row for each judge on each case.
     _CASE: column that holds the label of each row's case while a table is
         made.
     _FOUND: column that holds whether a judge was found while a table is
         made.
     _JUDGE_PREFIXES: the starts of the names of the columns that
-        `vote_table` makes for each judge, which `ReshapeByPanel` removes.
+        `vote_table` makes for each judge, which `VotesToCases` removes.
     _NAME: column that holds each judge's name while a table is made.
     _NID: the column of a table of votes with each judge's number, which
-        labels the table that `ReshapeByJudge` makes.
+        labels the table that `CasesToJudges` makes.
     _OTHER: column that holds the place of the other judge of each pair
         while a table is made.
     _PLACE: column that holds each judge's place on a panel while a table
@@ -31,14 +33,15 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 import amos
 import numpy as np
 import pandas as pd
 
-from ...core import cases, utilities
-from ._biographies import MergeBiographies
+from ...core import cases, datasets, utilities
+from ...wrangler import shapers
+from ._biographies import _ROW, AddBiography, by_seat
 from ._roster import Roster
 
 # Names of the columns that the techniques add to the tables that they make
@@ -70,9 +73,10 @@ class CodePanels(amos.Munger):
     listed in "panel_names" (as the roster names them, such as "Lynch, Sandra
     Lea"), and "panel_found" is how many there are, which can be compared
     with "panel_size". Each of them also has columns of its own, numbered by
-    the place of the judge's name in "panel_judges": "judge1" (the judge's
-    name as the Federal Judicial Center reports it) and "judge1_nid" (the
-    center's number for the judge), "judge2" and "judge2_nid", and so on, for
+    the place of the judge's name in "panel_judges": "judge_name1" (the
+    judge's name as the Federal Judicial Center reports it) and "judge_nid1"
+    (the center's number for the judge), "judge_name2" and "judge_nid2", and
+    so on (as `add_biography` numbers the judges of cases), for
     as many names as the longest panel lists. A name that is not matched
     leaves its place missing, so the judges after it keep theirs, and a case
     with fewer names has missing values in the rest. For each attribute in
@@ -88,8 +92,8 @@ class CodePanels(amos.Munger):
     judges they name are added as "author_name" (the first author found),
     "concurring_names", and "dissenting_names".
 
-    The judges of each case are found as `merge_biographies` finds them (see
-    `MergeBiographies`), in a table with a row for each judge on each case, and
+    The judges of each case are found as `add_biography` finds them (see
+    `AddBiography`), in a table with a row for each judge on each case, and
     the case gets summaries of its rows (as the `merge_summary` technique of
     `amos` adds them).
 
@@ -153,8 +157,8 @@ class CodePanels(amos.Munger):
 
 
 @dataclasses.dataclass
-class ReshapeByVotes(amos.Shaper):
-    """Makes a table with one row for each judge on each case.
+class CasesToVotes(shapers.Converter, amos.Shaper):
+    """Makes a table with one row for each judge on each case (`Votes`).
 
     The table is for studying how judges vote, rather than what courts
     decide. See `vote_table` for its columns. It replaces the table of cases,
@@ -169,6 +173,8 @@ class ReshapeByVotes(amos.Shaper):
     has.
 
     """
+
+    output: ClassVar[type[datasets.CourtData]] = datasets.Votes
 
     def shape(
         self,
@@ -198,16 +204,72 @@ class ReshapeByVotes(amos.Shaper):
 
 
 @dataclasses.dataclass
-class ReshapeByPanel(amos.Shaper):
-    """Makes a table of votes a table of cases again.
+class DocketsToVotes(shapers.Converter, amos.Shaper):
+    """Makes a table with one row for each judge on each docket (`Votes`).
 
-    It undoes `reshape_by_votes`: the rows of each case become one row,
+    It is `cases_to_votes` for `Dockets` (see `vote_table`): each docket of a
+    case that consolidated several appeals has a row for each of the case's
+    judges, so each vote has the docket's columns (such as the Integrated
+    Database's, from `add_idb`). The rows are labeled by "vote_id" (the
+    docket's id and the judge's place, such as "4567890-2-1"), and have
+    "case_docket", "case_id", and "docket". A judge's vote on a case is counted
+    once for each of its dockets, so group by "case_id" (or keep one docket
+    of each case) to count each case once.
+
+    Like every shaper, it takes "label", "task", and "groups" (such as
+    "case_id", which keeps the votes of a case together).
+
+    """
+
+    output: ClassVar[type[datasets.CourtData]] = datasets.Votes
+
+    def shape(
+        self,
+        data: pd.DataFrame,
+        roster: Roster | pd.DataFrame | pathlib.Path | str | None = None,
+        outcomes: Sequence[str] | str | None = None,
+        **kwargs: Any) -> pd.DataFrame:
+        """Returns a table with one row for each judge on each docket.
+
+        Args:
+            data: the table of dockets, labeled by "case_docket".
+            roster: a roster, the table of one, or the path of a saved one.
+                Defaults to `None`, in which case the roster saved in
+                "judges" in `utilities.data_folder()` is used.
+            outcomes: names of the columns with the outcomes of the cases,
+                for which each judge's vote is added. Defaults to `None`, in
+                which case they are the columns whose names start with
+                "outcome_".
+            **kwargs: not used.
+
+        Raises:
+            KeyError: if `data` lacks "case_id" or a column that is needed.
+
+        Returns:
+            The table of judges' votes.
+
+        """
+        cases.require_columns(
+            data, ['case_id'], repr(self.name),
+            hint = 'Make the dockets with "cases_to_dockets"')
+        return vote_table(
+            data, roster, outcomes = utilities.listify(outcomes) or None,
+            label = 'case_docket')
+
+
+@dataclasses.dataclass
+class VotesToCases(shapers.Converter, amos.Shaper):
+    """Makes a table of votes a table of cases again (`Cases`).
+
+    It undoes `cases_to_votes`: the rows of each case become one row,
     labeled by "case_id" as a table of parsed cases is, with the case's
-    columns in their order. The columns that `reshape_by_votes` makes for
+    columns in their order. The columns that `cases_to_votes` makes for
     each judge are removed: "judge", and those whose names begin with
     "judge_", "colleagues_", or "vote_" (such as "judge_party",
     "colleagues_party", "judge_dissented", and "vote_reversal"). Every other
-    column is the case's, so each case keeps the value of its first row. A
+    column is the case's, so each case keeps the value of its first row
+    (for votes made from dockets, "case_docket" and "docket" are removed too,
+    and other columns keep the first docket's values). A
     case with no judge who was found in the roster has no rows in the table
     of votes, so it is not in the table of cases either. To summarize the
     judges of each case instead, use `code_panels` on the cases, or
@@ -219,6 +281,8 @@ class ReshapeByPanel(amos.Shaper):
     votes other than "case_id" and the judges' columns.
 
     """
+
+    output: ClassVar[type[datasets.CourtData]] = datasets.Cases
 
     """ Public Methods """
 
@@ -272,31 +336,33 @@ class ReshapeByPanel(amos.Shaper):
 
         """
         cases.require_columns(data, ['case_id'], repr(self.name))
-        judged = [c for c in data.columns if _is_judge_column(c)]
+        judged = [
+            c for c in data.columns
+            if _is_judge_column(c) or c in ('case_docket', 'docket')]
         table = data.drop(columns = judged).drop_duplicates(subset = 'case_id')
         return table.set_index('case_id')
 
 
 @dataclasses.dataclass
-class ReshapeByJudge(amos.Shaper):
-    """Makes a table with one row for each judge.
+class CasesToJudges(shapers.Converter, amos.Shaper):
+    """Makes a table with one row for each judge (`Judges`).
 
     The rows of each judge in a table of votes (see `vote_table`) become one
     row, labeled by "judge_nid" (the Federal Judicial Center's number for the
     judge), with "judge" (the judge's name), "cases" (the number of the
-    judge's votes), and summaries of the other columns, as `group_rows`
-    takes them. A column that has one value among each judge's votes keeps
-    it (such as "judge_woman", or "court" for judges of one court). Of the
-    other columns of numbers and booleans, the mean is taken, which is a
-    share for a boolean: "vote_reversal" is the share of the judge's votes
-    to reverse, "judge_dissented" the share of the judge's cases in which
-    the judge dissented, and "judge_age" the judge's mean age when deciding
-    them. Columns of text or lists that differ among a judge's votes (such
-    as "case_id" and the cases' names) are left out, and so are ids (columns
-    whose names end with "_id"), unless "how" names a summary for them.
+    judge's votes), and the means of the columns of numbers and booleans, as
+    `group_rows` takes them (see `courtpy.shapers.summarize`). The mean of a
+    boolean is a share: "vote_reversal" is the share of the judge's votes to
+    reverse, "judge_dissented" the share of the judge's cases in which the
+    judge dissented, "type_criminal" the share of the judge's cases that
+    were criminal, "party_type_corporation" (if the parties have types) the
+    share with a corporation as a party, and "judge_age" the judge's mean
+    age when deciding them. Nothing about any one case is kept: columns of
+    text (such as the cases' names and dates) and ids (such as "case_id")
+    are left out, unless "keep" or "how" names them.
 
     If the data is a table of cases (it has no "judge_nid" column), the
-    table of votes is made first, as `reshape_by_votes` makes it, with
+    table of votes is made first, as `cases_to_votes` makes it, with
     "roster" and "outcomes".
 
     Like every shaper, it takes "label", "task", and "groups". Without
@@ -305,6 +371,8 @@ class ReshapeByJudge(amos.Shaper):
     from the label, since a label that was a vote is now a share.
 
     """
+
+    output: ClassVar[type[datasets.CourtData]] = datasets.Judges
 
     """ Public Methods """
 
@@ -341,7 +409,9 @@ class ReshapeByJudge(amos.Shaper):
         data: pd.DataFrame,
         roster: Roster | pd.DataFrame | pathlib.Path | str | None = None,
         outcomes: Sequence[str] | str | None = None,
+        *,
         how: Mapping[str, Any] | None = None,
+        keep: Sequence[str] | str | None = None,
         count: str | None = 'cases',
         **kwargs: Any) -> pd.DataFrame:
         """Returns a table with one row for each judge.
@@ -357,8 +427,10 @@ class ReshapeByJudge(amos.Shaper):
                 Defaults to `None`, in which case they are the columns whose
                 names start with "outcome_".
             how: the summaries of columns, by their names, which take the
-                place of the usual ones (see `group_rows`), such as
+                place of the means or add columns, such as
                 {"court": "list"}. Defaults to `None`.
+            keep: columns of text to keep, with the first value of each
+                judge's votes. Defaults to `None`, which keeps "judge".
             count: name of the column with the number of each judge's votes,
                 or `None` for no such column. Defaults to "cases".
             **kwargs: not used.
@@ -372,27 +444,12 @@ class ReshapeByJudge(amos.Shaper):
         """
         votes = data if _NID in data.columns else vote_table(
             data, roster, outcomes = utilities.listify(outcomes) or None)
-        votes = votes.reset_index(drop = True)
-        chosen = dict(how or {})
-        summarized = [
-            column for column in votes.columns
-            if column != _NID and (
-                column in chosen or column == 'judge'
-                or _is_number(votes[column], column))]
-        others = [
-            column for column in votes.columns
-            if column != _NID and column not in summarized]
-        constant = _constant(votes, _NID, others)
-        kept = [
-            column for column in votes.columns
-            if column in summarized or column in constant]
-        table = amos.shapers.GroupRows().shape(
-            votes[[_NID, *kept]], by = _NID, how = chosen or None,
-            count = count)
+        votes = shapers.add_party_type_flags(votes)
+        kept = ['judge'] if keep is None else utilities.listify(keep)
+        table = shapers.summarize(
+            votes, [_NID], how = how, keep = kept, count = count)
         first = [c for c in ('judge', count) if c is not None and c in table]
-        ordered = [_NID, *first, *[
-            c for c in table.columns if c != _NID and c not in first]]
-        return table[ordered].set_index(_NID)
+        return table[[*first, *[c for c in table.columns if c not in first]]]
 
 
 """ Public Functions """
@@ -402,7 +459,8 @@ def vote_table(
     data: pd.DataFrame,
     roster: Roster | pd.DataFrame | pathlib.Path | str | None = None,
     *,
-    outcomes: Sequence[str] | None = None) -> pd.DataFrame:
+    outcomes: Sequence[str] | None = None,
+    label: str = 'case_id') -> pd.DataFrame:
     """Returns a table with one row for each judge on each case.
 
     Each name in "panel_judges" is matched to a judge in a roster (see
@@ -410,7 +468,7 @@ def vote_table(
     id and the judge's place among them (such as "4567890-2"). Cases with no
     judge who is found are left out. The table is made as `amos` reshapes
     and merges data: the `lists_to_rows` technique makes a row for each name,
-    and `merge_biographies` (see `MergeBiographies`) adds the judge that each
+    and `add_biography` (see `AddBiography`) adds the judge that each
     name refers to. The columns are:
 
     | Column | Meaning |
@@ -433,6 +491,10 @@ def vote_table(
         outcomes: names of the columns with the outcomes of the cases.
             Defaults to `None`, in which case they are the columns whose
             names start with "outcome_".
+        label: the name of the column of the labels of the rows of `data`
+            (which the rows of each case's judges share). Defaults to
+            "case_id". For a table of dockets, it is "case_docket", and
+            their "case_id" column is kept.
 
     Raises:
         KeyError: if `data` lacks a column that is needed or named.
@@ -453,11 +515,11 @@ def vote_table(
     labels = data.index[origins]
     places = (panel.groupby(_CASE).cumcount() + 1).tolist()
     index = pd.Index(
-        [f'{label}-{place}' for label, place in zip(
+        [f'{row}-{place}' for row, place in zip(
             labels, places, strict = True)],
         name = 'vote_id', dtype = object)
     votes = pd.DataFrame({
-        'case_id': labels.to_numpy(),
+        label: labels.to_numpy(),
         'judge': panel['judge'].to_numpy(),
         'judge_nid': panel['nid'].to_numpy()}, index = index)
     numbers = pd.concat([
@@ -519,46 +581,6 @@ def _colleagues(panel: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
     return others
 
 
-def _constant(
-    data: pd.DataFrame,
-    key: str,
-    columns: Sequence[str]) -> list[str]:
-    """Returns the columns that have one value among each group's rows.
-
-    Args:
-        data: the table.
-        key: the column that says which group each row belongs to.
-        columns: the columns to check.
-
-    Returns:
-        Those of `columns`, in order, whose values (missing ones included)
-            are the same in every row of each group. A column with lists (or
-            other values that cannot be compared as wholes) is left out.
-
-    """
-    whole = [
-        column for column in columns
-        if data[column].dtype != object
-        or not data[column].map(_is_container).any()]
-    if not whole:
-        return []
-    counts = data.groupby(key, sort = False)[whole].nunique(dropna = False)
-    return [column for column in whole if bool((counts[column] <= 1).all())]
-
-
-def _is_container(value: Any) -> bool:
-    """Returns whether a value holds other values, such as a list.
-
-    Args:
-        value: a value of a table.
-
-    Returns:
-        Whether it is a list, tuple, set, `dict`, or array.
-
-    """
-    return isinstance(value, list | tuple | set | frozenset | dict | np.ndarray)
-
-
 def _is_judge_column(column: Any) -> bool:
     """Returns whether a column of a table of votes is about one judge.
 
@@ -573,24 +595,6 @@ def _is_judge_column(column: Any) -> bool:
     return name == 'judge' or name.startswith(_JUDGE_PREFIXES)
 
 
-def _is_number(values: pd.Series, column: Any) -> bool:
-    """Returns whether a column is numbers or booleans that can be averaged.
-
-    Args:
-        values: the column.
-        column: the name of the column.
-
-    Returns:
-        Whether it is numbers or booleans and is not an id (a column whose
-            name is "id" or ends with "_id").
-
-    """
-    name = str(column)
-    return (
-        pd.api.types.is_numeric_dtype(values.dtype)
-        and name != 'id' and not name.endswith('_id'))
-
-
 def _named(
     data: pd.DataFrame,
     column: str,
@@ -601,7 +605,7 @@ def _named(
     """Finds the judges that a column of the cases names.
 
     The `lists_to_rows` technique of `amos` makes a row for each name that a
-    case lists, and `MergeBiographies` finds the judge that each name refers to.
+    case lists, and `AddBiography` finds the judge that each name refers to.
 
     Args:
         data: the parsed cases, with "court_num" and "year".
@@ -610,7 +614,7 @@ def _named(
             lists of names (as `split_values` makes them).
         roster: the roster to find the judges in.
         columns: the columns to add for each judge, other than "nid" (see
-            `MergeBiographies`). Defaults to an empty `tuple`.
+            `AddBiography`). Defaults to an empty `tuple`.
         unmatched: whether to keep the names that are not matched, with
             missing values. Defaults to `False`.
 
@@ -634,7 +638,7 @@ def _named(
     # A case with no names has one row, whose name is missing, so each name's
     # place is its row among its case's.
     listed[_SEAT] = listed.groupby(_CASE).cumcount() + 1
-    merged = MergeBiographies().apply(
+    merged = AddBiography().apply(
         amos.Dataset(listed),
         source = roster,
         name = _NAME,
@@ -657,22 +661,20 @@ def _numbered(panel: pd.DataFrame, size: int) -> pd.DataFrame:
         size: the number of cases.
 
     Returns:
-        A table with a row for each case, in order, and "judge1",
-            "judge1_nid", "judge2", "judge2_nid", and so on, numbered by the
-            places of the names in the cases' lists, for as many as the
-            longest list has. A name that was not matched leaves its place
-            missing. It has no columns if `panel` has no rows.
+        A table with a row for each case, in order, and "judge_name1",
+            "judge_nid1", "judge_name2", "judge_nid2", and so on, numbered by
+            the places of the names in the cases' lists, for as many as the
+            longest list has (see `by_seat`). A name that was not matched
+            leaves its place missing. It has no columns if `panel` has no
+            rows.
 
     """
-    place = panel[_SEAT].to_numpy()
-    columns: dict[str, pd.Series] = {}
-    for number in range(1, int(place.max(initial = 0)) + 1):
-        judges = panel[place == number].set_index(_CASE)
-        columns[f'judge{number}'] = judges['judge'].astype(object).reindex(
-            range(size))
-        columns[f'judge{number}_nid'] = judges['nid'].astype('Int64').reindex(
-            range(size))
-    return pd.DataFrame(columns, index = pd.RangeIndex(size))
+    seated = pd.DataFrame({
+        _ROW: panel[_CASE].to_numpy(),
+        _SEAT: panel[_SEAT].to_numpy(),
+        'judge_name': panel['judge'].astype(object).array,
+        'judge_nid': panel['nid'].astype('Int64').array})
+    return by_seat(seated, size)
 
 
 def _summarize(

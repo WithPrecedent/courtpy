@@ -83,18 +83,21 @@ print(coded["outcome_reversal"].mean())
 print(coded[["type_criminal", "outcome_criminal_defendant_won"]].value_counts())
 ```
 
-`courtpy.code` returns an `amos.Dataset`, whose `history` records each coder.
-Save the table so that the steps above need not be repeated:
+`courtpy.code` returns `Cases`, an `amos.Dataset` with one row for each
+case, whose `history` records each coder. Save it so that the steps above
+need not be repeated:
 
 ```python
-courtpy.save_cases(coded, "cases.csv")
-coded = courtpy.load_cases("cases.csv")
+dataset.save("cases.csv")
+dataset = courtpy.Cases.load("cases.csv")
 ```
 
-The CSV file can be opened in a spreadsheet. Columns with several values in a
-case (such as the judges) are text, with "; " between the values. The
-`split_values` coder turns them into lists, which are written the same way,
-and `load_cases` turns them back into lists.
+The CSV file can be opened in a spreadsheet, and "cases.joblib" beside it
+holds the whole dataset (its label, history, and so on), which
+`courtpy.Cases.load("cases.joblib")` loads as it was. Columns with several
+values in a case (such as the judges) are text, with "; " between the
+values. The `split_values` coder turns them into lists, which are saved as
+text in the same way.
 
 ## 4. Analyze the table
 

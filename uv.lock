@@ -40,7 +40,7 @@ wheels = [
 
 [[package]]
 name = "amos"
-version = "0.10.1"
+version = "0.10.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bobbie" },
@@ -58,9 +58,9 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/e0/67b325f2eb06b62e045601a50b49c0d46afe53d3b02a96fdd0c9ddd7ec26/amos-0.10.1.tar.gz", hash = "sha256:100e30aca9ce7458e9540f18a8262150fecadd01a52b83603271800e08de938a", size = 2068488, upload-time = "2026-11-18T03:39:24.024Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/9e/ac55f9bcbdfc23a88ba8ffcaad5fdea238b94a875464c28dcbfb001fbd9a/amos-0.10.2.tar.gz", hash = "sha256:21d45d3204e4b906447fbc8670f43850f23c8641d034d45831eb2959735e384c", size = 2076961, upload-time = "2026-11-19T17:24:38.863Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/94/b89eb32d902f138fb163778612803c34957747d7dddf723e69529339207a/amos-0.10.1-py3-none-any.whl", hash = "sha256:3171c6711166e3474031bcaab77a88411cd54dadeb15564e81b2e68aed7285e7", size = 466293, upload-time = "2026-11-18T03:39:21.848Z" },
+    { url = "https://files.pythonhosted.org/packages/85/ad/85dd1d1f2510f3fbabbefa79022a60c79055830d4de9fc3fdf361d4842aa/amos-0.10.2-py3-none-any.whl", hash = "sha256:c05efaf7144c54cb7b12b989d4512c12c51fcc02460eb66fe9d3c493e55a3fc8", size = 473654, upload-time = "2026-11-19T17:24:37.053Z" },
 ]
 
 [package.optional-dependencies]
@@ -993,7 +993,7 @@ tests = [
 
 [package.metadata]
 requires-dist = [
-    { name = "amos", specifier = ">=0.10.1" },
+    { name = "amos", specifier = ">=0.10.2" },
     { name = "amos", extras = ["all"], marker = "extra == 'analysis'" },
     { name = "chrisjen", specifier = ">=0.5.0" },
     { name = "fjc-biographies", specifier = ">=0.1.0" },

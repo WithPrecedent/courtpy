@@ -6,6 +6,7 @@ import pathlib
 
 import amos
 import nagata
+import pandas as pd
 import pytest
 
 import courtpy
@@ -51,12 +52,23 @@ def test_save_and_reuse(court_listener_folder: pathlib.Path, tmp_path: pathlib.P
     loader = loaders.LoadCourtListener(clerk = clerk)
     loader.apply(None, source = court_listener_folder, save = 'cases.csv')
     saved = pathlib.Path(clerk.interim_folder) / 'cases.csv'
-    assert saved.is_file()
+    whole = saved.with_suffix('.joblib')
+    assert saved.is_file() and whole.is_file()
     reused = loader.apply(
         None, source = tmp_path / 'missing', save = 'cases.csv', reuse = 'true',
         label = 'outcome_reversal')
-    assert reused.history[0]['reused'] == str(saved)
-    assert len(reused.history) == 1
+    assert isinstance(reused, courtpy.Cases)
+    # The saved dataset goes on from where it was saved, history and all.
+    assert reused.history[-1]['reused'] == str(whole)
+    assert [e['technique'] for e in reused.history] == [
+        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome', 'save_data',
+        'load_court_listener']
+    assert reused.data.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
+    # Without the joblib file, the table is reused.
+    whole.unlink()
+    reused = loader.apply(None, source = tmp_path / 'missing', save = 'cases.csv', reuse = 'true')
+    assert isinstance(reused, courtpy.Cases)
+    assert reused.history[-1]['reused'] == str(saved)
     assert reused.data.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
 
 
@@ -150,12 +162,21 @@ def test_load_lexis_nexis(tmp_path: pathlib.Path) -> None:
 
 
 def test_load_cases(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
-    table = courtpy.code(courtpy.parse(court_listener_folder)).data
-    path = courtpy.save_cases(table, tmp_path / 'cases.csv')
+    coded = courtpy.code(courtpy.parse(court_listener_folder))
+    path = tmp_path / 'cases.csv'
+    coded.save(path)
+    path.with_suffix('.joblib').unlink()
     dataset = loaders.LoadCases().apply(None, source = path, label = 'outcome_reversal')
+    assert isinstance(dataset, courtpy.Cases)
     assert [e['technique'] for e in dataset.history] == ['load_cases']
     assert dataset.data.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
+    # A saved dataset of votes is votes again.
+    votes = courtpy.Votes.create(pd.DataFrame({'vote_id': ['1-1'], 'case_id': ['1'], 'judge': ['LYNCH']}))
+    votes.save(tmp_path / 'votes.joblib')
+    loaded = loaders.LoadCases().apply(None, source = tmp_path / 'votes.joblib')
+    assert isinstance(loaded, courtpy.Votes)
+    assert list(loaded.data.index) == ['1-1']
     with pytest.raises(ValueError, match = 'has nothing to load'):
         loaders.LoadCases().apply(None)
-    with pytest.raises(FileNotFoundError, match = 'no table of cases'):
+    with pytest.raises(FileNotFoundError, match = 'no file of'):
         loaders.LoadCases().apply(None, source = tmp_path / 'missing.csv')

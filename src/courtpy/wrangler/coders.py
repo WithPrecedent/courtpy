@@ -16,7 +16,8 @@ The coders use the columns made by the federal rules (such as
 with the same names or write your own coder.
 
 Contents:
-    CodeCaseType: decides whether each case is criminal or civil.
+    CodeCaseType: decides whether each case is criminal or civil, and its
+        other types.
     CodeOutcome: decides whether each decision reversed the court below, and
         which side won.
     CodeParties: completes the roles of the parties.
@@ -40,7 +41,7 @@ import amos
 import chrisjen
 import pandas as pd
 
-from ..core import cases, options, utilities
+from ..core import cases, datasets, options, utilities
 from . import rules
 
 _OPPOSITES: tuple[tuple[str, str], ...] = (
@@ -105,16 +106,26 @@ class CodeParties(amos.Munger):
 
 @dataclasses.dataclass
 class CodeCaseType(amos.Munger):
-    """Decides whether each case is criminal or civil.
+    """Decides whether each case is criminal or civil, and its other types.
 
     A case is criminal ("type_criminal") if the United States is a party and
     there is a sign of a criminal case: a criminal docket number or history,
     a United States Attorney as counsel, or a criminal issue in the opinion
     (any "criminal_..." column). The United States is then the prosecution,
-    and the other party is the criminal defendant. In a civil case, the
-    plaintiffs and defendants are coded as civil plaintiffs and defendants.
+    and the other party is the criminal defendant. Every other case is civil
+    ("type_civil"), and its plaintiffs and defendants are coded as civil
+    plaintiffs and defendants.
 
-    Adds "type_criminal", and for each party, "party1_prosecution",
+    Each other prefix of the rules of the topics of cases (see
+    `rules.case_type_prefixes`: "tort", "contract", "ip", "writ", and
+    "constitutional" in courtpy's rules) is a case type too: "type_tort" is
+    true if any "tort_..." column is. So a case can be of several types (a
+    civil case that is a tort case and a contract case), and a prefix added
+    to the rules (such as "immigration_") is a type once the cases are
+    parsed with it. `cases_to_case_types` makes a table of the types.
+
+    Adds "type_criminal", "type_civil", "type_{prefix}" for each other prefix
+    that a column of the cases has, and for each party, "party1_prosecution",
     "party1_criminal_defendant", "party1_civil_plaintiff", and
     "party1_civil_defendant" (and the same for "party2").
 
@@ -125,11 +136,19 @@ class CodeCaseType(amos.Munger):
 
     """
 
-    def munge(self, data: pd.DataFrame, **kwargs: Any) -> pd.DataFrame:
-        """Codes each case as criminal or civil.
+    def munge(
+        self,
+        data: pd.DataFrame,
+        prefixes: Sequence[str] | str | None = None,
+        **kwargs: Any) -> pd.DataFrame:
+        """Codes the types of each case.
 
         Args:
             data: the parsed cases.
+            prefixes: the prefixes of the columns of flags that are case
+                types, other than "criminal" and "civil". Defaults to `None`,
+                in which case they are those of courtpy's rules (see
+                `rules.case_type_prefixes`).
             **kwargs: not used.
 
         Returns:
@@ -152,6 +171,18 @@ class CodeCaseType(amos.Munger):
             | cases.column_as_flags(data, 'party2_united_states'))
         criminal = government & criminal_signal
         data['type_criminal'] = criminal
+        data['type_civil'] = ~criminal
+        chosen = (
+            rules.case_type_prefixes() if prefixes is None
+            else utilities.listify(prefixes))
+        for prefix in chosen:
+            flags = [c for c in data.columns if str(c).startswith(f'{prefix}_')]
+            if prefix in ('criminal', 'civil') or not flags:
+                continue
+            found = pd.Series(False, index = data.index)
+            for column in flags:
+                found |= cases.column_as_flags(data, column)
+            data[f'type_{prefix}'] = found
         for side, other in _SIDES:
             prosecution = criminal & cases.column_as_flags(
                 data, f'{side}_united_states')
@@ -447,10 +478,14 @@ def code(
             to `None`.
 
     Returns:
-        A dataset of the coded cases, whose history records each technique.
+        A dataset of the coded cases, whose history records each technique:
+            `Cases` made from a table, or the kind that the last shaper made
+            (such as `Votes`, after "cases_to_votes").
 
     """
-    dataset = data if isinstance(data, amos.Dataset) else amos.Dataset(data)
+    dataset = (
+        data if isinstance(data, amos.Dataset)
+        else datasets.Cases.create(data))
     for name in utilities.listify(coders):
         if utilities.is_none_setting(name):
             continue
@@ -459,7 +494,7 @@ def code(
             chrisjen.library.borrow(name, genre = 'operation'))
         settings = dict((parameters or {}).get(name, {}))
         technique = kind(parameters = settings)
-        technique.apply(dataset)
+        dataset = technique.apply(dataset)
     return dataset
 
 

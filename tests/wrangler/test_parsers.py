@@ -114,19 +114,30 @@ def test_custom_rulebook(court_listener_folder: pathlib.Path, tmp_path: pathlib.
 
 def test_save_and_load(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
     table = courtpy.parse(court_listener_folder)
-    path = cases.save_cases(table, tmp_path / 'out' / 'cases.csv')
-    assert (tmp_path / 'out' / 'cases.lists.json').is_file()
-    loaded = cases.load_cases(path)
+    path = tmp_path / 'out' / 'cases.csv'
+    saved = courtpy.Cases.create(table).save(path)
+    assert saved == [path.with_suffix('.joblib'), path]
+    # Nothing else is made beside the files.
+    assert sorted(p.name for p in path.parent.iterdir()) == ['cases.csv', 'cases.joblib']
+    loaded = courtpy.Cases.load(path).data
     assert list(loaded.index) == ['1', '2', '3']
     assert loaded.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
     assert pd.isna(loaded.loc['3', 'dissenting'])
-    # Lists that `split_values` makes are lists again after loading.
-    listed = courtpy.code(table, 'split_values').data
-    loaded = cases.load_cases(cases.save_cases(listed, tmp_path / 'lists.csv'))
-    assert loaded.loc['1', 'panel_judges'] == ['LYNCH', 'HOWARD', 'THOMPSON']
-    assert loaded.loc['3', 'dissenting'] == []
-    assert pd.api.types.is_bool_dtype(loaded['published'].dtype)
-    pd.testing.assert_series_equal(loaded['court_num'], table['court_num'], check_dtype = False)
+    # Lists that `split_values` makes are saved as text, as the rules write
+    # them, in the table and in the dataset.
+    listed = courtpy.code(table, 'split_values')
+    listed.save(tmp_path / 'lists.parquet')
+    assert listed.data.loc['1', 'panel_judges'] == ['LYNCH', 'HOWARD', 'THOMPSON']
+    for name in ('lists.parquet', 'lists.joblib'):
+        loaded = courtpy.Cases.load(tmp_path / name).data
+        assert loaded.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
+        assert pd.api.types.is_bool_dtype(loaded['published'].dtype)
+        pd.testing.assert_series_equal(loaded['court_num'], table['court_num'], check_dtype = False)
+    assert listed.history[-1]['technique'] == 'save_data'
+    with pytest.raises(ValueError, match = 'must end in'):
+        listed.save(tmp_path / 'lists.txt')
+    with pytest.raises(TypeError, match = 'holds Cases'):
+        courtpy.Votes.load(tmp_path / 'lists.joblib')
 
 
 def test_parser_metadata_wins(court_listener_folder: pathlib.Path) -> None:

@@ -13,7 +13,7 @@ with a row for each justice in each case. Both keep the database's names for
 their columns (such as "issueArea" and "decisionDirection"), so the codebook
 applies to them as it is.
 
-`merge_scdb` (an `amos.Merger`, which is added to the `amos` library as soon
+`add_scdb` (an `amos.Merger`, which is added to the `amos` library as soon
 as courtpy is imported) adds the database's columns to parsed cases of the
 Supreme Court, with "scdb_" before their names. A case is matched by the
 database's id for it, which CourtListener records ("scdb_id"), or else by
@@ -23,8 +23,8 @@ one of its citations:
 import courtpy
 
 cases = courtpy.parse("data/court_listener")
-dataset = courtpy.code(cases, "merge_scdb", parameters = {
-    "merge_scdb": {"columns": "issueArea, decisionDirection, partyWinning"}})
+dataset = courtpy.code(cases, "add_scdb", parameters = {
+    "add_scdb": {"columns": "issueArea, decisionDirection, partyWinning"}})
 ```
 
 `load_scdb` and `download_scdb` (reference loaders, see
@@ -32,10 +32,10 @@ dataset = courtpy.code(cases, "merge_scdb", parameters = {
 such as of how the justices vote ("kind" set to "votes").
 
 Contents:
+    AddScdb: adds the Supreme Court Database's columns to each case.
     DownloadScdb: downloads the Supreme Court Database and loads its cases
         or votes.
     LoadScdb: loads the Supreme Court Database's table of cases or of votes.
-    MergeScdb: adds the Supreme Court Database's columns to each case.
     cases: returns the database's table with a row for each case.
     download: downloads the latest release of the database.
     votes: returns the database's table with a row for each justice in each
@@ -70,7 +70,7 @@ _SYMBOLS: re.Pattern[str] = re.compile(r'[^A-Z0-9]')
 
 
 @dataclasses.dataclass
-class MergeScdb(amos.Merger):
+class AddScdb(amos.Merger):
     """Adds the Supreme Court Database's columns to each case.
 
     Each case is matched to the database's row for it: the row with the
@@ -241,7 +241,7 @@ class LoadScdb(loaders.ReferenceLoader):
     of the database's files. Without one, the latest release that was
     downloaded is used, which is downloaded first if there is none (see
     `download`). To add the database's columns to parsed cases, use
-    `merge_scdb` instead.
+    `add_scdb` instead.
 
     """
 

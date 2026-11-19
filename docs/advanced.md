@@ -29,13 +29,17 @@ Each module can also be imported from `courtpy` itself (such as
 | wrangler | `courtpy.rules` | courtpy's rulebooks (`RULEBOOKS`, such as "federal"), which are `amos` rulebooks (`amos.parsers.ParseAll`) of the CSV files of rules, and `register_rulebooks`, which makes rulebooks of a study's own folders of rules. |
 | wrangler | `courtpy.parsers` | `Parser` and `parse`, which turn saved cases into a table. |
 | wrangler | `courtpy.coders` | The coders, which are `amos` techniques (including `tidy_cases`, which gives columns with missing values the right types), and `code`, which applies them. |
+| wrangler | `courtpy.shapers` | `cases_to_dockets` and `dockets_to_cases`, which make a row for each docket number of each case and make cases of them again, `cases_to_courts`, `cases_to_case_types`, and `cases_to_party_types`, which summarize cases by court, case type, and party type, and `summarize`, which they share with `cases_to_judges`. |
 | wrangler | `courtpy.loaders` | The loaders, which are `amos` techniques that collect, parse, and code cases in a project, and `ReferenceLoader`, the base of the techniques that load other tables (see [Reference tables](#reference-tables)). |
-| references | `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `merge_biographies`, `code_panels`, `reshape_by_votes`, `reshape_by_panel`, `reshape_by_judge`, `load_roster`, and `download_biographies` techniques. |
-| references | `courtpy.politics` | `build_table`, which makes a table of each year's political context from the sources' current files, `justices`, which returns each justice's Martin-Quinn and Judicial Common Space scores, and the `add_politics`, `load_politics`, and `download_politics` techniques. |
+| references | `courtpy.judges` | `Roster`, which matches the names in opinions to judges (from a roster that fjc-biographies makes), and the `add_biography`, `add_jcs`, `add_circuit`, `code_panels`, `cases_to_votes`, `dockets_to_votes`, `votes_to_cases`, `cases_to_judges`, `load_roster`, and `download_biographies` techniques. |
+| references | `courtpy.politics` | `build_table`, which makes a table of each year's political context from the sources' current files, `justices`, which returns each justice's Martin-Quinn and Judicial Common Space scores, the tables of date ranges `executives`, `legislatures`, and `high_courts`, and the `add_executive`, `add_legislature`, `add_high_court`, `load_politics`, and `download_politics` techniques. |
+| references | `courtpy.courts` | `federal_courts`, the table of the federal courts in "instructions/federal/courts.csv", and `circuits`, which finds the circuit of each case. |
+| references | `courtpy.scores` | The `add_judge_scores` and `add_court_scores` techniques, which add scores of judges and courts from training data. |
 | references | `courtpy.jcs` | `medians`, which loads the Judicial Common Space medians of each year, and `download`, which downloads the published scores with judicial-common-space, and the `download_jcs` technique. |
-| references | `courtpy.scdb` | `cases` and `votes`, which load the Supreme Court Database, and the `merge_scdb`, `load_scdb`, and `download_scdb` techniques. |
-| references | `courtpy.fjc_idb` | `appeals` and `download`, which load and download the Federal Judicial Center's Integrated Database with fjc-idb, and the `merge_idb`, `load_idb`, and `download_idb` techniques. |
-| core | `courtpy.cases` | `Case`, `save_cases` and `load_cases` for case tables, and helpers for their columns (`split_cell`, `column_as_flags`, `flags_as_numbers`, `select_whole_cases`, and `require_columns`). |
+| references | `courtpy.scdb` | `cases` and `votes`, which load the Supreme Court Database, and the `add_scdb`, `load_scdb`, and `download_scdb` techniques. |
+| references | `courtpy.fjc_idb` | `appeals` and `download`, which load and download the Federal Judicial Center's Integrated Database with fjc-idb, and the `add_idb`, `load_idb`, and `download_idb` techniques. |
+| core | `courtpy.datasets` | `Cases`, `Dockets`, `Votes`, `Judges`, `Courts`, `CaseTypes`, and `PartyTypes`, the kinds of `amos.Dataset` that courtpy makes, which can be saved and loaded whole. |
+| core | `courtpy.cases` | `Case`, and helpers for their columns (`split_cell`, `column_as_flags`, `flags_as_numbers`, `select_whole_cases`, and `require_columns`). |
 | core | `courtpy.secrets` | Storing and finding the CourtListener API key. |
 | core | `courtpy.options` | Defaults that a project can change before they are used. |
 
@@ -89,10 +93,14 @@ names are lists. Columns of booleans or whole numbers that are missing for
 some cases (such as `published` or `year`) have the "boolean" and "Int64"
 types, which allow missing values.
 
-`save_cases` saves a table as a CSV file (with lists written as text, separated
-by "; ", and the names of those columns saved beside the file) or as a parquet
-file (which keeps lists and types as they are), and `load_cases` loads it
-again.
+`Cases.save` saves the whole dataset in a joblib file (with its label,
+history, and anything techniques have added), as the `save_data` technique of
+`amos` does, and its data as a table beside it: a CSV, parquet, or Excel
+file, named by the path's extension. Lists are written as text, separated by
+"; ", as the rules write several values. `Cases.load` loads either file: the
+joblib file as it was, or the table, labeled by "case_id" again and with the
+types that allow missing values. Every kind of courtpy dataset (`Votes`,
+`Judges`, and so on) saves and loads in the same way.
 
 ## Coders
 
@@ -215,24 +223,26 @@ from them:
 
 | Technique | Adds |
 | --- | --- |
-| `merge_biographies` | A merger. Each row names one judge (in the column that its `name` parameter names, which is "judge" unless another is set), and gets the columns of that judge's row of the roster, with "judge_" (or another `prefix`) before their names: every attribute, and `age`, `senior`, `designated` (sitting on a court other than the judge's own), and `district_judge`, which depend on the case's year and court. All are numbers (1 and 0 for true and false). Its `columns` parameter names the columns to add, which can be any others of the roster too (such as `judge`, the judge's name, or `president`), and `indicator` names a column that says whether each judge was found. |
-| `code_panels` | A munger. `panel_names` (the judges who were found, as the roster names them), `panel_found` (how many, to compare with `panel_size`), `judge1`, `judge1_nid`, `judge2`, `judge2_nid`, and so on (each judge who was found, in the panel's order, with the Federal Judicial Center's name and `nid`), `author_name`, `concurring_names`, and `dissenting_names`, and the composition of the panel: `panel_{attribute}` is the mean of each attribute among its judges. So `panel_woman` is the share who are women, and `panel_party` is the mean party of the presidents who appointed them (from -1, all Democrats, to 1, all Republicans). `panel_age`, `panel_senior`, `panel_designated`, and `panel_district_judge` depend on the case's year and court. |
-| `reshape_by_votes` | A shaper. Replaces the table of cases with one row for each judge on each case, labeled by "vote_id" (such as "4567890-2"): the case's columns, `case_id`, `judge`, `judge_nid`, `judge_{attribute}`, `colleagues_{attribute}` (the mean among the other judges of the panel), `judge_author`, `judge_concurred`, `judge_dissented`, and for each outcome of the case, `vote_{outcome}`: the outcome, or its opposite if the judge dissented. So `vote_reversal` is whether the judge voted to reverse. Its `outcomes` parameter names the outcomes (by default, every column that starts with "outcome_"). Like every shaper, it takes `label`, `task`, and `groups` for the table that it makes, and must come before the data is split. |
-| `reshape_by_panel` | A shaper. Undoes `reshape_by_votes`: the rows of each case become one row again, labeled by "case_id", with the case's columns as they were. `judge` and the columns that begin with `judge_`, `colleagues_`, or `vote_` are removed, and each case keeps the other columns of its first row. A case with no judge who was found in the roster has no votes, so it does not come back. Without `label`, a label such as `vote_reversal` becomes the outcome it was made from (`outcome_reversal`), and the groups lose `case_id`. |
-| `reshape_by_judge` | A shaper. Makes a table with one row for each judge, labeled by "judge_nid": `judge`, `cases` (how many votes; `count` names it, or "none"), and summaries of the other columns, as `group_rows` takes them. A column with one value among each judge's votes keeps it (such as `judge_woman`, or `court` for a judge of one court), and the mean is taken of the other numbers and booleans, so `vote_reversal` is the share of the judge's votes to reverse and `judge_dissented` the share of the judge's cases with a dissent by the judge. Text that differs among a judge's votes, lists, and ids (such as `case_id`) are left out unless its `how` parameter names a summary for them, as in `{"case_id": "list"}`. Given a table of cases, it makes the votes first, with `roster` and `outcomes`. Without `groups`, the table has none, and without `task`, the task is inferred again, since a vote is now a share. |
+| `add_biography` | A merger. Each row names one judge (in the column that its `name` parameter names, which is "judge" unless another is set), and gets the columns of that judge's row of the roster, with "judge_" (or another `prefix`) before their names: every attribute, and `age`, `senior`, `designated` (sitting on a court other than the judge's own), and `district_judge`, which depend on the case's year and court. All are numbers (1 and 0 for true and false). Its `columns` parameter names the columns to add, which can be any others of the roster too (such as `judge`, the judge's name, or `president`), and `indicator` names a column that says whether each judge was found. In `Cases` without a `name`, each case names the judges in `panel_judges`, and the columns are numbered by each judge's seat: `judge_name1`, `judge_nid1`, `judge_party1`, and so on for the first judge, `judge_name2` and the rest for the second. Its `lookup` parameter can be a function (of a judge's name, the case's court, and its year) that takes the place of the roster. |
+| `add_jcs` | A merger. `add_biography` with `jcs` as its only column (`judge_jcs`, or `judge_jcs1` and so on in `Cases`), which needs a roster made with `jcs = True`. |
+| `add_circuit` | A merger. The makeup of the active (not senior) judges of each case's circuit on the day it was decided: `circuit_median_party`, `circuit_total_party`, `circuit_median_jcs`, `circuit_total_jcs`, and `circuit_judges` (see [Political context](#political-context)). |
+| `code_panels` | A munger. `panel_names` (the judges who were found, as the roster names them), `panel_found` (how many, to compare with `panel_size`), `judge_name1`, `judge_nid1`, `judge_name2`, `judge_nid2`, and so on (each judge who was found, in the panel's order, with the Federal Judicial Center's name and `nid`), `author_name`, `concurring_names`, and `dissenting_names`, and the composition of the panel: `panel_{attribute}` is the mean of each attribute among its judges. So `panel_woman` is the share who are women, and `panel_party` is the mean party of the presidents who appointed them (from -1, all Democrats, to 1, all Republicans). `panel_age`, `panel_senior`, `panel_designated`, and `panel_district_judge` depend on the case's year and court. |
+| `cases_to_votes` | A shaper. Replaces the table of cases with one row for each judge on each case, labeled by "vote_id" (such as "4567890-2"): the case's columns, `case_id`, `judge`, `judge_nid`, `judge_{attribute}`, `colleagues_{attribute}` (the mean among the other judges of the panel), `judge_author`, `judge_concurred`, `judge_dissented`, and for each outcome of the case, `vote_{outcome}`: the outcome, or its opposite if the judge dissented. So `vote_reversal` is whether the judge voted to reverse. Its `outcomes` parameter names the outcomes (by default, every column that starts with "outcome_"). Like every shaper, it takes `label`, `task`, and `groups` for the table that it makes, and must come before the data is split. |
+| `votes_to_cases` | A shaper. Undoes `cases_to_votes`: the rows of each case become one row again, labeled by "case_id", with the case's columns as they were. `judge` and the columns that begin with `judge_`, `colleagues_`, or `vote_` are removed, and each case keeps the other columns of its first row. A case with no judge who was found in the roster has no votes, so it does not come back. Without `label`, a label such as `vote_reversal` becomes the outcome it was made from (`outcome_reversal`), and the groups lose `case_id`. |
+| `cases_to_judges` | A shaper. Makes `Judges`, a table with one row for each judge, labeled by "judge_nid": `judge`, `cases` (how many votes; `count` names it, or "none"), and the means of the columns of numbers and booleans, as `group_rows` takes them, so `vote_reversal` is the share of the judge's votes to reverse, `judge_dissented` the share of the judge's cases with a dissent by the judge, and `type_criminal` the share of the judge's cases that are criminal. Nothing about any one case is kept: text (such as `court` or the cases' names) and ids (such as `case_id`) are left out unless its `keep` parameter names them, or its `how` parameter names a summary for them, as in `{"case_id": "list"}`. Given a table of cases, it makes the votes first, with `roster` and `outcomes`. Without `groups`, the table has none, and without `task`, the task is inferred again, since a vote is now a share. |
 
-`code_panels` and `reshape_by_votes` do what a wrangler of
-`lists_to_rows, merge_biographies, group_rows` would do: they make a row for
+`code_panels` and `cases_to_votes` do what a wrangler of
+`lists_to_rows, add_biography, group_rows` would do: they make a row for
 each name that a case lists, find the judge that each name refers to, and
-(for `code_panels`) summarize the rows of each case. Use `merge_biographies`
+(for `code_panels`) summarize the rows of each case. Use `add_biography`
 itself for a table that names one judge in each row. For example, to add what is
 known about the author of each opinion to a table of cases:
 
 ```ini
 [wrangler]
-techniques = load_court_listener, merge_biographies, drop_text
+techniques = load_court_listener, add_biography, drop_text
 
-[merge_biographies_parameters]
+[add_biography_parameters]
 name = author
 prefix = author_
 indicator = author_found
@@ -243,13 +253,13 @@ checking (and reporting) every time:
 
 ```python
 print(project.result.history[-2])
-# {'technique': 'merge_biographies', 'source': '...roster.csv', 'rows': 5212, 'matched': 4980, 'created': ['author_party', ...]}
+# {'technique': 'add_biography', 'source': '...roster.csv', 'rows': 5212, 'matched': 4980, 'created': ['author_party', ...]}
 ```
 
 Each of them can be among a loader's "coders", so a vote can be the label of a
-study (see [examples/reshape_by_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/reshape_by_votes.ini)
+study (see [examples/cases_to_votes.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/cases_to_votes.ini)
 and the [recipes](recipes.md)). In Python, `courtpy.judges.vote_table` makes
-the same table as `reshape_by_votes`, and a `Roster` matches one name at a
+the same table as `cases_to_votes`, and a `Roster` matches one name at a
 time:
 
 ```python
@@ -260,63 +270,58 @@ print(roster.names([row]), roster.describe(row, court_num = 1, year = 2020))
 A loader passes its coders no parameters, so as coders they use the saved
 roster. To name another, list them as techniques of the wrangler instead
 (after the loader), with a section of parameters for each.
-`merge_biographies` takes the roster as its `source`, as every merger takes
+`add_biography` takes the roster as its `source`, as every merger takes
 its other table, and finds a file that is named there as the project's clerk
 finds files: in the current folder, and then in the input folder.
-`code_panels`, `reshape_by_votes`, and `reshape_by_judge` take it as `roster`, whose path is relative to the folder that the study is
+`code_panels`, `cases_to_votes`, and `cases_to_judges` take it as `roster`, whose path is relative to the folder that the study is
 run from.
 
 ## Political context
 
-`add_politics` adds what a table of years says about each case's year, with
-"politics_" before the names of the table's columns. With no table, it adds
-`politics_president_party`: -1 for a Democratic president and 1 for a
-Republican. `courtpy.politics.build_table` makes a table with two more
-sources:
+Three mergers add who held power on the day each case was decided. Each
+matches the case's date ("date_filed", unless `date` names another column)
+to a table of date ranges (with "start_date" and "end_date") with the
+`merge_ranges` technique of `amos`, so a table of your own with the same
+columns (such as a state's governors) can be its `source`. A date on which
+one range ends and the next begins (such as the day of an inauguration)
+gets the later one.
 
-| Columns | Meaning | File |
+| Technique | Adds | Table |
 | --- | --- | --- |
-| `supreme_court_median`, `supreme_court_min`, `supreme_court_max` | The median, lowest, and highest of the [Martin-Quinn scores](https://mqscores.wustl.edu/measures.php) of the justices in each term. | "justices.csv", the score of each justice in each term. |
-| `senate_median`, `house_median` | The median [NOMINATE](https://voteview.com/data) score of the members of each chamber of Congress. | "HSall_members.csv", the ideology of every member of every Congress (Voteview's "Member Ideology" data). |
+| `add_executive` | `executive_name` and `executive_ideology` (the president's party: -1 for Democratic and 1 for Republican). | `courtpy.politics.executives`, from "instructions/federal/presidents.csv", where a president can be added. |
+| `add_legislature` | `senate_ideology` and `house_ideology`: the median [NOMINATE](https://voteview.com/data) score of the members of each chamber of the Congress then sitting. | `courtpy.politics.legislatures`, from "HSall_members.csv", the ideology of every member of every Congress (Voteview's "Member Ideology" data). |
+| `add_high_court` | `high_court_ideology`: the [Martin-Quinn score](https://mqscores.wustl.edu/measures.php) of the median justice in the Supreme Court's term then sitting (October to September). | `courtpy.politics.high_courts`, from "justices.csv", the score of each justice in each term. |
 
-Higher scores are more conservative. `build_table` downloads the sources'
-current files (about 6 megabytes) the first time, with
+Higher scores are more conservative. The sources' current files (about 6
+megabytes) are downloaded the first time, with
 [judicial-common-space](https://github.com/WithPrecedent/judicial_common_space),
-and keeps them in "politics" in courtpy's data folder, where that package and
+and kept in "politics" in courtpy's data folder, where that package and
 fjc-biographies look for them too.
 `courtpy.politics.download(overwrite = True)` downloads them again, for the
 terms and votes since. The Martin-Quinn page sometimes refuses automated
 requests; then save "justices.csv" from it in a browser and put it in that
-folder. To use files of your own instead, pass their paths, or `False` to
-leave a source out:
-
-```python
-table = courtpy.politics.build_table()
-table.to_csv("data/politics.csv", index = False)
-```
+folder.
 
 ```ini
-[files]
-input_folder = data
-
 [wrangler]
-techniques = load_court_listener, add_politics, drop_text
-
-[add_politics_parameters]
-source = politics.csv
+techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text
 ```
 
-`add_politics` is the `merge_keys` merger of `amos` with the year as its key,
-so it takes that merger's parameters. `source` is the table of years, which
-is found as the project's clerk finds files (in the current folder, and then
-in the input folder). Any table with a "year" column can be used, so other
-measures can be added in a spreadsheet. `on` and `other_on` name the columns
-to match by, `prefix` the text before the new columns' names, `columns` the
-columns to add, and `indicator` a column that says whether each case's year
-was in the table. A table with two rows for a year stops the study, unless
-`duplicates` says to use the "first" or "last" of them. As one of a loader's
-coders, `add_politics` gets no parameters, so it adds only the party of the
-president.
+`add_circuit` adds the makeup of the whole circuit of each case on the day
+it was decided (for a district court, the circuit that hears its appeals,
+from "instructions/federal/courts.csv"; see `courtpy.courts`). The circuit's
+judges are those of its court of appeals in the roster who were active then:
+appointed, not yet gone, and not senior, since senior judges do not sit en
+banc. It adds `circuit_median_party` and `circuit_total_party` (the median
+and sum of the parties of the presidents who appointed them),
+`circuit_median_jcs` and `circuit_total_jcs` (of their Judicial Common Space
+scores, if the roster was made with `jcs = True`), and `circuit_judges`.
+
+`courtpy.politics.build_table` still makes a table of each year's political
+context (`president_party`, `supreme_court_median`, `supreme_court_min`,
+`supreme_court_max`, `senate_median`, and `house_median`), which
+`load_politics` and `download_politics` load to study the years themselves,
+and which the `merge_keys` technique of `amos` can add to cases by "year".
 
 `courtpy.politics.justices` returns the Martin-Quinn score of each justice in
 each term, from the same "justices.csv", with the score put on the scale of
@@ -342,7 +347,7 @@ computes the scores from their sources, which courtpy uses in three ways:
 
 The scores of judges become an attribute of a roster, so the judge techniques
 use them like any other: `code_panels` adds `panel_jcs` (the mean score of
-each panel), and `merge_biographies` and `reshape_by_votes` add `judge_jcs` (and
+each panel), and `add_biography` and `cases_to_votes` add `judge_jcs` (and
 `colleagues_jcs`). The files that they are computed from (Voteview's NOMINATE
 scores, the dates of senators' service, Wikipedia's lists of circuit judges'
 duty stations, and the justices' Martin-Quinn scores) are downloaded into
@@ -356,8 +361,8 @@ roster = courtpy.judges.Roster.from_fjc(jcs = True, martin_quinn = True)
 roster.save()
 ```
 
-`medians` has a row for each year, so it can be the table of `add_politics`,
-or a part of `build_table` (`build_table(common_space = True)`), whose
+`medians` has a row for each year, so it can be added to cases by "year" with
+the `merge_keys` technique of `amos`, or be a part of `build_table` (`build_table(common_space = True)`), whose
 columns already start with "jcs_". judicial-common-space downloads the
 published archive of scores (about 100 kilobytes) the first time it is
 needed, and keeps its CSV files in "jcs" in courtpy's data folder
@@ -368,14 +373,14 @@ needed, and keeps its CSV files in "jcs" in courtpy's data folder
 The [Supreme Court Database](https://scdb.la.psu.edu) codes every case that
 the Supreme Court has decided since its 1946 term: the issue, the direction
 of the decision, what the court did with the decision below, which party won,
-and how each justice voted. `merge_scdb` (a merger) adds its coding to parsed
+and how each justice voted. `add_scdb` (a merger) adds its coding to parsed
 cases of the Supreme Court, with "scdb_" before the database's names for its
 columns:
 
 ```ini
 [load_court_listener_parameters]
 courts = scotus
-coders = code_parties, code_case_type, code_outcome, merge_scdb
+coders = code_parties, code_case_type, code_outcome, add_scdb
 ```
 
 A case is matched by the database's id for it, which CourtListener records
@@ -389,7 +394,7 @@ used.
 The latest release is downloaded from the database's
 [data page](https://scdb.la.psu.edu/data/) the first time, and kept in "scdb"
 in courtpy's data folder (`courtpy.scdb.download(overwrite = True)` looks for
-a newer one). As a technique of the wrangler, `merge_scdb` takes a merger's
+a newer one). As a technique of the wrangler, `add_scdb` takes a merger's
 parameters: `source` (a file of the database that you downloaded yourself),
 `columns` (such as "issueArea, decisionDirection, partyWinning"), `prefix`,
 and `indicator`, and `on`, `other_on`, and `citations` for the columns to
@@ -428,15 +433,22 @@ not the Federal Circuit. courtpy reads it with
 [fjc-idb](https://github.com/WithPrecedent/fjc_idb), whose
 [codebooks](https://WithPrecedent.github.io/fjc_idb) explain each column.
 
-`merge_idb` (a merger) adds the database's record of each appeal to its case,
-with "idb_" before fjc-idb's names for the columns. Use it as a technique of
-the wrangler, after the loader:
+`add_idb` (a merger) adds the database's record of each appeal, with "idb_"
+before fjc-idb's names for the columns. The database has a record for each
+docket, and a case that consolidated several appeals has several docket
+numbers, so add it to `Dockets` (after `cases_to_dockets`), whose rows each
+have one docket number ("docket"), and each appeal gets its own record.
+Added to `Cases`, a case gets the record of the first of its docket numbers
+that the database has. `dockets_to_cases` makes the dockets cases again
+(with the first docket's record), and `dockets_to_votes` makes a row for
+each judge on each docket. Use them as techniques of the wrangler, after the
+loader:
 
 ```ini
 [wrangler]
-techniques = load_court_listener, merge_idb
+techniques = load_court_listener, cases_to_dockets, add_idb
 
-[merge_idb_parameters]
+[add_idb_parameters]
 columns = appeal_type, pro_se_party, in_forma_pauperis, appeal_date, judgment_date, notice_to_judgment
 indicator = in_idb
 ```
@@ -475,7 +487,7 @@ courtpy.fjc_idb.appeals(2008, 2026).to_parquet("data/appeals.parquet")
 ```
 
 ```ini
-[merge_idb_parameters]
+[add_idb_parameters]
 source = appeals.parquet
 ```
 
@@ -505,7 +517,7 @@ and loaders (see [Building a Study](studies.md#sources-of-your-own)):
 | --- | --- | --- |
 | `load_court_listener` | A folder of saved CourtListener cases. Defaults to "court_listener". | Downloads cases into the folder (if "download" is set), parses them, and codes them. |
 | `load_lexis_nexis` | A folder of Lexis-Nexis cases, one per text file. Defaults to "lexis_nexis". | Divides any "batches" into the folder, parses the cases, and codes them. |
-| `load_cases` | A table saved by `save_cases` (or `courtpy parse`). | Loads the table, with its lists and types. It applies no coders unless "coders" names some. |
+| `load_cases` | A dataset saved by `Cases.save` (or `courtpy parse`): its joblib file or its table. | Loads the dataset (a joblib file of `Votes` is `Votes` again), or the table as `Cases`, with its types. It applies no coders unless "coders" names some. |
 
 Their parameters go in a "{loader}_parameters" section of the settings:
 
@@ -513,8 +525,8 @@ Their parameters go in a "{loader}_parameters" section of the settings:
 | --- | --- | --- |
 | `source` | all | The folder (or, for `load_cases`, the file) to load. |
 | `coders` | all | Techniques to apply after parsing. Defaults to "code_parties, code_case_type, code_outcome" ("none" for `load_cases`). Use "none" for none. |
-| `save` | all | File to save the coded table to (".csv" or ".parquet"). |
-| `reuse` | all | Whether to load the saved table, if there is one, instead of collecting, parsing, and coding again. |
+| `save` | all | File to save the coded table to (".csv", ".parquet", or ".xlsx"), with the whole dataset beside it in a joblib file of the same name. |
+| `reuse` | all | Whether to load the saved dataset, if there is one, instead of collecting, parsing, and coding again. |
 | `label`, `task`, `groups` | all | As in `amos`. They default to those in the "general" section. |
 | `download` | `load_court_listener` | "bulk" to extract cases from the bulk data, "api" to download them with the API, a way that a study adds, or "none" (the default) to use the cases already in the folder. Any parameter that the loader does not know is an option of the way to download. |
 | `courts` | `load_court_listener` | CourtListener court ids (such as "ca1, ca2") or groups (`federal_appellate`, `federal_circuits`, or `supreme_court`). |
@@ -523,7 +535,7 @@ Their parameters go in a "{loader}_parameters" section of the settings:
 | `dockets` | `load_court_listener` | For "api", whether to download each case's docket too (one more request per case). |
 | `bulk_folder`, `bulk_date`, `stream` | `load_court_listener` | For "bulk", where to keep the bulk files, which date's files to use, and whether to read them from CourtListener without saving them. |
 | `batches` | `load_lexis_nexis` | Files (or folders) of many cases to divide into the source folder first. |
-| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", "criminal", "torts", and "agencies") or CSV files or folders. "header" and "general" are always applied. Defaults to "federal". |
+| `rulebooks` | `load_court_listener`, `load_lexis_nexis` | Rules to parse with: built-in names ("federal", or any of "citations", "civil", "constitutional", "criminal", and "agencies") or CSV files or folders. "header" and "general" are always applied. Defaults to "federal". |
 | `keep_text`, `limit`, `workers` | `load_court_listener`, `load_lexis_nexis` | Whether to keep the opinions' text, most cases to parse, and processes to parse with. |
 
 The loaders work through the project's clerk, as `amos` loaders do. A folder
@@ -572,7 +584,7 @@ label = majority
 ```
 
 To add a reference table's columns to cases instead, use its merger
-(`merge_biographies`, `merge_scdb`, `merge_idb`, or `add_politics`).
+(`add_biography`, `add_scdb`, `add_idb`, or `add_executive`).
 
 ## The CourtListener API
 
@@ -673,9 +685,9 @@ courtpy.options._COURT_GROUPS["new_england"] = ("ca1", "mad", "nhd", "med", "rid
 | `ValueError: no court_listener cases were found in ...` | The loader's source folder has no saved cases. Set "download" or "source". |
 | `ModuleNotFoundError: No module named 'statsmodels'` | `logit_sm` (and the other statsmodels models) need statsmodels. Use `logit` for scikit-learn's logistic regression, or `pip install amos[statistics]`. |
 | `KeyError: the label 'outcome_reversal' is not a column of the data` | The label is made by a coder that was not run. Check the "coders" setting. |
-| `FileNotFoundError: there is no roster of judges at ...` | `merge_biographies`, `code_panels`, and `reshape_by_votes` need a roster. Make and save one with `courtpy.judges.Roster.from_fjc().save()`, or name one with the "source" parameter of `merge_biographies` or the "roster" parameter of the others. |
-| `ValueError: ... rows of the other table have the same ['year'] as another of its rows` | The table of `add_politics` has more than one row for a year, and a case can match only one. Set its "duplicates" to "first" or "last", or remove the rows. |
-| `TypeError: 'add_politics' cannot match 'year', which is text in the data, with 'year', which is numbers in the other table` | The cases' years are not numbers (as they are in a table that was saved and loaded without `courtpy.load_cases`). Load the table with `load_cases`, or change the column with a cleaner such as `clean_numbers`. |
-| `KeyError: 'merge_scdb' needs the column 'scdb_id' ... or 'citation'` | `merge_scdb` matches cases by the Supreme Court Database's ids, which CourtListener records for cases of the Supreme Court, or by their citations. Set its "on" or "citations" to the columns that have them. |
-| `ValueError: '...' changes the rows of the data, so it must come before the data is split` | `reshape_by_votes` is a shaper, which came after a splitter. Put it in the wrangler (or among a loader's coders). |
+| `FileNotFoundError: there is no roster of judges at ...` | `add_biography`, `code_panels`, and `cases_to_votes` need a roster. Make and save one with `courtpy.judges.Roster.from_fjc().save()`, or name one with the "source" parameter of `add_biography` or the "roster" parameter of the others. |
+| `KeyError: 'add_executive' needs the columns ['date_filed']` | `add_executive`, `add_legislature`, `add_high_court`, and `add_circuit` match each case's date. Set their "date" to the column that has it. |
+| `TypeError: 'merge_keys' cannot match 'year', which is text in the data, with 'year', which is numbers in the other table` | The cases' years are not numbers (as they are in a table that was saved and loaded without `courtpy.Cases.load`). Load the table with `Cases.load` (or `load_cases`), or change the column with a cleaner such as `clean_numbers`. |
+| `KeyError: 'add_scdb' needs the column 'scdb_id' ... or 'citation'` | `add_scdb` matches cases by the Supreme Court Database's ids, which CourtListener records for cases of the Supreme Court, or by their citations. Set its "on" or "citations" to the columns that have them. |
+| `ValueError: '...' changes the rows of the data, so it must come before the data is split` | `cases_to_votes` is a shaper, which came after a splitter. Put it in the wrangler (or among a loader's coders). |
 | `ImportError: cannot import 'fairlearn.metrics...'` | A study has "groups" (such as `case_id`, for judges' votes), so the scorecard compares the model across them, which needs fairlearn. Name the scorecard's "metrics", or `pip install amos[fairness]`. |

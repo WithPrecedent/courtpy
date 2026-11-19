@@ -46,13 +46,12 @@ def step_by_step() -> None:
         end_date = '2019-12-31',
         folder = CASES)
     # 2. Parse them with the federal rules and code the outcomes.
-    table = courtpy.code(courtpy.parse(CASES, workers = 4)).data
-    courtpy.save_cases(table, TABLE)
-    print(table['outcome_reversal'].mean(), 'of the decisions reversed')
-    # 3. Load the saved table as an amos dataset, ready for any amos technique.
-    dataset = courtpy.loaders.LoadCases().apply(
-        source = TABLE, label = 'outcome_reversal')
-    print(dataset)
+    cases = courtpy.code(courtpy.parse(CASES, workers = 4))
+    cases.save(TABLE)
+    print(cases.data['outcome_reversal'].mean(), 'of the decisions reversed')
+    # 3. Load the saved cases, ready for any amos technique.
+    cases = courtpy.Cases.load(TABLE, label = 'outcome_reversal')
+    print(cases)
 
 
 if __name__ == '__main__':
