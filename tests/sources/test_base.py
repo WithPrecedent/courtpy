@@ -115,7 +115,12 @@ def test_subclasses_register() -> None:
         def download(self, folder: pathlib.Path, **kwargs: Any) -> list[pathlib.Path]:
             return []
 
+    @dataclasses.dataclass
+    class MiddleDownload(base.Download, abc.ABC):
+        """A base class for other ways to download, which is not added."""
+
     assert 'middle' not in base.SOURCES
+    assert 'middle_download' not in base.DOWNLOADS
     assert base.find_download('texas') is StateDownload
     assert StateDownload.describe() == "Downloads a state court's cases."
     with pytest.raises(ValueError, match = '"api", "bulk", "state", or "none"'):
@@ -139,6 +144,15 @@ def test_parse_a_source_of_your_own(
     table = courtpy.parse(state_folder, source = 'state_court_test', workers = workers)
     assert list(table.index) == ['a', 'b']
     assert (table['state'] == 'Texas').all()
+
+
+def test_parse_paths_and_one_file(state_folder: pathlib.Path) -> None:
+    paths = [state_folder / 'b.txt', state_folder / 'a.txt']
+    table = courtpy.parse(paths, source = 'state_court_test')
+    assert list(table.index) == ['b', 'a']
+    parser = courtpy.Parser.create()
+    case_id, row = parser.parse_file(state_folder / 'a.txt', 'state_court_test')
+    assert case_id == 'a' and row['state'] == 'Texas'
 
 
 def test_loader_of_your_own(state_folder: pathlib.Path) -> None:
