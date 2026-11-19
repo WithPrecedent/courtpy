@@ -37,6 +37,7 @@ def test_listify_and_normalize() -> None:
     assert utilities.listify('a, b,,c ') == ['a', 'b', 'c']
     assert utilities.listify(None) == []
     assert utilities.listify(['x', ' y']) == ['x', 'y']
+    assert utilities.listify(7) == ['7']
     assert utilities.normalize(' a\n\tb  c ') == 'a b c'
     assert utilities.normalize(None) == ''
 
