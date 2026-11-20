@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.5.1
+
+### Added
+
+* `compare_with_idb` (an explorer, in `courtpy.fjc_idb`) compares a study
+  with the Federal Judicial Center's Integrated Database. Cases are compared
+  as `Dockets` and matched as `add_idb` matches them. The table
+  `compare_with_idb` shows how the variables that both have agree (whether
+  an appeal is criminal or civil, was reversed, was published, had a
+  dissent, was brought by the United States, had a pro se appellant, or was
+  a prisoner's appeal, or any pair of columns): the dockets compared, the
+  matches and Cohen's kappa, and the disagreements in each direction. The
+  table `compare_with_idb_missing` compares the database's appeals that the
+  study lacks with those it has, in each circuit (or district, with `by`).
+  It reports the coverage, the shares of each variable, their difference,
+  and a two-proportion z test. By default, it counts only appeals decided on
+  the merits in the study's circuits and dates (`merits_only`).
+* The plots `idb_confusion_matrices` (a confusion matrix for each variable)
+  and `idb_missing_differences` (the differences by group, starred below
+  `alpha`), which `compare_with_idb` draws with `visualize`.
+
+### Changed
+
+* Requires fjc-idb 0.1.0 (it was 0.0.4), whose appellate table has
+  `pro_se_appellant`, `prisoner_appeal`, `reversed_in_whole_or_part`, and
+  the other outcome columns.
+
+### Fixed
+
+* "OWEN" in a Fifth Circuit opinion is Judge Priscilla Richman, who sat as
+  Priscilla Owen until 2019 (the Federal Judicial Center's files give only
+  her name now). It had been matched to Judge Richard Owen of the Southern
+  District of New York through 2015, and to no judge after.
+* A name that fits no judge is tried in shorter forms (`shorter_names`):
+  the first and last names, and then the first initial and the last name,
+  but never the last name alone. So "Susan P. Graber" (whom the files name
+  Susan Graber), "Sarah A. L. Merriam" (Sarah Ann Leilani Merriam), and
+  "Ed Carnes" (Edward Carnes) are matched.
+
 ## 0.5.0
 
 courtpy follows the `amos` way of working more closely: its data are `amos`

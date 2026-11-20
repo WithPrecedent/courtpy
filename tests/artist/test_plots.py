@@ -42,7 +42,8 @@ def draw(name: str, item: amos.Dataset, **parameters: object) -> object:
 def test_plots_are_in_the_library() -> None:
     for name in (
             'court_rates', 'cases_over_time', 'issues_over_time', 'panel_composition',
-            'lower_court_rates', 'trends_by_administration', 'judge_network'):
+            'lower_court_rates', 'trends_by_administration', 'judge_network',
+            'idb_confusion_matrices', 'idb_missing_differences'):
         assert amos.library.classify(name) == 'plot'
 
 

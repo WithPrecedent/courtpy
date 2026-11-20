@@ -102,6 +102,8 @@ Contents:
     panel_compositions: returns the composition of each case's panel by
         the parties of the presidents who appointed its judges, such as
         "DDR".
+    shorter_names: returns shorter ways of writing a name that an opinion
+        gives, to try when the name itself fits no judge.
     republican_appointees: returns how many judges of each case's panel a
         Republican president appointed.
     vote_table: returns a table with one row for each judge on each case.
@@ -112,7 +114,7 @@ from __future__ import annotations
 
 from ._biographies import AddBiography, AddJcs
 from ._circuits import AddCircuit
-from ._names import clean_name, name_forms
+from ._names import clean_name, name_forms, shorter_names
 from ._panels import (
     CasesToJudges,
     CasesToVotes,
@@ -149,4 +151,5 @@ __all__ = [
     'name_forms',
     'panel_compositions',
     'republican_appointees',
+    'shorter_names',
     'vote_table']

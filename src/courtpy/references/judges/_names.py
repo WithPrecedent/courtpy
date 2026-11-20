@@ -4,10 +4,13 @@ Contents:
     clean_name: returns a name the way that names are compared.
     name_forms: returns the ways that an opinion may write a judge's name,
         grouped by how much of the name they give.
+    shorter_names: returns shorter ways of writing a name that an opinion
+        gives, to try when the name itself fits no judge.
     _LEVELS: the groups of the forms of a judge's name, from the most of
         the name to the least.
     _NAME_PUNCTUATION: pattern for the punctuation that is removed from
         names before they are compared.
+    _SUFFIXES: the suffixes of names, as `clean_name` writes them.
 
 """
 
@@ -23,6 +26,7 @@ _LEVELS: tuple[str, ...] = ('full', 'initials', 'last')
 # has only plain characters.
 _NAME_PUNCTUATION: re.Pattern[str] = re.compile(
     r"[.,\[\]'" + chr(0x2019) + ']')
+_SUFFIXES: frozenset[str] = frozenset({'JR', 'SR', 'II', 'III', 'IV', 'V'})
 
 
 """ Public Functions """
@@ -116,3 +120,40 @@ def name_forms(
                 seen.add(named)
                 levels[level].append(named)
     return levels
+
+
+def shorter_names(name: str) -> list[str]:
+    """Returns shorter ways of writing a name that an opinion gives.
+
+    An opinion may give more of a judge's name than the Federal Judicial
+    Center's files do (as "Susan P. Graber" for a judge whom the files name
+    "Susan Graber"), give middle initials that are not those of the files'
+    middle names (as "Sarah A. L. Merriam" for "Sarah Ann Leilani Merriam"),
+    or give a short first name (as "Ed Carnes" for "Edward Carnes"). Such a
+    name is none of the forms of the judge's name (see `name_forms`), but a
+    shorter way of writing it is: the first and last names, and then the
+    first initial and the last name. A suffix stays with the last name. The
+    last name alone is never one of them, since a name that gives more
+    should not be matched by less than its first name or initial.
+
+    Args:
+        name: the name, as `clean_name` returns it.
+
+    Returns:
+        The first and last names (if the name has a middle name or initial)
+            and the first initial and last name (if the first name is longer
+            than an initial), as `clean_name` writes them, without repeats
+            or `name` itself. There are none for a name of one word.
+
+    """
+    parts = name.split()
+    tail = 2 if len(parts) > 1 and parts[-1] in _SUFFIXES else 1
+    given, last = parts[:-tail], ' '.join(parts[-tail:])
+    if not given:
+        return []
+    shorter = []
+    if len(given) > 1:
+        shorter.append(f'{given[0]} {last}')
+    if len(given[0]) > 1:
+        shorter.append(f'{given[0][:1]} {last}')
+    return [form for form in dict.fromkeys(shorter) if form != name]

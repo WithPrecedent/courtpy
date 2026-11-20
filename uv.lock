@@ -997,7 +997,7 @@ requires-dist = [
     { name = "amos", extras = ["all"], marker = "extra == 'analysis'" },
     { name = "chrisjen", specifier = ">=0.5.0" },
     { name = "fjc-biographies", specifier = ">=0.1.0" },
-    { name = "fjc-idb", specifier = ">=0.0.4" },
+    { name = "fjc-idb", specifier = ">=0.1.0" },
     { name = "judicial-common-space", specifier = ">=0.1.0" },
     { name = "keyring", specifier = ">=24" },
     { name = "nagata", specifier = ">=0.2.1" },
@@ -1541,15 +1541,15 @@ wheels = [
 
 [[package]]
 name = "fjc-idb"
-version = "0.0.4"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "camina" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/3b/d02cf2a4e73899aaf47a51b09220f63c6c0647d0cece832431e47dec6ac5/fjc_idb-0.0.4.tar.gz", hash = "sha256:e7459e3675e2c31718415790034183cf8c3ec70372eefcde4fa05c5fbc017aac", size = 193379, upload-time = "2026-10-17T16:55:08.07Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/eb/e0c77284488d0ea2d7246da71c3cd95af539ac6e1835cc814a816f2557d0/fjc_idb-0.1.0.tar.gz", hash = "sha256:aed2964e850e0f042209f978679459d2f6e513c4f6f08cf9b7979f39c3d3c3f8", size = 195211, upload-time = "2026-11-20T18:50:01.978Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/4a/148279bad9f3f9d3d77891fe13e6577bdcbed92b244696caba09a1fc63e8/fjc_idb-0.0.4-py3-none-any.whl", hash = "sha256:5f13c10d6a5179a96b710cc45930cd2005e74dfc97d605ee4253c399ec689632", size = 43866, upload-time = "2026-10-17T16:55:06.868Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/3d/357e3c288385e7ff7508144c436077792888606a8089c6319402bd2814d6/fjc_idb-0.1.0-py3-none-any.whl", hash = "sha256:9bee38fecd215d8b81846d0dd1652144079f7e91a2333c6d342ed175ff56279a", size = 44616, upload-time = "2026-11-20T18:50:01.109Z" },
 ]
 
 [[package]]

@@ -529,6 +529,86 @@ again, which the Federal Judicial Center updates during the year). fjc-idb's
 own functions (such as `fjc_idb.run` and `fjc_idb.merge_district`) work on
 the same folder.
 
+### Comparing a study with the database
+
+`compare_with_idb` (an explorer) asks two questions of a study of the courts
+of appeals. Do its variables agree with the database's? And how do the
+appeals it lacks differ from the ones it has? It works on `Cases` or
+`Dockets`. Cases are compared as dockets (see `cases_to_dockets`), but the
+dataset stays as it was, and each docket is matched to its record as
+`add_idb` matches it. It takes `add_idb`'s parameters for finding the
+database (`source`, `start_year`, `folder`, and so on).
+
+```ini
+[explorer]
+techniques = compare_with_idb
+
+[compare_with_idb_parameters]
+source = appeals.parquet
+by = circuit
+visualize = true
+```
+
+The first table, `tables["compare_with_idb"]`, has a row for each variable
+that both have, among the dockets that were matched:
+
+| Variable | The study's column | The database's column |
+| --- | --- | --- |
+| `criminal` | `type_criminal` | `appeal_type` is a criminal appeal |
+| `civil` | `type_civil` | `appeal_type` is not a criminal appeal |
+| `reversal` | `outcome_reversal` | `disposition` is reversed (in whole or part) or remanded |
+| `published` | `published` | `published` |
+| `dissent` | `dissents` (more than 0) | `dissents` (more than 0) |
+| `us_appellant` | a party is `united_states` and `appellant` | `us_appellant` |
+| `pro_se_appellant` | `pro_se_appellant` | `pro_se_appellant` |
+| `prisoner_appeal` | `prisoner_appeal` | `prisoner_appeal` |
+
+A variable whose column the study lacks is left out. The table counts the
+dockets with both values ("compared") and those that agree ("matches",
+"match_share", and Cohen's "kappa", which discounts the agreement that chance
+would give). It also counts the disagreements in each direction:
+"data_only" is true in the study and false in the database, and "idb_only"
+is the reverse. `variables` picks some of them by name (such as
+`variables = criminal, reversal`). In Python, it can also add others, each
+as a column of the study and a column of the database:
+
+```python
+import courtpy
+
+cases = courtpy.parse("data/courtlistener")
+dockets = courtpy.code(cases, ["cases_to_dockets"])
+compare = courtpy.fjc_idb.CompareWithIdb()
+table = compare.describe(
+    dockets, source = "appeals.parquet",
+    variables = {"en_banc": ("en_banc", "enbanc")})
+```
+
+The second table, `tables["compare_with_idb_missing"]`, starts from the
+database, which has every appeal, so the study always lacks some. It keeps
+the appeals of the study's circuits that were judged between the study's
+first and last decisions. Unless `merits_only = false`, it keeps only those
+decided on the merits, since procedural terminations rarely have opinions.
+Then, for each circuit (or each district court appealed from, with
+`by = district`) and for all of them ("All"), and for each variable of
+`report`, it reports:
+
+- "appeals", "in_data", and "coverage": how many appeals there are, how many
+  the study has, and the share it has.
+- "share_in_data" and "share_missing": the share that are true among the
+  appeals the study has and among those it lacks.
+- "difference" and "p_value": the first share minus the second, and the
+  p value of a two-proportion z test of that difference.
+
+So a positive "difference" in reversals means the study's appeals were
+reversed more often than the ones it lacks, as studies of published
+opinions usually are.
+
+With `visualize`, `idb_confusion_matrices` draws a confusion matrix for each
+variable of the first table. `idb_missing_differences` draws the second
+table as a grid of groups and variables, shaded by the difference, with a
+star where the p value is below `alpha` (0.05 unless set). The figures are in
+`figures` under the tables' names.
+
 ## Figures and checks
 
 courtpy's plots, evaluators, and inferer are `amos` techniques for the
