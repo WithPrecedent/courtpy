@@ -41,13 +41,17 @@ import pandas as pd
 
 from ...core import cases, options, utilities
 from ...wrangler import loaders, rules
-from ._names import _LEVELS, clean_name, name_forms
+from ._names import _LEVELS, clean_name, name_forms, shorter_names
 
-# Judge Johnson of the Fifth Circuit signed opinions as "Sam D. Johnson", and
-# Judge King of the Fifth Circuit sat as Carolyn Dineen Randall until 1988.
+# Judge Johnson of the Fifth Circuit signed opinions as "Sam D. Johnson",
+# Judge King of the Fifth Circuit sat as Carolyn Dineen Randall until 1988,
+# and Judge Richman of the Fifth Circuit sat as Priscilla Owen until 2019
+# (the Federal Judicial Center's files give only the names that judges have
+# now).
 _ALIASES: dict[int, str] = {
     1382851: 'Sam D. Johnson',
-    1386716: 'Carolyn Dineen Randall'}
+    1386716: 'Carolyn Dineen Randall',
+    1392271: 'Priscilla Owen'}
 _APPELLATE: frozenset[str] = frozenset({
     'U.S. Court of Appeals', 'Supreme Court'})
 # The categories of the Federal Judicial Center's files that a roster is made
@@ -97,7 +101,11 @@ class Roster:
     3. or else the last name alone, which is how opinions usually name
        judges.
 
-    The first of them that fits any judge who was serving is used. Many
+    The first of them that fits any judge who was serving is used. A name
+    that fits no judge at all is then tried in shorter forms, as a full name
+    or initials (see `shorter_names`): an opinion's "Susan P. Graber" is
+    "Susan Graber", and its "Ed Carnes" is "E. Carnes", but never the last
+    name alone. Many
     judges share a name, especially a last name, so the judges whose names
     fit are then narrowed by the court of the case:
 
@@ -516,12 +524,17 @@ class Roster:
         courts = self._numbers['court_num']
         if court_num is not None and court_num not in courts:
             return None
-        for level in _LEVELS:
-            rows = [
-                row for row in self._forms[level].get(name, ())
-                if year is None or self._serving(row, year)]
-            if rows:
-                return self._choose(rows, court_num)
+        # The name as it is, at every level, and then its shorter forms as
+        # full names or initials (never the last name alone).
+        attempts = [(name, _LEVELS)] + [
+            (form, _LEVELS[:-1]) for form in shorter_names(name)]
+        for form, levels in attempts:
+            for level in levels:
+                rows = [
+                    row for row in self._forms[level].get(form, ())
+                    if year is None or self._serving(row, year)]
+                if rows:
+                    return self._choose(rows, court_num)
         return None
 
     def _choose(self, rows: list[int], court_num: int | None) -> int | None:

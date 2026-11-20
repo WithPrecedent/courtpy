@@ -20,11 +20,17 @@ confidence interval. Each bar says how many cases it counts.
 | `panel_composition` | The rate of a column for each composition of the panel by the parties of the presidents who appointed its judges ("DDD" to "RRR"), split by another column if "by" is set. | `Cases`, with the judges' parties (from `add_biography` or `code_panels`). |
 | `lower_court_rates` | The rate of a column for each court whose decisions a court reviews, a panel for each reviewing court. | `Cases`, with "lower_court_name" or "lower_court_num". |
 | `trends_by_administration` | The yearly rate of a column in each court, a panel for each court, with the terms of Democratic and Republican presidents shaded. | `Cases`, with "year". |
+| `idb_confusion_matrices` | A confusion matrix for each variable that the data and the Integrated Database both have, with Cohen's kappa. | The table of `compare_with_idb`. |
+| `idb_missing_differences` | The share of each variable among the appeals of the Integrated Database that the data has minus the share among those it lacks, for each circuit or district. | The second table of `compare_with_idb`. |
 | `judge_network` | The judges as a network, joined by how often they sat together (or, with "dissents", how often one dissented from the other), colored by party. | `Votes` (see `cases_to_votes`). |
 
 Contents:
     CasesOverTime: the number of cases of each court in each year.
     CourtRates: the rate of a column in each court.
+    IdbConfusionMatrices: how the data agrees with the Integrated Database,
+        a confusion matrix for each variable.
+    IdbMissingDifferences: how the Integrated Database's appeals that the
+        data lacks differ from those it has, in each group.
     IssuesOverTime: the number of cases with each issue in each court in
         each year.
     JudgeNetwork: the judges as a network of who sat with, or dissented
@@ -512,6 +518,153 @@ class TrendsByAdministration(amos.plots.Plot):
 
 
 @dataclasses.dataclass
+class IdbConfusionMatrices(amos.plots.Plot):
+    """Plots how the data agrees with the Integrated Database, by variable.
+
+    Each variable of `compare_with_idb`'s first table is a panel with a
+    confusion matrix: the data's value (true or false) in the rows and the
+    database's in the columns, each cell shaded by its share of the dockets
+    compared and labeled with its count and share. The panel's title has
+    Cohen's kappa.
+
+    """
+
+    size: ClassVar[tuple[float, float]] = (8.0, 6.0)
+    starts_at_zero: ClassVar[str] = ''
+
+    """ Required Methods """
+
+    def draw(
+        self,
+        item: amos.Dataset,
+        figure: Any,
+        *,
+        source: str = 'compare_with_idb',
+        columns: int = 3,
+        **kwargs: Any) -> None:
+        """Draws a confusion matrix for each variable.
+
+        Args:
+            item: the dataset, with the table of `compare_with_idb`.
+            figure: the figure to draw on.
+            source: the name of the table in the dataset's `tables`. Defaults
+                to "compare_with_idb".
+            columns: the most panels in a row. Defaults to 3.
+            **kwargs: not used.
+
+        """
+        table = _table(item, source)
+        panels = _court_panels(figure, table.index, columns, share_y = False)
+        labels = ['True', 'False']
+        for name, axes in panels.items():
+            row = table.loc[name]
+            counts = np.array([
+                [row['both_true'], row['data_only']],
+                [row['idb_only'], row['both_false']]], dtype = float)
+            total = counts.sum()
+            shares = counts / total if total else counts
+            axes.imshow(shares, cmap = 'Blues', vmin = 0, vmax = 1)
+            for (down, across), count in np.ndenumerate(counts):
+                share = shares[down, across]
+                axes.text(
+                    across, down, f'{count:,.0f}\n{share:.0%}',
+                    ha = 'center', va = 'center', fontsize = 'small',
+                    color = 'white' if share > 0.6 else 'black')
+            axes.set_xticks([0, 1], labels)
+            axes.set_yticks([0, 1], labels)
+            axes.set_xlabel('IDB', fontsize = 'small')
+            axes.set_ylabel('Data', fontsize = 'small')
+            axes.minorticks_off()
+            kappa = row['kappa']
+            title = _words(str(name))
+            if pd.notna(kappa):
+                title = f'{title} (κ = {kappa:.2f})'
+            axes.set_title(title, fontsize = 'small')
+
+
+@dataclasses.dataclass
+class IdbMissingDifferences(amos.plots.Plot):
+    """Plots how the appeals that the data lacks differ, by group.
+
+    `compare_with_idb`'s second table is drawn as a grid of the groups
+    (circuits or districts, with "All" first) and the variables. Each cell
+    is the share of the appeals that the data has minus the share of those
+    that it lacks, in percentage points, shaded red where the data has more
+    and blue where it has less, with a star if the p value of the difference
+    is below "alpha". Each group's label says what share of its appeals the
+    data has.
+
+    """
+
+    size: ClassVar[tuple[float, float]] = (9.0, 7.0)
+    starts_at_zero: ClassVar[str] = ''
+
+    """ Required Methods """
+
+    def draw(
+        self,
+        item: amos.Dataset,
+        figure: Any,
+        *,
+        source: str = 'compare_with_idb_missing',
+        alpha: float = 0.05,
+        **kwargs: Any) -> None:
+        """Draws the differences of each variable in each group.
+
+        Args:
+            item: the dataset, with the second table of `compare_with_idb`.
+            figure: the figure to draw on.
+            source: the name of the table in the dataset's `tables`. Defaults
+                to "compare_with_idb_missing".
+            alpha: the p value below which a difference is starred. Defaults
+                to 0.05.
+            **kwargs: not used.
+
+        """
+        table = _table(item, source)
+        groups = list(dict.fromkeys(table['group']))
+        names = list(dict.fromkeys(table['variable']))
+        differences = table.pivot_table(
+            index = 'group', columns = 'variable', values = 'difference',
+            aggfunc = 'first', dropna = False).reindex(
+                index = groups, columns = names)
+        p_values = table.pivot_table(
+            index = 'group', columns = 'variable', values = 'p_value',
+            aggfunc = 'first', dropna = False).reindex(
+                index = groups, columns = names)
+        coverage = table.drop_duplicates('group').set_index('group')[
+            'coverage'].reindex(groups)
+        points = differences.to_numpy(dtype = float) * 100
+        significance = p_values.to_numpy(dtype = float)
+        largest = np.nanmax(np.abs(points)) if np.isfinite(points).any() else 1
+        axes = figure.subplots()
+        image = axes.imshow(
+            points, cmap = 'RdBu_r', vmin = -largest, vmax = largest,
+            aspect = 'auto')
+        for (down, across), value in np.ndenumerate(points):
+            if np.isnan(value):
+                continue
+            starred = significance[down, across] < float(alpha)
+            axes.text(
+                across, down, f'{value:+.0f}' + ('*' if starred else ''),
+                ha = 'center', va = 'center', fontsize = 'small',
+                color = 'white' if abs(value) > 0.6 * largest else 'black')
+        axes.set_xticks(
+            range(len(names)), [_words(str(n)) for n in names],
+            rotation = 45, ha = 'right')
+        axes.set_yticks(range(len(groups)), [
+            f'{group} ({share:.0%} in data)' if pd.notna(share)
+            else str(group)
+            for group, share in coverage.items()])
+        axes.minorticks_off()
+        colorbar = figure.colorbar(image, ax = axes)
+        colorbar.set_label(
+            'Share in data minus share missing (points)', fontsize = 'small')
+        axes.set_title(
+            f'* p < {float(alpha):g}', fontsize = 'small', loc = 'right')
+
+
+@dataclasses.dataclass
 class JudgeNetwork(amos.plots.Plot):
     """Plots the judges as a network of who sat with, or dissented from, whom.
 
@@ -840,6 +993,29 @@ def _terms(start: float, stop: float) -> list[tuple[float, float, int]]:
         if ends > start and begins < stop:
             found.append((max(begins, start), min(ends, stop), int(party)))
     return found
+
+
+def _table(item: amos.Dataset, source: str) -> pd.DataFrame:
+    """Returns a table of a dataset's `tables` to draw.
+
+    Args:
+        item: the dataset.
+        source: the name of the table.
+
+    Raises:
+        KeyError: if the dataset has no table named `source`.
+
+    Returns:
+        The table.
+
+    """
+    if source not in item.tables:
+        message = (
+            f'there is no table named {source!r} to draw (apply '
+            f'"compare_with_idb" first, or name its table as "source")'
+        )
+        raise KeyError(message)
+    return item.tables[source]
 
 
 def _words(column: str) -> str:

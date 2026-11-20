@@ -322,6 +322,30 @@ def test_match_uses_the_year(roster: judges.Roster, monkeypatch: pytest.MonkeyPa
     assert found(roster, 'SMITH', None, 2010) is None
 
 
+def test_shorter_names() -> None:
+    assert judges.shorter_names('SUSAN P GRABER') == ['SUSAN GRABER', 'S GRABER']
+    assert judges.shorter_names('SARAH A L MERRIAM') == ['SARAH MERRIAM', 'S MERRIAM']
+    assert judges.shorter_names('ED CARNES') == ['E CARNES']
+    assert judges.shorter_names('MILTON D SMITH JR') == ['MILTON SMITH JR', 'M SMITH JR']
+    assert judges.shorter_names('M SMITH') == []
+    assert judges.shorter_names('SMITH') == []
+    assert judges.shorter_names('SMITH JR') == []
+
+
+def test_match_shorter_names(roster: judges.Roster) -> None:
+    # More of a name than the files give, or other middle initials: the first
+    # and last names fit.
+    assert found(roster, 'Rita M. Q. Thompson', 1, 2015) == (103, FIRST)
+    assert found(roster, 'John Quincy Howard', 1, 2015) == (102, FIRST)
+    # A short first name: its initial and the last name fit.
+    assert found(roster, 'Ricky Poser', 7, 2010) == (110, 'U.S. Court of Appeals for the Seventh Circuit')
+    # The shorter forms still tell apart judges who share a last name, and
+    # never fall back to the last name alone.
+    assert found(roster, 'Milt X. Smith', 9, 2010) == (104, NINTH)
+    assert found(roster, 'Zed X. Smith', 9, 2010) is None
+    assert found(roster, 'Zed Lynch', 1, 2015) is None
+
+
 def test_match_does_not_guess(roster: judges.Roster) -> None:
     # A bankruptcy appellate panel (999) has no judges in the roster.
     assert found(roster, 'RAKE', 999, 2015) is None
@@ -338,6 +362,23 @@ def test_aliases(table: pd.DataFrame) -> None:
         pd.DataFrame([(1386716, 1, 'King, Carolyn Dineen', APPEALS, 'U.S. Court of Appeals for the Fifth Circuit', 'Jimmy Carter', 'Democratic', '', '', 'Voice', '', '1979-07-13', '', '')], columns = SERVICE_COLUMNS),
         pd.DataFrame([(1386716, 'King', 'Carolyn', 'Dineen', '', '1938', 'Female', 'White')], columns = DEMOGRAPHICS_COLUMNS))
     assert judges.Roster(built).match('RANDALL', 5, 1985) == 0
+    # Judge Richman sat as Priscilla Owen, so "OWEN" in the Fifth Circuit is
+    # her, and not a district judge of another circuit named Owen.
+    fifth = 'U.S. Court of Appeals for the Fifth Circuit'
+    built = judges.build_roster(
+        pd.DataFrame([
+            (1392271, 1, 'Richman, Priscilla', APPEALS, fifth, 'George W. Bush', 'Republican', '', '', 'Roll Call', ' 55/43', '2005-06-03', '', ''),
+            (130, 1, 'Owen, Richard', DISTRICT, 'U.S. District Court for the Southern District of New York', 'Richard M. Nixon', 'Republican', '', '', 'Voice', '', '1973-12-19', '', '')],
+            columns = SERVICE_COLUMNS),
+        pd.DataFrame([
+            (1392271, 'Richman', 'Priscilla', '', '', '1954', 'Female', 'White'),
+            (130, 'Owen', 'Richard', '', '', '1922', 'Male', 'White')],
+            columns = DEMOGRAPHICS_COLUMNS))
+    renamed = judges.Roster(built)
+    for year in (2012, 2020):
+        assert found(renamed, 'OWEN', 5, year) == (1392271, fifth)
+        assert found(renamed, 'RICHMAN', 5, year) == (1392271, fifth)
+    assert found(renamed, 'Richard Owen', 5, 2012) == (130, 'U.S. District Court for the Southern District of New York')
 
 
 def test_identify_and_describe(roster: judges.Roster) -> None:

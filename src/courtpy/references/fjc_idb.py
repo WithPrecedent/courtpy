@@ -48,14 +48,21 @@ Contents:
         case.
     DownloadIdb: downloads the Integrated Database's files and loads its
         appeals.
+    CompareWithIdb: compares a dataset with the Integrated Database's
+        records of appeals, and its appeals that the dataset lacks.
     LoadIdb: loads the Integrated Database's table of appeals for a range of
         years.
     appeals: returns the database's table of appeals for a range of years.
     download: downloads the database's yearly files that are missing.
     logger: the module's logger, which reports the files that are
         downloaded.
+    _BY: the columns of the database that the groups of `compare_with_idb`
+        name.
     _DOCKET_COLUMN: the column of `Dockets` with each row's one docket
         number.
+    _FALSE_TEXT: text that is false in a column of flags.
+    _TRUE_TEXT: text that is true in a column of flags.
+    _VARIABLES: the variables that `compare_with_idb` compares, by name.
 
 """
 
@@ -64,12 +71,14 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
+import math
 import pathlib
 import re
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
+from typing import Any, ClassVar
 
 import amos
+import chrisjen
 import fjc_idb
 import fjc_idb.main
 import fjc_idb.options
@@ -77,8 +86,8 @@ import fjc_idb.rules
 import numpy as np
 import pandas as pd
 
-from ..core import options, utilities
-from ..wrangler import loaders
+from ..core import cases, options, utilities
+from ..wrangler import loaders, shapers
 
 logger = logging.getLogger(__name__)
 _COURTS: tuple[str, ...] = ('court_num', 'court')
@@ -196,25 +205,17 @@ class AddIdb(amos.Merger):
             The dataset, with the new columns.
 
         """
-        reader = dict(kwargs.pop('reader', None) or {})
-        if source is None:
-            start, stop = _years(
-                item.data, start_year, stop_year,
-                kwargs.get('dates', _DATES))
-            district = utilities.to_bool(district)
-            table = appeals(
-                start,
-                stop,
-                utilities.locate(folder, self.clerk) if folder else None,
-                district = district,
-                download = utilities.to_bool(download))
-            described = f'FJC IDB appeals, {start}-{stop}' + (
-                ', with district records' if district else '')
-        else:
-            table = self.read(source, **reader)
-            described = (
-                str(source) if isinstance(source, str | pathlib.Path)
-                else type(source).__name__)
+        table, described = _load_appeals(
+            self,
+            item.data,
+            source,
+            start_year = start_year,
+            stop_year = stop_year,
+            district = district,
+            folder = folder,
+            download = download,
+            dates = kwargs.get('dates', _DATES),
+            reader = kwargs.pop('reader', None))
         # A merger leaves out the columns whose names the cases have, but
         # the prefix keeps the database's columns apart from the cases'.
         chosen = (
@@ -440,6 +441,293 @@ class DownloadIdb(loaders.ReferenceLoader):
         return appeals(
             start, stop, folder, district = with_district, download = False,
             fix_city_spellings = utilities.to_bool(fix_city_spellings))
+
+
+@dataclasses.dataclass
+class CompareWithIdb(amos.describers.Describer):
+    """Compares a dataset with the Integrated Database's records of appeals.
+
+    The cases are made `Dockets` first (see `cases_to_dockets`), unless they
+    are already, since the database has a record for each docket rather than
+    for each decision. Each docket is matched to its record as `add_idb`
+    matches it, and two tables are made.
+
+    The first, stored under the technique's name, says how well the
+    variables that both have agree, one row for each variable, for the
+    dockets that were matched: how many dockets have both values ("compared"),
+    how many of those agree ("matches", "match_share", and Cohen's "kappa"),
+    and the disagreements in each direction ("data_only" is true in the data
+    and false in the database, and "idb_only" the reverse). The variables
+    are true-or-false. By default, they are each of these whose column the
+    data has:
+
+    | Variable | The data's column | The database's column |
+    | --- | --- | --- |
+    | criminal | "type_criminal" | "appeal_type" is a criminal appeal |
+    | civil | "type_civil" | "appeal_type" is not a criminal appeal |
+    | reversal | "outcome_reversal" | "disposition" is reversed (in whole or part) or remanded |
+    | published | "published" | "published" |
+    | dissent | "dissents" (more than 0) | "dissents" (more than 0) |
+    | us_appellant | the United States is a party ("party1_united_states") and the appellant ("party1_appellant"), for either party | "us_appellant" |
+    | pro_se_appellant | "pro_se_appellant" | "pro_se_appellant" |
+    | prisoner_appeal | "prisoner_appeal" | "prisoner_appeal" |
+
+    The second, stored under the technique's name and "_missing", compares
+    the appeals in the database that the data has with those that it lacks,
+    in each circuit (or district, or any column of the database) and in all
+    of them ("All"). The database has every appeal, so the data always lacks
+    some. What matters is whether the appeals it lacks differ from those it
+    has, such as whether reversals are more common among them. The appeals
+    are those of the data's circuits whose judgments are between the data's
+    first and last decisions and, unless "merits_only" is false, that were
+    decided on the merits (those with a "disposition"), since the others
+    rarely have opinions. Each row is one variable in one group: how many
+    appeals there are ("appeals"), how many the data has ("in_data") and
+    their share ("coverage"), the share of the appeals with a known value
+    that are true among those the data has ("share_in_data") and those it
+    lacks ("share_missing"), their "difference", and the p value of a
+    two-proportion z test of it ("p_value"). Its variables are the
+    database's side of the variables above, by default.
+
+    With "visualize", `idb_confusion_matrices` draws the first table and
+    `idb_missing_differences` the second (stored in `figures` under the
+    tables' names).
+
+    | Parameter | Meaning |
+    | --- | --- |
+    | `variables` | The variables to compare: names of those above, or a mapping of new names to a column of the data and a column of the database (as a list or as text with a comma between them). By default, each of those above whose column the data has. |
+    | `report` | The variables of the second table: names of those above, or columns of the database. By default, all of those above. |
+    | `by` | "circuit", "district" (the district court appealed from), or another column of the database, for the groups of the second table. It is "circuit" unless set. |
+    | `merits_only` | Whether the second table counts only the appeals decided on the merits. It is true unless set. |
+    | `alpha` | Not used by the tables; `idb_missing_differences` stars differences whose p value is below it. |
+    | `source`, `start_year`, `stop_year`, `district`, `folder`, `download`, `reader`, `courts`, `dockets`, `dates` | As for `add_idb`. |
+
+    """
+
+    visual: ClassVar[str] = 'idb_confusion_matrices'
+    clerk: Any = dataclasses.field(default = None, repr = False)
+
+    """ Class Methods """
+
+    @classmethod
+    def build(
+        cls,
+        name: str,
+        project: Any,
+        parameters: MutableMapping[str, Any] | None = None,
+        **kwargs: Any) -> CompareWithIdb:
+        """Builds the technique with the clerk of `project`.
+
+        Args:
+            name: name of the technique.
+            project: the project the technique belongs to.
+            parameters: more parameters, which take precedence over those in
+                the settings. Defaults to `None`.
+            **kwargs: other arguments for the constructor.
+
+        Returns:
+            The built technique.
+
+        """
+        kwargs.setdefault('clerk', project.clerk)
+        return super().build(name, project, parameters, **kwargs)
+
+    """ Required Methods """
+
+    def describe(self, item: amos.Dataset, **kwargs: Any) -> pd.DataFrame:
+        """Returns the table of how well the variables agree.
+
+        Args:
+            item: the dataset of cases or dockets.
+            **kwargs: the parameters of `compare`.
+
+        Returns:
+            The first table of `compare`.
+
+        """
+        return self.compare(item, **kwargs)[0]
+
+    """ Public Methods """
+
+    def apply(
+        self,
+        item: amos.Dataset,
+        *,
+        visualize: bool = False,
+        **kwargs: Any) -> amos.Dataset:
+        """Adds both tables of `compare` to the tables of `item`.
+
+        Args:
+            item: the dataset of cases or dockets. It is not changed, and
+                stays cases if it is cases.
+            visualize: whether to draw both tables as figures. The dataset's
+                `visualize_explorers` replaces it, if it is set. Defaults to
+                `False`.
+            **kwargs: the parameters of `compare`.
+
+        Returns:
+            The dataset, with the new tables (and figures).
+
+        """
+        alpha = kwargs.pop('alpha', None)
+        agreement, missing, details = self.compare(item, **kwargs)
+        item.tables[self.name] = agreement
+        item.tables[self.missing_name] = missing
+        item.record(
+            self.name, table = self.name, missing_table = self.missing_name,
+            **details)
+        if alpha is not None:
+            kwargs['alpha'] = alpha
+        self._visualize(item, visualize, kwargs)
+        return item
+
+    def compare(
+        self,
+        item: amos.Dataset,
+        *,
+        variables: Mapping[str, Any] | Sequence[str] | str | None = None,
+        report: Sequence[str] | str | None = None,
+        by: str = 'circuit',
+        merits_only: bool | str = True,
+        source: Any = None,
+        start_year: int | None = None,
+        stop_year: int | None = None,
+        district: bool = False,
+        folder: pathlib.Path | str | None = None,
+        download: bool = True,
+        reader: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+        """Returns how the dataset agrees with the database, and what it lacks.
+
+        Args:
+            item: the dataset of cases or dockets.
+            variables: the variables to compare: names of `_VARIABLES`, or a
+                mapping of new names to a column of the data and a column of
+                the database. Defaults to `None`, for each of `_VARIABLES`
+                whose column the data has.
+            report: the variables of the second table: names of
+                `_VARIABLES` or columns of the database. Defaults to `None`,
+                for all of `_VARIABLES`.
+            by: "circuit", "district", or a column of the database, for the
+                groups of the second table. Defaults to "circuit".
+            merits_only: whether the second table counts only the appeals
+                decided on the merits. Defaults to `True`.
+            source: the database's table of appeals, or the path of a file of
+                it (see `AddIdb.apply`). Defaults to `None`.
+            start_year: the first year of the database to use, without a
+                `source`. Defaults to `None`.
+            stop_year: the last year of the database to use, without a
+                `source`. Defaults to `None`.
+            district: whether to read the district court's records too,
+                without a `source` (needed for district columns other than
+                "district_of_origin"). Defaults to `False`.
+            folder: the folder of the database's yearly files, without a
+                `source`. Defaults to `None`.
+            download: whether to download the yearly files that are missing,
+                without a `source`. Defaults to `True`.
+            reader: parameters for reading `source`. Defaults to `None`.
+            **kwargs: "courts", "dockets", and "dates" (see `AddIdb.match`).
+
+        Raises:
+            KeyError: if a variable or a column is unknown, or the database
+                lacks "disposition" and `merits_only` is true.
+
+        Returns:
+            The table of agreement, the table of what the data lacks, and
+                details for the dataset's history.
+
+        """
+        data = _as_dockets(item.data)
+        merger = AddIdb(clerk = self.clerk)
+        table, described = _load_appeals(
+            merger, data, source, start_year = start_year,
+            stop_year = stop_year, district = district, folder = folder,
+            download = download, dates = kwargs.get('dates', _DATES),
+            reader = reader)
+        found = np.asarray(merger.match(data, table, **kwargs), dtype = 'int64')
+        matched = found >= 0
+        agreement = _agreement(
+            data[matched], table.iloc[found[matched]], variables)
+        universe = _universe(
+            data, table, utilities.to_bool(merits_only),
+            utilities.listify(kwargs.get('courts', _COURTS)),
+            utilities.listify(kwargs.get('dates', _DATES)))
+        in_data = np.isin(np.flatnonzero(universe), found[matched])
+        missing = _missing(
+            table[universe].assign(_in_data = in_data), report, by)
+        details = {
+            'source': described,
+            'dockets': len(data),
+            'matched': int(matched.sum()),
+            'idb_appeals': int(universe.sum()),
+            'in_data': int(in_data.sum()),
+            'by': by}
+        return agreement, missing, details
+
+    """ Properties """
+
+    @property
+    def missing_name(self) -> str:
+        """Returns the name of the table (and figure) of what the data lacks.
+
+        Returns:
+            The technique's name with "_missing" after it.
+
+        """
+        return f'{self.name}_missing'
+
+    """ Private Methods """
+
+    def _visualize(
+        self,
+        item: amos.Dataset,
+        visualize: Any,
+        parameters: Mapping[str, Any] | None = None) -> None:
+        """Draws both tables, if it is asked for.
+
+        Args:
+            item: the dataset, with both tables.
+            visualize: the technique's `visualize` argument.
+            parameters: the parameters that the technique was applied with.
+                Defaults to `None`.
+
+        """
+        super()._visualize(item, visualize, parameters)
+        entry = next(
+            e for e in reversed(item.history)
+            if e.get('technique') == self.name)
+        if entry.get('figure') != self.name:
+            return
+        settings = {'source': self.missing_name}
+        if parameters and 'alpha' in parameters:
+            settings['alpha'] = parameters['alpha']
+        try:
+            plot: Any = chrisjen.library.borrow('idb_missing_differences')()
+            figure = plot.make_figure(item, **settings)
+        except Exception as error:  # noqa: BLE001
+            logger.warning(
+                f'the figure of {self.missing_name!r} was not drawn: {error}')
+            entry['figure_error'] = str(error)
+            return
+        item.figures[self.missing_name] = figure
+        entry['missing_figure'] = self.missing_name
+
+    def _visual_parameters(
+        self,
+        item: amos.Dataset,  # noqa: ARG002
+        parameters: Mapping[str, Any]) -> dict[str, Any]:  # noqa: ARG002
+        """Returns the parameters of `idb_confusion_matrices`.
+
+        Args:
+            item: the dataset, with the technique's table.
+            parameters: the parameters that the technique was applied with.
+
+        Returns:
+            The name of the table of agreement as "source".
+
+        """
+        return {'source': self.name}
 
 
 def appeals(
@@ -776,11 +1064,9 @@ def _records(
             '"docket_number" (or "docket_num_idb"), as fjc-idb names them'
         )
         raise KeyError(message)
-    codes = {label: code for code, label in fjc_idb.rules.circuits.items()}
-    circuits = table['circuit'].astype('string').str.strip()
     # fjc-idb's labels (such as "First Circuit") become the database's codes,
     # and codes stay as they are.
-    circuits = circuits.map(codes).fillna(circuits)
+    circuits = _circuit_codes(table)
     if 'docket_number' in table.columns:
         parts = table['docket_number'].astype('string').str.extract(
             r'(\d{2})-(\d+)')
@@ -877,3 +1163,634 @@ def _years(
     if stop_year is None and not years.empty:
         stop_year = min(int(years.max()) + 1, this_year)
     return _span(start_year, stop_year)
+
+
+def _agreement(
+    data: pd.DataFrame,
+    records: pd.DataFrame,
+    variables: Mapping[str, Any] | Sequence[str] | str | None) -> pd.DataFrame:
+    """Returns how well the variables of the data and the database agree.
+
+    Args:
+        data: the dockets that were matched.
+        records: the database's record of each of `data`, in the same order.
+        variables: the variables to compare (see `CompareWithIdb.compare`).
+
+    Raises:
+        KeyError: if a variable that was named is unknown, or a column of it
+            is missing.
+
+    Returns:
+        One row for each variable (see `CompareWithIdb`).
+
+    """
+    chosen, named = _chosen_variables(variables)
+    rows = []
+    for name, variable in chosen.items():
+        mine = _values(data, variable.data)
+        theirs = _values(records, variable.idb)
+        if mine is None or theirs is None:
+            if named:
+                side = 'data' if mine is None else 'database'
+                needed = (
+                    variable.data_text if mine is None else variable.idb_text)
+                message = (
+                    f'the {side} lacks the column of the variable {name!r} '
+                    f'({needed})'
+                )
+                raise KeyError(message)
+            continue
+        ours = mine.to_numpy(dtype = 'float64')
+        idb = theirs.to_numpy(dtype = 'float64')
+        known = ~np.isnan(ours) & ~np.isnan(idb)
+        counts = {
+            (a, b): int(((ours == a) & (idb == b) & known).sum())
+            for a in (0, 1) for b in (0, 1)}
+        compared = int(known.sum())
+        matches = counts[1, 1] + counts[0, 0]
+        rows.append({
+            'variable': name,
+            'data_column': variable.data_text,
+            'idb_column': variable.idb_text,
+            'dockets': len(ours),
+            'compared': compared,
+            'matches': matches,
+            'match_share': matches / compared if compared else np.nan,
+            'both_true': counts[1, 1],
+            'both_false': counts[0, 0],
+            'data_only': counts[1, 0],
+            'idb_only': counts[0, 1],
+            'data_missing': int(np.isnan(ours).sum()),
+            'idb_missing': int(np.isnan(idb).sum()),
+            'kappa': _kappa(counts, compared)})
+    columns = [
+        'variable', 'data_column', 'idb_column', 'dockets', 'compared',
+        'matches', 'match_share', 'both_true', 'both_false', 'data_only',
+        'idb_only', 'data_missing', 'idb_missing', 'kappa']
+    return pd.DataFrame(rows, columns = columns).set_index('variable')
+
+
+def _as_dockets(data: pd.DataFrame) -> pd.DataFrame:
+    """Returns a table of cases as a table of dockets.
+
+    Args:
+        data: cases (labeled by "case_id", or by their positions) or dockets
+            (which have "docket").
+
+    Raises:
+        KeyError: if `data` has no docket numbers.
+
+    Returns:
+        `data` itself if it has "docket", and otherwise a row for each
+            docket number of each case (see `cases_to_dockets`).
+
+    """
+    if _DOCKET_COLUMN in data.columns:
+        return data
+    if 'case_id' in data.columns:
+        data = data.set_index('case_id')
+    elif data.index.name != 'case_id':
+        data = data.rename_axis('case_id')
+    return shapers.CasesToDockets().shape(data)
+
+
+def _chosen_variables(
+    variables: Mapping[str, Any] | Sequence[str] | str | None,
+) -> tuple[dict[str, _Variable], bool]:
+    """Returns the variables to compare.
+
+    Args:
+        variables: names of `_VARIABLES`, a mapping of new names to a column
+            of the data and a column of the database, or `None`.
+
+    Raises:
+        KeyError: if a name is not one of `_VARIABLES`.
+        ValueError: if a new variable does not have two columns.
+
+    Returns:
+        The variables by name, and whether they were named (so that a
+            missing column is an error, rather than a reason to leave the
+            variable out).
+
+    """
+    if variables is None:
+        return dict(_VARIABLES), False
+    if isinstance(variables, Mapping):
+        chosen = {}
+        for name, columns in variables.items():
+            pair = utilities.listify(columns)
+            if len(pair) != 2:
+                message = (
+                    f'the variable {name!r} needs a column of the data and a '
+                    f'column of the database, not {columns!r}'
+                )
+                raise ValueError(message)
+            chosen[str(name)] = _Variable(*pair, *pair)
+        return chosen, True
+    names = utilities.listify(variables)
+    unknown = [name for name in names if name not in _VARIABLES]
+    if unknown:
+        message = (
+            f'the variables {unknown} are unknown (the known ones are '
+            f'{list(_VARIABLES)})'
+        )
+        raise KeyError(message)
+    return {name: _VARIABLES[name] for name in names}, True
+
+
+def _circuit_codes(table: pd.DataFrame) -> pd.Series:
+    """Returns the database's code for the circuit of each appeal.
+
+    Args:
+        table: the database's table of appeals, with "circuit" (fjc-idb's
+            label, such as "First Circuit", or the database's code).
+
+    Returns:
+        The code of each appeal (such as "1", or "0" for the D.C. Circuit).
+
+    """
+    codes = {label: code for code, label in fjc_idb.rules.circuits.items()}
+    circuits = table['circuit'].astype('string').str.strip()
+    return circuits.map(codes).fillna(circuits)
+
+
+def _codes(values: pd.Series) -> pd.Series:
+    """Returns a column of the database's codes as text.
+
+    Args:
+        values: codes, as numbers or text.
+
+    Returns:
+        The codes as text without spaces (and without ".0" after whole
+            numbers), with missing values (and the database's "-8", for
+            missing) kept missing.
+
+    """
+    texts = values.astype('string').str.strip().str.replace(
+        r'\.0$', '', regex = True)
+    return texts.mask(texts == '-8')
+
+
+def _data_us_appellant(data: pd.DataFrame) -> pd.Series | None:
+    """Returns whether the United States brought each appeal of the data.
+
+    Args:
+        data: the dockets.
+
+    Returns:
+        1 if a party is the United States and the appellant, and otherwise
+            0, or `None` if `data` lacks the columns of the parties.
+
+    """
+    sides = ('party1', 'party2')
+    needed = [
+        f'{side}_{role}' for side in sides
+        for role in ('united_states', 'appellant')]
+    if any(column not in data.columns for column in needed):
+        return None
+    brought = pd.Series(False, index = data.index)
+    for side in sides:
+        brought |= (
+            cases.column_as_flags(data, f'{side}_united_states')
+            & cases.column_as_flags(data, f'{side}_appellant'))
+    return brought.astype('float64')
+
+
+def _flags(values: pd.Series) -> pd.Series:
+    """Returns a column as 1s and 0s, with missing values kept missing.
+
+    Args:
+        values: true-or-false values, counts (which are true if more than 0),
+            or text such as "true", "false", "1", or "0".
+
+    Returns:
+        The values as decimals: 1.0, 0.0, or NaN.
+
+    """
+    def flag(value: Any) -> float:
+        """Returns one value as 1.0, 0.0, or NaN.
+
+        Args:
+            value: the value.
+
+        Returns:
+            1.0 if it is true (or more than 0), 0.0 if it is false (or 0),
+                and NaN if it is missing or neither.
+
+        """
+        if value is None or (not isinstance(value, str) and pd.isna(value)):
+            return np.nan
+        if isinstance(value, str):
+            text = value.strip().lower()
+            if text in _TRUE_TEXT:
+                return 1.0
+            if text in _FALSE_TEXT:
+                return 0.0
+            try:
+                return float(float(text) > 0)
+            except ValueError:
+                return np.nan
+        try:
+            return float(float(value) > 0)
+        except (TypeError, ValueError):
+            return np.nan
+
+    return pd.Series(
+        [flag(value) for value in values.tolist()], index = values.index,
+        dtype = 'float64')
+
+
+def _idb_criminal(table: pd.DataFrame) -> pd.Series | None:
+    """Returns whether each appeal of the database is a criminal appeal.
+
+    Args:
+        table: the database's table of appeals.
+
+    Returns:
+        1 if its "appeal_type" is one of fjc-idb's criminal appeal types, 0
+            if it is another type, and missing if it is unknown, or `None`
+            if `table` lacks "appeal_type".
+
+    """
+    if 'appeal_type' not in table.columns:
+        return None
+    codes = _codes(table['appeal_type'])
+    criminal = codes.isin(fjc_idb.rules.criminal_apptypes).astype('float64')
+    return criminal.mask(codes.isna())
+
+
+def _idb_civil(table: pd.DataFrame) -> pd.Series | None:
+    """Returns whether each appeal of the database is not a criminal appeal.
+
+    Args:
+        table: the database's table of appeals.
+
+    Returns:
+        The reverse of `_idb_criminal`, or `None` if `table` lacks
+            "appeal_type".
+
+    """
+    criminal = _idb_criminal(table)
+    return None if criminal is None else 1 - criminal
+
+
+def _idb_reversal(table: pd.DataFrame) -> pd.Series | None:
+    """Returns whether each appeal of the database was reversed or remanded.
+
+    It is what courtpy's "outcome_reversal" means: the court of appeals
+    reversed, vacated, or remanded (in whole or in part).
+
+    Args:
+        table: the database's table of appeals.
+
+    Returns:
+        1 if its "disposition" is reversed, affirmed and reversed in part, or
+            remanded, 0 if it is another disposition on the merits, and
+            missing if it was not decided on the merits, or `None` if
+            `table` lacks "disposition".
+
+    """
+    if 'disposition' not in table.columns:
+        return None
+    codes = _codes(table['disposition'])
+    rules = fjc_idb.rules.disposition_columns
+    reversed_codes = [
+        *rules['reversed_in_whole_or_part'], *rules['remanded_only']]
+    reversal = codes.isin(reversed_codes).astype('float64')
+    return reversal.mask(codes.isna())
+
+
+def _kappa(counts: Mapping[tuple[int, int], int], compared: int) -> float:
+    """Returns Cohen's kappa for two true-or-false columns.
+
+    Args:
+        counts: the number of rows with each pair of values (the data's and
+            the database's).
+        compared: the number of rows with both values.
+
+    Returns:
+        The agreement beyond what chance would give, from -1 to 1, or NaN if
+            there are no rows or both columns have one value throughout.
+
+    """
+    if not compared:
+        return np.nan
+    observed = (counts[1, 1] + counts[0, 0]) / compared
+    ours = (counts[1, 1] + counts[1, 0]) / compared
+    theirs = (counts[1, 1] + counts[0, 1]) / compared
+    expected = ours * theirs + (1 - ours) * (1 - theirs)
+    if expected >= 1:
+        return np.nan
+    return (observed - expected) / (1 - expected)
+
+
+def _load_appeals(
+    merger: AddIdb,
+    data: pd.DataFrame,
+    source: Any,
+    *,
+    start_year: int | None,
+    stop_year: int | None,
+    district: bool | str,
+    folder: pathlib.Path | str | None,
+    download: bool | str,
+    dates: Sequence[str] | str,
+    reader: Mapping[str, Any] | None) -> tuple[pd.DataFrame, str]:
+    """Returns the database's table of appeals for a table of cases.
+
+    Args:
+        merger: the merger whose clerk finds files and that reads `source`.
+        data: the cases, whose dates set the years without a `source`.
+        source: the database's table of appeals, the path of a file of it,
+            or `None` to make it from the yearly files (see `appeals`).
+        start_year: the first year to use, without a `source`, or `None` for
+            the year of the earliest decision.
+        stop_year: the last year to use, without a `source`, or `None` for
+            the year after the latest decision.
+        district: whether to add the district courts' records, without a
+            `source`.
+        folder: the folder of the yearly files, or `None` for the default.
+        download: whether to download the yearly files that are missing.
+        dates: the columns of `data` with the date of each decision.
+        reader: parameters for reading `source`, or `None`.
+
+    Returns:
+        The table, and a description of where it came from.
+
+    """
+    if source is None:
+        start, stop = _years(data, start_year, stop_year, dates)
+        with_district = utilities.to_bool(district)
+        table = appeals(
+            start,
+            stop,
+            utilities.locate(folder, merger.clerk) if folder else None,
+            district = with_district,
+            download = utilities.to_bool(download))
+        described = f'FJC IDB appeals, {start}-{stop}' + (
+            ', with district records' if with_district else '')
+        return table, described
+    table = merger.read(source, **dict(reader or {}))
+    described = (
+        str(source) if isinstance(source, str | pathlib.Path)
+        else type(source).__name__)
+    return table, described
+
+
+def _missing(
+    table: pd.DataFrame,
+    report: Sequence[str] | str | None,
+    by: str) -> pd.DataFrame:
+    """Returns how the appeals that the data has differ from those it lacks.
+
+    Args:
+        table: the database's appeals that the data could have, with
+            "_in_data" (whether the data has each).
+        report: names of `_VARIABLES` or columns of `table`, or `None` for
+            all of `_VARIABLES`.
+        by: "circuit", "district" (for "district_of_origin"), or another
+            column of `table`, for the groups.
+
+    Raises:
+        KeyError: if `by` or a variable of `report` is not a column of
+            `table`.
+
+    Returns:
+        One row for each variable in each group, "All" first (see
+            `CompareWithIdb`).
+
+    """
+    column = _BY.get(by, by)
+    if column not in table.columns:
+        message = f'the database lacks the column {column!r} to group by'
+        raise KeyError(message)
+    named = report is not None
+    names = list(_VARIABLES) if report is None else utilities.listify(report)
+    flags: dict[str, pd.Series] = {}
+    for name in names:
+        variable = _VARIABLES.get(name)
+        values = _values(table, variable.idb if variable else name)
+        if values is None:
+            if named:
+                message = f'the database lacks the variable {name!r}'
+                raise KeyError(message)
+            continue
+        flags[name] = values
+    groups = table[column].astype('string').fillna(f'No {by}')
+    order = _group_order(groups, by)
+    frame = pd.DataFrame({
+        'group': pd.concat([pd.Series('All', index = table.index), groups]),
+        'in_data': pd.concat([table['_in_data']] * 2).astype(bool)})
+    totals = frame.groupby('group', sort = False)['in_data'].agg(
+        ['size', 'sum']).astype('int64')
+    sizes = totals['size'].to_dict()
+    helds = totals['sum'].to_dict()
+    rows = []
+    for name, values in flags.items():
+        frame['value'] = pd.concat([values, values]).to_numpy()
+        known = frame.dropna(subset = ['value'])
+        sums = known.pivot_table(
+            index = 'group', columns = 'in_data', values = 'value',
+            aggfunc = ['size', 'sum'], fill_value = 0)
+        for group in order:
+            size, held = int(sizes.get(group, 0)), int(helds.get(group, 0))
+            n_in, x_in, n_out, x_out = (
+                _cell(sums, group, kind, side)
+                for side in (True, False) for kind in ('size', 'sum'))
+            share_in = x_in / n_in if n_in else np.nan
+            share_out = x_out / n_out if n_out else np.nan
+            rows.append({
+                'group': group,
+                'variable': name,
+                'appeals': int(size),
+                'in_data': int(held),
+                'coverage': held / size if size else np.nan,
+                'known_in_data': n_in,
+                'known_missing': n_out,
+                'share_in_data': share_in,
+                'share_missing': share_out,
+                'difference': share_in - share_out,
+                'p_value': _p_value(x_in, n_in, x_out, n_out)})
+    columns = [
+        'group', 'variable', 'appeals', 'in_data', 'coverage',
+        'known_in_data', 'known_missing', 'share_in_data', 'share_missing',
+        'difference', 'p_value']
+    return pd.DataFrame(rows, columns = columns)
+
+
+def _cell(sums: pd.DataFrame, group: str, kind: str, side: bool) -> int:
+    """Returns one count of a table of counts by group and side.
+
+    Args:
+        sums: the number ("size") and number true ("sum") of the known values
+            of each group (rows) and side (whether the data has the appeal).
+        group: the group.
+        kind: "size" or "sum".
+        side: whether the data has the appeals.
+
+    Returns:
+        The count, or 0 if the table lacks it.
+
+    """
+    if (kind, side) not in sums.columns:
+        return 0
+    return int(sums[(kind, side)].to_dict().get(group, 0))
+
+
+def _group_order(groups: pd.Series, by: str) -> list[str]:
+    """Returns the groups of the second table in the order to report them.
+
+    Args:
+        groups: the group of each appeal.
+        by: what the groups are.
+
+    Returns:
+        "All", and then the circuits in their order (for "circuit") or the
+            other groups in alphabetical order.
+
+    """
+    found = set(groups.dropna().unique())
+    if by == 'circuit':
+        labels = [
+            label for code, label in fjc_idb.rules.circuits.items()
+            if code != '-8']
+        ordered = [label for label in labels if label in found]
+        ordered += sorted(found - set(ordered))
+    else:
+        ordered = sorted(found)
+    return ['All', *ordered]
+
+
+def _p_value(x_in: int, n_in: int, x_out: int, n_out: int) -> float:
+    """Returns the p value of a two-proportion z test.
+
+    Args:
+        x_in: the number true among the appeals that the data has.
+        n_in: the number of those appeals with a known value.
+        x_out: the number true among the appeals that the data lacks.
+        n_out: the number of those appeals with a known value.
+
+    Returns:
+        The two-sided p value that the shares are the same, or NaN if a
+            side has no appeals or every value is the same.
+
+    """
+    if not n_in or not n_out:
+        return np.nan
+    pooled = (x_in + x_out) / (n_in + n_out)
+    error = math.sqrt(pooled * (1 - pooled) * (1 / n_in + 1 / n_out))
+    if error == 0:
+        return np.nan
+    z = (x_in / n_in - x_out / n_out) / error
+    return math.erfc(abs(z) / math.sqrt(2))
+
+
+def _universe(
+    data: pd.DataFrame,
+    table: pd.DataFrame,
+    merits_only: bool,
+    courts: Sequence[str],
+    dates: Sequence[str]) -> np.ndarray:
+    """Returns which appeals of the database the data could have.
+
+    Args:
+        data: the dockets.
+        table: the database's table of appeals.
+        merits_only: whether to keep only the appeals decided on the merits
+            (those with a "disposition").
+        courts: the columns of `data` with the court of each case.
+        dates: the columns of `data` with the date of each decision.
+
+    Raises:
+        KeyError: if `merits_only` is true and `table` lacks "disposition".
+
+    Returns:
+        Whether each appeal is in one of the data's circuits, was judged
+            between the data's first and last decisions, and (with
+            `merits_only`) was decided on the merits.
+
+    """
+    circuits = {code for code in _circuits(data, courts) if code is not None}
+    keep = _circuit_codes(table).isin(circuits).fillna(False).to_numpy(
+        bool, copy = True)
+    decided = pd.Series(_decided(data, dates), dtype = 'datetime64[ns]')
+    if decided.notna().any() and 'judgment_date' in table.columns:
+        judged = pd.to_datetime(
+            table['judgment_date'], errors = 'coerce', format = 'ISO8601')
+        keep = keep & judged.between(
+            decided.min(), decided.max()).to_numpy(bool)
+    if merits_only:
+        if 'disposition' not in table.columns:
+            message = (
+                'the table of appeals needs "disposition" to keep the '
+                'appeals decided on the merits (or set "merits_only" to '
+                'false)'
+            )
+            raise KeyError(message)
+        keep = keep & _codes(table['disposition']).notna().to_numpy(bool)
+    return keep
+
+
+def _values(
+    frame: pd.DataFrame,
+    spec: str | Callable[[pd.DataFrame], pd.Series | None],
+) -> pd.Series | None:
+    """Returns one side of a variable as 1s and 0s.
+
+    Args:
+        frame: the data or the database's records.
+        spec: a column of `frame`, or a function that makes the values.
+
+    Returns:
+        The values (see `_flags`), or `None` if `frame` lacks what they need.
+
+    """
+    if callable(spec):
+        values = spec(frame)
+        return None if values is None else _flags(values)
+    if spec not in frame.columns:
+        return None
+    return _flags(frame[spec])
+
+
+@dataclasses.dataclass(frozen = True)
+class _Variable:
+    """A true-or-false variable that the data and the database both have.
+
+    Attributes:
+        data: the column of the data, or a function that makes its values.
+        idb: the column of the database, or a function that makes its values.
+        data_text: what the data's values are, for the table.
+        idb_text: what the database's values are, for the table.
+
+    """
+
+    data: str | Callable[[pd.DataFrame], pd.Series | None]
+    idb: str | Callable[[pd.DataFrame], pd.Series | None]
+    data_text: str
+    idb_text: str
+
+
+_BY: dict[str, str] = {'district': 'district_of_origin'}
+_FALSE_TEXT: frozenset[str] = frozenset({'false', 'f', 'no', 'n'})
+_TRUE_TEXT: frozenset[str] = frozenset({'true', 't', 'yes', 'y'})
+_VARIABLES: dict[str, _Variable] = {
+    'criminal': _Variable(
+        'type_criminal', _idb_criminal, 'type_criminal',
+        'appeal_type (criminal)'),
+    'civil': _Variable(
+        'type_civil', _idb_civil, 'type_civil', 'appeal_type (not criminal)'),
+    'reversal': _Variable(
+        'outcome_reversal', _idb_reversal, 'outcome_reversal',
+        'disposition (reversed or remanded)'),
+    'published': _Variable('published', 'published', 'published', 'published'),
+    'dissent': _Variable('dissents', 'dissents', 'dissents', 'dissents'),
+    'us_appellant': _Variable(
+        _data_us_appellant, 'us_appellant',
+        'party{1,2}_united_states & party{1,2}_appellant', 'us_appellant'),
+    'pro_se_appellant': _Variable(
+        'pro_se_appellant', 'pro_se_appellant', 'pro_se_appellant',
+        'pro_se_appellant'),
+    'prisoner_appeal': _Variable(
+        'prisoner_appeal', 'prisoner_appeal', 'prisoner_appeal',
+        'prisoner_appeal')}

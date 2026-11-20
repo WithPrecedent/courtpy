@@ -312,3 +312,119 @@ def test_load_and_download_idb(monkeypatch: pytest.MonkeyPatch, tmp_path: pathli
         ('download', 2017, None, tmp_path, {'district': False, 'overwrite': True}),
         ('appeals', 2017, None, tmp_path, {
             'district': False, 'download': False, 'fix_city_spellings': True})]
+
+
+# Invented merits appeals for `compare_with_idb`: the First Circuit's 17-1237
+# and the Second Circuit's 18-0001 are missing from the cases below, 18-0004
+# was not decided on the merits, and 18-0005 was judged after every case.
+COMPARED = pd.DataFrame({
+    'circuit': ['First Circuit'] * 4 + ['Second Circuit'] * 5,
+    'docket_number': [
+        'No. 17-1234', 'No. 17-1235', 'No. 17-1236', 'No. 17-1237',
+        'No. 18-1', 'No. 18-2', 'No. 18-3', 'No. 18-4', 'No. 18-5'],
+    'docket_date': pd.to_datetime(['2017-01-01'] * 9),
+    'judgment_date': pd.to_datetime([
+        '2018-05-01', '2018-06-01', '2018-07-01', '2018-08-01', '2018-05-01',
+        '2018-06-01', '2018-12-01', '2018-06-01', '2019-02-01']),
+    'appeal_type': ['19', '4', '19', '3', '21', '4', '4', '4', '4'],
+    'disposition': ['1', '2', '1', '6', '1', '2', '3', None, '2'],
+    'published': [1, 0, 0, 1, 0, 1, 1, 0, 0],
+    'dissents': [0, 1, 0, 0, 0, 0, 0, 0, 0],
+    'district_of_origin': ['D. Mass.'] * 4 + ['S.D.N.Y.'] * 5})
+
+
+def compared_cases() -> courtpy.Cases:
+    """Returns cases to compare with `COMPARED`."""
+    return courtpy.Cases.create(pd.DataFrame({
+        'case_id': ['a', 'b', 'c'],
+        'court': ['ca1', 'ca1', 'ca2'],
+        'docket_number': ['17-1234, 17-1235', '17-1236', '18-2, 18-3'],
+        'date_filed': ['2018-05-01', '2018-07-01', '2018-12-01'],
+        'type_criminal': [True, True, False],
+        'type_civil': [False, False, True],
+        'outcome_reversal': [False, True, True],
+        'published': ['True', 'False', None]}))
+
+
+def test_compare_with_idb_is_a_describer() -> None:
+    assert amos.library.classify('compare_with_idb') == 'describer'
+
+
+def test_compare_with_idb_agreement() -> None:
+    cases = compared_cases()
+    result = idb.CompareWithIdb().apply(cases, source = COMPARED)
+    # The cases stay cases, though they are compared as dockets.
+    assert result is cases and isinstance(result, courtpy.Cases)
+    table = result.tables['compare_with_idb']
+    # The data lacks "dissents" and the parties' columns, so those are left out.
+    assert list(table.index) == ['criminal', 'civil', 'reversal', 'published']
+    criminal = table.loc['criminal']
+    # 17-1235 is criminal in the data and civil in the database.
+    assert (criminal['dockets'], criminal['compared'], criminal['matches']) == (5, 5, 4)
+    assert (criminal['data_only'], criminal['idb_only']) == (1, 0)
+    reversal = table.loc['reversal']
+    # 17-1234 (affirmed) is no reversal in either, and 17-1235 (reversed) is
+    # no reversal in the data; 17-1236 is affirmed but a reversal in the
+    # data; 18-2 (reversed) and 18-3 (affirmed and reversed in part) are both.
+    assert (reversal['both_true'], reversal['both_false']) == (2, 1)
+    assert (reversal['data_only'], reversal['idb_only']) == (1, 1)
+    assert reversal['match_share'] == pytest.approx(0.6)
+    published = table.loc['published']
+    # Case c's two dockets have no value, so they are not compared.
+    assert (published['compared'], published['data_missing']) == (3, 2)
+    assert published['kappa'] == pytest.approx(0.4)
+    # Cohen's kappa of criminal: 0.8 agree, and 0.48 would by chance.
+    assert criminal['kappa'] == pytest.approx((0.8 - 0.48) / 0.52)
+    record = result.history[-1]
+    assert (record['dockets'], record['matched'], record['idb_appeals'], record['in_data']) == (
+        5, 5, 7, 5)
+
+
+def test_compare_with_idb_missing() -> None:
+    result = idb.CompareWithIdb().apply(
+        compared_cases(), source = COMPARED, report = ['reversal', 'published'])
+    table = result.tables['compare_with_idb_missing']
+    assert list(table['group'].unique()) == ['All', 'First Circuit', 'Second Circuit']
+    row = table.set_index(['group', 'variable']).loc['All', 'reversal']
+    # Seven merits appeals are in the cases' circuits and dates, and the cases
+    # have five of them.
+    assert (row['appeals'], row['in_data']) == (7, 5)
+    assert row['coverage'] == pytest.approx(5 / 7)
+    # The missing appeals (17-1237, remanded, and 18-1, affirmed) are half
+    # reversals, and three of the five that the data has are.
+    assert row['share_in_data'] == pytest.approx(0.6)
+    assert row['share_missing'] == pytest.approx(0.5)
+    assert row['difference'] == pytest.approx(0.1)
+    assert 0 < row['p_value'] <= 1
+    # Every appeal the database has, decided on the merits or not.
+    every = idb.CompareWithIdb().apply(
+        compared_cases(), source = COMPARED, merits_only = False, by = 'district')
+    table = every.tables['compare_with_idb_missing']
+    assert list(table['group'].unique()) == ['All', 'D. Mass.', 'S.D.N.Y.']
+    assert table.set_index(['group', 'variable']).loc[('All', 'criminal'), 'appeals'] == 8
+
+
+def test_compare_with_idb_variables() -> None:
+    cases = compared_cases()
+    table = idb.CompareWithIdb().describe(
+        cases, source = COMPARED, variables = {'criminal_code': 'type_criminal, appeal_type'})
+    assert list(table.index) == ['criminal_code']
+    with pytest.raises(KeyError, match = 'dissent'):
+        idb.CompareWithIdb().describe(cases, source = COMPARED, variables = 'dissent')
+    with pytest.raises(KeyError, match = 'unknown'):
+        idb.CompareWithIdb().describe(cases, source = COMPARED, variables = 'nope')
+    with pytest.raises(KeyError, match = 'merits_only'):
+        idb.CompareWithIdb().describe(cases, source = COMPARED.drop(columns = 'disposition'))
+
+
+def test_compare_with_idb_figures() -> None:
+    pytest.importorskip('matplotlib')
+    result = idb.CompareWithIdb().apply(compared_cases(), source = COMPARED, visualize = True)
+    record = result.history[-1]
+    assert (record['figure'], record['missing_figure']) == (
+        'compare_with_idb', 'compare_with_idb_missing')
+    matrices = result.figures['compare_with_idb']
+    assert [a.get_title() for a in matrices.axes if a.get_visible()][0] == 'criminal (κ = 0.62)'
+    differences = result.figures['compare_with_idb_missing']
+    labels = [t.get_text() for t in differences.axes[0].get_yticklabels()]
+    assert labels[0] == 'All (71% in data)'
