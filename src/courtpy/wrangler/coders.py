@@ -27,6 +27,8 @@ Contents:
     TidyCases: gives columns of booleans or whole numbers with missing values
         types that allow them.
     code: applies coders (or other `amos` techniques) to parsed cases.
+    _UNITED_STATES_FIRST: the pattern of a party's text that begins with the
+        United States.
 
 """
 
@@ -34,6 +36,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
@@ -50,6 +53,8 @@ _OPPOSITES: tuple[tuple[str, str], ...] = (
     ('plaintiff', 'defendant'))
 _SIDES: tuple[tuple[str, str], ...] = (
     ('party1', 'party2'), ('party2', 'party1'))
+_UNITED_STATES_FIRST: re.Pattern[str] = re.compile(
+    r'\W*(?:THE\s+)?(?:UNITED\s+STATES|U\.\s?S\.|USA\b)', re.IGNORECASE)
 # The kinds of rules that write several values in one cell.
 _SEVERAL_KINDS: tuple[str, ...] = ('names', 'matches', 'categories')
 _SPLIT_INTO: tuple[str, ...] = ('lists', 'columns')
@@ -65,10 +70,20 @@ class CodeParties(amos.Munger):
     appellant (and so on for petitioners and respondents, and for plaintiffs
     and defendants).
 
-    It also adds "party1_appealing" and "party2_appealing" (the party is an
-    appellant or petitioner and not also an appellee or respondent) and
-    "party1_defending" and "party2_defending" (the reverse). Both are false
-    for a party whose role is unknown.
+    It also adds "party1_appealing" and "party2_appealing" (the party brought
+    the appeal) and "party1_defending" and "party2_defending" (the other
+    party did). Each party's own caption decides first: a party is appealing
+    if it is an appellant and not an appellee, and defending if the reverse.
+    Only a party named neither appellant nor appellee is judged by whether it
+    is a petitioner or respondent, since a habeas petitioner who won below is
+    the appellee ("Petitioner, Appellee"). A party whose own caption decides
+    nothing, or names it both (as a caption that joins several appeals can:
+    "Joseph Prochilo, Defendant, Appellee; United States of America,
+    Appellant, v. Elvis Guerrero, Defendant, Appellee"), takes the opposite
+    of the other party's, if the other party's caption decides it. If both
+    captions decide and agree, both are kept, and if they disagree (both
+    appellants, as in a cross-appeal), both are unknown. Both are false for a
+    party whose role is unknown.
 
     Needs the columns "party1_{role}" and "party2_{role}" for each role:
     appellant, appellee, petitioner, respondent, plaintiff, and defendant.
@@ -96,11 +111,21 @@ class CodeParties(amos.Munger):
                     original[f'{side}_{first}'] | original[f'{other}_{second}'])
                 data[f'{side}_{second}'] = (
                     original[f'{side}_{second}'] | original[f'{other}_{first}'])
-        for side, _ in _SIDES:
-            appealing = data[f'{side}_appellant'] | data[f'{side}_petitioner']
-            defending = data[f'{side}_appellee'] | data[f'{side}_respondent']
-            data[f'{side}_appealing'] = appealing & ~defending
-            data[f'{side}_defending'] = defending & ~appealing
+        own = {side: _own_direction(original, side) for side, _ in _SIDES}
+        for side, other in _SIDES:
+            mine_appealing, mine_defending = own[side]
+            other_appealing, other_defending = own[other]
+            mine_known = mine_appealing | mine_defending
+            other_known = other_appealing | other_defending
+            agree = (
+                (mine_appealing & other_defending)
+                | (mine_defending & other_appealing))
+            data[f'{side}_appealing'] = (
+                (mine_appealing & (agree | ~other_known))
+                | (~mine_known & other_defending))
+            data[f'{side}_defending'] = (
+                (mine_defending & (agree | ~other_known))
+                | (~mine_known & other_appealing))
         return data
 
 
@@ -112,7 +137,14 @@ class CodeCaseType(amos.Munger):
     there is a sign of a criminal case: a criminal docket number or history,
     a United States Attorney as counsel, or a criminal issue in the opinion
     (any "criminal_..." column). The United States is then the prosecution,
-    and the other party is the criminal defendant. Every other case is civil
+    and the other party is the criminal defendant. When both parties' text
+    names the United States (as a caption that joins several appeals can:
+    "Joseph Prochilo, Defendant, Appellee; United States of America,
+    Appellant, v. Elvis Guerrero, Defendant, Appellee"), the party whose text
+    ("party1" or "party2") begins with the United States is the prosecution,
+    if only one does, and otherwise the party that is a defendant and not a
+    plaintiff, if only one is, is the criminal defendant.
+    Every other case is civil
     ("type_civil"), and its plaintiffs and defendants are coded as civil
     plaintiffs and defendants.
 
@@ -183,14 +215,12 @@ class CodeCaseType(amos.Munger):
             for column in flags:
                 found |= cases.column_as_flags(data, column)
             data[f'type_{prefix}'] = found
+        united_states = _prosecuting_sides(data)
         for side, other in _SIDES:
-            prosecution = criminal & cases.column_as_flags(
-                data, f'{side}_united_states')
+            prosecution = criminal & united_states[side]
             data[f'{side}_prosecution'] = prosecution
             data[f'{side}_criminal_defendant'] = (
-                criminal
-                & cases.column_as_flags(data, f'{other}_united_states')
-                & ~prosecution)
+                criminal & united_states[other] & ~prosecution)
             data[f'{side}_civil_plaintiff'] = ~criminal & (
                 cases.column_as_flags(data, f'{side}_plaintiff')
                 | cases.column_as_flags(data, f'{other}_defendant'))
@@ -518,6 +548,85 @@ def _several_values() -> tuple[str, ...]:
         if name == 'federal' or name.endswith('header')))
     return tuple(dict.fromkeys(
         n for r in book if r.kind in _SEVERAL_KINDS for n in r.names))
+
+
+def _own_direction(
+    roles: Mapping[str, pd.Series],
+    side: str) -> tuple[pd.Series, pd.Series]:
+    """Returns whether a party's own caption says it appealed or defended.
+
+    The party's appellant and appellee flags decide, unless it has neither,
+    in which case its petitioner and respondent flags do. A party with both
+    flags of the pair that decides is neither appealing nor defending.
+
+    Args:
+        roles: the parties' flags as parsed, by column name (such as
+            "party1_appellant").
+        side: "party1" or "party2".
+
+    Returns:
+        Whether the party is appealing, and whether it is defending, by its
+            own caption alone.
+
+    """
+    appellant = roles[f'{side}_appellant']
+    appellee = roles[f'{side}_appellee']
+    appellate = appellant | appellee
+    appealing = appellant.where(appellate, roles[f'{side}_petitioner'])
+    defending = appellee.where(appellate, roles[f'{side}_respondent'])
+    return appealing & ~defending, defending & ~appealing
+
+
+def _prosecuting_sides(data: pd.DataFrame) -> dict[str, pd.Series]:
+    """Returns which party is the United States, for finding the prosecution.
+
+    A party is the United States if its text names it. If both parties' text
+    does, as a caption that joins several appeals can, the party whose text
+    begins with the United States is, if only one does ("party1" and
+    "party2" are the parties' text). Otherwise, if only one of them is a
+    defendant and not a plaintiff, that one is not.
+
+    Args:
+        data: the cases, with "party1_united_states", "party2_united_states",
+            and the parties' plaintiff and defendant flags.
+
+    Returns:
+        Whether each party is the United States, by "party1" and "party2".
+
+    """
+    named = {
+        side: cases.column_as_flags(data, f'{side}_united_states')
+        for side, _ in _SIDES}
+    both = named['party1'] & named['party2']
+    defendant = {
+        side: cases.column_as_flags(data, f'{side}_defendant')
+        & ~cases.column_as_flags(data, f'{side}_plaintiff')
+        for side, _ in _SIDES}
+    first = {side: _begins_with_united_states(data, side) for side, _ in _SIDES}
+    by_text = first['party1'] ^ first['party2']
+    by_role = ~by_text & (defendant['party1'] ^ defendant['party2'])
+    return {
+        side: named[side] & ~(
+            both & ((by_text & ~first[side]) | (by_role & defendant[side])))
+        for side, _ in _SIDES}
+
+
+def _begins_with_united_states(data: pd.DataFrame, side: str) -> pd.Series:
+    """Returns whether a party's text begins with the United States.
+
+    Args:
+        data: the cases.
+        side: "party1" or "party2", the column of the party's text.
+
+    Returns:
+        Whether the text begins with "United States" (or "U.S." or "USA"),
+            or false values if `data` has no such column.
+
+    """
+    if side not in data.columns:
+        return pd.Series(False, index = data.index)
+    text = data[side].astype('string').fillna('')
+    return text.str.match(_UNITED_STATES_FIRST).astype(bool)
 
 
 def _has_text(data: pd.DataFrame, column: str) -> pd.Series:

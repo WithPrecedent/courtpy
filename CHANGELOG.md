@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.5.2
+
+### Changed
+
+* The README's table of techniques lists the artist's plots after the
+  critic's checks and inferer.
+* CITATION.cff and the README's citation give version 0.5.2.
+
+### Fixed
+
+* `code_parties` now decides who brought an appeal from each party's own
+  caption first. A party whose caption names it both appellant and appellee
+  (as a caption that joins several appeals does: "Joseph Prochilo,
+  Defendant, Appellee; United States of America, Appellant, v. Elvis
+  Guerrero, Defendant, Appellee") takes the opposite of the other party's
+  role. Before, both parties were left unknown. A party named appellant or
+  appellee is no longer judged by "Petitioner" or "Respondent", so "George
+  H. Bennett, Petitioner, Appellee" is the appellee. Two appellants (a
+  cross-appeal) are still unknown.
+* `code_case_type` finds the prosecution when both parties' text names the
+  United States, as a caption that joins several appeals can. The party
+  whose text begins with the United States is the prosecution, and
+  otherwise the party that is a defendant and not a plaintiff is the
+  criminal defendant. Before, neither was the criminal defendant, so
+  `appeal_by_defendant` was missing.
+* "Cross Appellee" and "Cross Appellant" written with a space, an en dash,
+  or an em dash are cross roles. They are no longer read as plain appellees
+  and appellants as well.
+* Recoding the 352,343 federal appellate decisions of 2010–2026 in
+  CourtListener this way found the side of 1,979 criminal appeals that had
+  none: 135 brought by the government and 1,844 by the defendant. It
+  changed no side that had been found. Compared with the Integrated
+  Database (`compare_with_idb`), the share of government appeals found rose
+  from 78% to 85%.
+
 ## 0.5.1
 
 ### Added

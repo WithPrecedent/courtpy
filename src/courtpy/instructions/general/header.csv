@@ -16,20 +16,20 @@ disposition,disposition_enforce,flags,Order of the National Labor Relations Boar
 docket_number,docket_numbers,matches,\d+-\d+,,"ignorecase, dotall",; ,Each docket number
 "docket_number, history",docket_criminal,flags,(?<![A-Z])CR(?:IM(?:INAL)?)?\.?(?:\s*(?:NO|ACTION|CASE)\.?)*[\s:-]*\d,,ignorecase,,"A criminal docket number (""06-CR-126"", ""4:07CR00123"", or ""Criminal Action No. 07-123"")"
 "docket_number, history",docket_civil,flags,(?<![A-Z])C(?:IV|V)(?:IL)?\.?(?:\s*(?:NO|ACTION|CASE)\.?)*[\s:-]*\d,,ignorecase,,"A civil docket number (""08-cv-1478"", ""CIV. 05-1234"", or ""Civil Action No. 05-123"")"
-party1,party1_cross_appellant,flags,CROSS-APPELLANT,,"ignorecase, dotall",,
-party1,party1_cross_appellee,flags,CROSS-APPELLEE,,"ignorecase, dotall",,
-party1,party1_appellant,flags,(?<!CROSS-)APPELLANT,,"ignorecase, dotall",,
-party1,party1_appellee,flags,(?<!CROSS-)APPELLEE,,"ignorecase, dotall",,
+party1,party1_cross_appellant,flags,CROSS[-–— ]APPELLANT,,"ignorecase, dotall",,
+party1,party1_cross_appellee,flags,CROSS[-–— ]APPELLEE,,"ignorecase, dotall",,
+party1,party1_appellant,flags,(?<!CROSS-)(?<!CROSS )(?<!CROSS–)(?<!CROSS—)APPELLANT,,"ignorecase, dotall",,
+party1,party1_appellee,flags,(?<!CROSS-)(?<!CROSS )(?<!CROSS–)(?<!CROSS—)APPELLEE,,"ignorecase, dotall",,
 party1,party1_plaintiff,flags,PLAINTIF,,"ignorecase, dotall",,
 party1,party1_defendant,flags,DEFENDANT,,"ignorecase, dotall",,
 party1,party1_petitioner,flags,PETITIONER,,"ignorecase, dotall",,
 party1,party1_respondent,flags,RESPONDENT,,"ignorecase, dotall",,
 party1,party1_intervenor,flags,INTERVEN,,"ignorecase, dotall",,
 party1,party1_united_states,flags,"(?:^|[;,(&]|\bAND\b)\s*(?:THE\s+)?(?:UNITED\s+STATES(?:\s+OF\s+AMERICA)?|U\.\s?S\.(?:\s?A\.)?|USA)(?=\s*(?:[,;:)]|$)|\s+(?:EX\s+REL|ON\s+BEHALF|FOR\s+THE\s+USE)\b)",,ignorecase,,"The United States itself as a party (""UNITED STATES OF AMERICA"", ""U.S."", or ""USA"", alone or as a relator's or user's plaintiff), not a company or official with ""United States"" in its name"
-party2,party2_cross_appellant,flags,CROSS-APPELLANT,,"ignorecase, dotall",,
-party2,party2_cross_appellee,flags,CROSS-APPELLEE,,"ignorecase, dotall",,
-party2,party2_appellant,flags,(?<!CROSS-)APPELLANT,,"ignorecase, dotall",,
-party2,party2_appellee,flags,(?<!CROSS-)APPELLEE,,"ignorecase, dotall",,
+party2,party2_cross_appellant,flags,CROSS[-–— ]APPELLANT,,"ignorecase, dotall",,
+party2,party2_cross_appellee,flags,CROSS[-–— ]APPELLEE,,"ignorecase, dotall",,
+party2,party2_appellant,flags,(?<!CROSS-)(?<!CROSS )(?<!CROSS–)(?<!CROSS—)APPELLANT,,"ignorecase, dotall",,
+party2,party2_appellee,flags,(?<!CROSS-)(?<!CROSS )(?<!CROSS–)(?<!CROSS—)APPELLEE,,"ignorecase, dotall",,
 party2,party2_plaintiff,flags,PLAINTIF,,"ignorecase, dotall",,
 party2,party2_defendant,flags,DEFENDANT,,"ignorecase, dotall",,
 party2,party2_petitioner,flags,PETITIONER,,"ignorecase, dotall",,

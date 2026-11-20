@@ -10,6 +10,7 @@ import pytest
 
 import courtpy
 from courtpy import coders
+from courtpy.wrangler import rules
 
 
 @pytest.fixture
@@ -47,6 +48,91 @@ def test_code_parties_completes_opposites() -> None:
     result = coders.CodeParties().apply(amos.Dataset(data)).data
     assert result.loc[0, 'party1_appellee'] and result.loc[0, 'party2_defendant']
     assert result.loc[0, 'party2_appealing'] and result.loc[0, 'party1_defending']
+
+
+def _parsed_parties(**flags: list[bool]) -> pd.DataFrame:
+    roles = [
+        'appellant', 'appellee', 'petitioner', 'respondent', 'plaintiff',
+        'defendant', 'united_states']
+    size = len(next(iter(flags.values())))
+    data = pd.DataFrame({
+        f'{s}_{r}': [False] * size for s in ('party1', 'party2') for r in roles})
+    for column, values in flags.items():
+        data[column] = values
+    return data
+
+
+def test_code_parties_prefers_each_party_own_caption() -> None:
+    # 0: a caption that joins several appeals names party2 both appellee and
+    # appellant, so party2 takes the opposite of party1's role.
+    # 1: a habeas petitioner who won below is the appellee.
+    # 2: both appellants (a cross-appeal) leaves both unknown.
+    # 3: party1 names itself both, and party2 decides.
+    data = _parsed_parties(
+        party1_appellant = [True, False, True, True],
+        party1_appellee = [False, True, False, True],
+        party1_petitioner = [False, True, False, False],
+        party2_appellant = [True, True, True, False],
+        party2_appellee = [True, False, False, True],
+        party2_respondent = [False, True, False, False])
+    result = coders.CodeParties().apply(amos.Dataset(data)).data
+    assert list(result['party1_appealing']) == [True, False, False, True]
+    assert list(result['party1_defending']) == [False, True, False, False]
+    assert list(result['party2_appealing']) == [False, True, False, False]
+    assert list(result['party2_defending']) == [True, False, False, True]
+
+
+def test_consolidated_government_appeal() -> None:
+    # "UNITED STATES of America, Appellant, v. Joseph PROCHILO, Defendant,
+    # Appellee; United States of America, Appellant, v. Elvis Guerrero,
+    # Defendant, Appellee": both parties' text names the United States.
+    data = _parsed_parties(
+        party1_appellant = [True], party1_united_states = [True],
+        party2_appellant = [True], party2_appellee = [True],
+        party2_defendant = [True], party2_united_states = [True])
+    data['docket_criminal'] = True
+    data['disposition'] = 'Reversed.'
+    for prefix in ('disposition', 'opinion'):
+        for ruling in ('reverse', 'vacate', 'remand'):
+            data[f'{prefix}_{ruling}'] = ruling == 'reverse'
+    result = courtpy.code(
+        amos.Dataset(data), ['code_parties', 'code_case_type', 'code_outcome']).data
+    assert result.loc[0, 'party1_prosecution']
+    assert result.loc[0, 'party2_criminal_defendant']
+    assert not result.loc[0, 'appeal_by_defendant']
+    assert result.loc[0, 'outcome_prosecution_won']
+
+
+def test_consolidated_government_appeal_by_text() -> None:
+    # Neither party is named a defendant, so the text decides which one is
+    # the United States.
+    data = _parsed_parties(
+        party1_appellant = [True], party1_united_states = [True],
+        party2_appellant = [True], party2_appellee = [True],
+        party2_united_states = [True])
+    data['party1'] = 'UNITED STATES of America, Appellant,'
+    data['party2'] = (
+        'Vincent BERTLING, Appellee; United States of America, Appellant, '
+        'v. Karl Raymond Bertling, Appellee')
+    data['docket_criminal'] = True
+    result = coders.CodeCaseType().apply(
+        coders.CodeParties().apply(amos.Dataset(data))).data
+    assert result.loc[0, 'party1_prosecution']
+    assert result.loc[0, 'party2_criminal_defendant']
+    assert result.loc[0, 'party2_defending']
+
+
+def test_cross_roles_with_spaces_are_not_plain_roles() -> None:
+    book = amos.parsers.Rulebook.create(rules.RULEBOOKS['header'])
+    patterns = {
+        rule.names[0]: rule.pattern for rule in book
+        if rule.columns == ('party1',)}
+    caption = 'UNITED STATES of America, Plaintiff-Appellant Cross Appellee,'
+    found = {name: bool(patterns[name].search(caption)) for name in (
+        'party1_appellant', 'party1_appellee', 'party1_cross_appellee')}
+    assert found == {
+        'party1_appellant': True, 'party1_appellee': False,
+        'party1_cross_appellee': True}
 
 
 def test_code_case_type(coded: amos.Dataset) -> None:
