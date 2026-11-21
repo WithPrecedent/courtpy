@@ -63,8 +63,32 @@ def test_key_commands(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFix
     assert courtpy.secrets.find_api_key() is None
 
 
+def test_download(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str]) -> None:
+    calls = []
+
+    def record(self: courtpy.CourtListener, *args: object, **kwargs: object) -> list[pathlib.Path]:
+        calls.append((self, args, kwargs))
+        return []
+
+    monkeypatch.setattr(courtpy.CourtListener, 'download', record)
+    monkeypatch.chdir(tmp_path)
+    assert cli.main([
+        '-q', 'download', '--courts', 'federal_geographic_circuits', 'scotus',
+        '--max-cases', '3', '--bulk-date', '2026-09-30', '--stream']) == 0
+    client, args, kwargs = calls[0]
+    assert client.bulk_date == '2026-09-30' and client.stream
+    assert args == (
+        ['federal_geographic_circuits', 'scotus'], None, None, pathlib.Path('courtlistener'))
+    assert kwargs == {
+        'method': 'bulk', 'max_cases': 3, 'dockets': False, 'refresh': False}
+    assert '0 cases saved in courtlistener' in capsys.readouterr().out
+
+
 def test_download_needs_a_key(capsys: pytest.CaptureFixture[str]) -> None:
-    assert cli.main(['-q', 'download', 'api', '--courts', 'ca1']) == 1
+    assert cli.main(['-q', 'download', '--method', 'api', '--courts', 'ca1']) == 1
     assert 'no CourtListener API key' in capsys.readouterr().err
 
 

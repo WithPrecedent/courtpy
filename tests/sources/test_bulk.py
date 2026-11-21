@@ -1,4 +1,4 @@
-"""Tests the bulk module."""
+"""Tests downloading cases from the bulk data with `CourtListener`."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import pytest
 from conftest import FakeResponse
 
 import courtpy
-from courtpy import bulk
+from courtpy import courtlistener
 
 DATE = '2026-09-30'
 OPINION_HTML = (
@@ -90,25 +90,25 @@ def bucket(tmp_path: pathlib.Path) -> pathlib.Path:
 
 
 def test_rows_read_postgres_csv(bucket: pathlib.Path) -> None:
-    data = bulk.BulkData(folder = bucket, date = DATE, session = LocalBucket(bucket))
-    opinions = list(data.rows('opinions'))
+    data = courtlistener.CourtListener(bulk_folder = bucket, bulk_date = DATE, session = LocalBucket(bucket))
+    opinions = list(data.read_bulk_rows('opinions'))
     assert opinions[0]['html_with_citations'] == OPINION_HTML
     assert opinions[2]['per_curiam'] == 't'
-    chosen = list(data.rows('dockets', columns = ['id'], keep = {'court_id': ['ca1']}))
+    chosen = list(data.read_bulk_rows('dockets', columns = ['id'], keep = {'court_id': ['ca1']}))
     assert chosen == [{'id': '10'}, {'id': '30'}]
 
 
 def test_available_and_latest(bucket: pathlib.Path) -> None:
-    data = bulk.BulkData(folder = bucket, session = LocalBucket(bucket))
-    assert data.available('opinions') == [DATE]
-    assert data.available('opinion-clusters') == [DATE]
-    assert data.resolve_date() == DATE
+    data = courtlistener.CourtListener(bulk_folder = bucket, session = LocalBucket(bucket))
+    assert data.bulk_dates('opinions') == [DATE]
+    assert data.bulk_dates('opinion-clusters') == [DATE]
+    assert data.resolve_bulk_date() == DATE
 
 
-def test_extract(bucket: pathlib.Path, tmp_path: pathlib.Path) -> None:
-    data = bulk.BulkData(folder = bucket, date = DATE, session = LocalBucket(bucket))
+def test_download_from_bulk_data(bucket: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    data = courtlistener.CourtListener(bulk_folder = bucket, bulk_date = DATE, session = LocalBucket(bucket))
     output = tmp_path / 'cases'
-    saved = data.extract('ca1', '2019-01-01', '2020-12-31', output)
+    saved = data.download('ca1', '2019-01-01', '2020-12-31', output)
     assert saved == [output / 'ca1' / '1.json']
     record = json.loads(saved[0].read_text(encoding = 'utf-8'))
     assert record['bulk_date'] == DATE
@@ -126,7 +126,7 @@ def test_extract(bucket: pathlib.Path, tmp_path: pathlib.Path) -> None:
         'id': 12, 'cluster_id': 1, 'type': '040dissent', 'author_str': 'Howard',
         'per_curiam': False, 'plain_text': 'I dissent.'}
     # Cases that were saved with their opinions are skipped the next time.
-    assert data.extract('ca1', '2019-01-01', '2020-12-31', output) == []
+    assert data.download('ca1', '2019-01-01', '2020-12-31', output) == []
     table = courtpy.parse(output)
     assert table.loc['1', 'docket_number'] == '19-1234'
     assert table.loc['1', 'date_argued'] == '2020-01-15'
@@ -149,13 +149,13 @@ def test_fetch_resumes_partial_download(bucket: pathlib.Path, tmp_path: pathlib.
     local = tmp_path / 'downloads'
     local.mkdir()
     (local / f'courts-{DATE}.csv.bz2.part').write_bytes(content[:10])
-    data = bulk.BulkData(folder = local, date = DATE, session = Remote(bucket))
-    path = data.fetch('courts')
+    data = courtlistener.CourtListener(bulk_folder = local, bulk_date = DATE, session = Remote(bucket))
+    path = data.fetch_bulk_file('courts')
     assert path.read_bytes() == content
     assert not (local / f'courts-{DATE}.csv.bz2.part').exists()
 
 
 def test_unknown_kind(bucket: pathlib.Path) -> None:
-    data = bulk.BulkData(folder = bucket, date = DATE, session = LocalBucket(bucket))
+    data = courtlistener.CourtListener(bulk_folder = bucket, bulk_date = DATE, session = LocalBucket(bucket))
     with pytest.raises(ValueError, match = 'kind must be one of'):
-        list(data.rows('people'))
+        list(data.read_bulk_rows('people'))

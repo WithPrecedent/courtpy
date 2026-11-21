@@ -33,21 +33,17 @@ for genre, name, module, summary in sorted(rows):
     print(f'| {genre} | `{name}` | `{module}` | {summary} |')
 ```
 
-## Sources and ways to download
+## Sources
 
-A loader's "download" (and `courtpy download`) can name any way to
-download, and `courtpy parse --source` any source. A study can add both (see
-[Building a Study](studies.md#sources-of-your-own)).
+`courtpy parse --source` (and a loader that subclasses `SourceLoader`) can
+name any source. A study can add its own (see
+[Building a Study](studies.md#sources-of-your-own)). `download_courtlistener`
+and `courtpy download` save cases of the `courtlistener` source, from the
+bulk data (`method = bulk`, the default) or the API (`method = api`).
 
 ```python exec="on"
 from courtpy import sources
 
-print('| Way to download | Saves | Does |')
-print('| --- | --- | --- |')
-for name in sorted({c.name for c in sources.DOWNLOADS.values()}):
-    method = sources.DOWNLOADS[name]
-    print(f'| `{name}` | `{method.source}` | {method.describe()} |')
-print()
 print('| Source | Files | Does |')
 print('| --- | --- | --- |')
 for name, source in sorted(sources.SOURCES.items()):

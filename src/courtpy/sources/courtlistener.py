@@ -1,26 +1,59 @@
-"""Downloads court opinions from the CourtListener API and reads them.
+"""Downloads court opinions from CourtListener and reads them.
 
 CourtListener (https://www.courtlistener.com) is a free legal research site
-run by the Free Law Project. Its opinions can be downloaded in two ways:
+run by the Free Law Project. `CourtListener` downloads its opinions in two
+ways (its "method"):
 
-* The REST API, with `CourtListener`, which needs an API key (see
+* "bulk" (the default) extracts them from the bulk data files, which need no
+  key and have no limits, but are very large and are updated every three
+  months.
+* "api" downloads them with the REST API, which needs an API key (see
   `courtpy.secrets`). It is best for small or very recent sets of cases,
   because CourtListener limits how many requests an account can make (a free
-  account can make 5 a minute, 50 an hour, and 125 a day, as of 2026).
-  `CourtListener` waits when asked to, saves its place, and resumes where it
-  stopped when it is run again.
-* The bulk data files, with `courtpy.bulk.BulkData`, which need no key and
-  have no limits, but are very large and are updated every three months.
+  account can make 5 a minute, 50 an hour, and 125 a day, as of 2026). The
+  client waits when asked to, saves its place, and resumes where it stopped
+  when it is run again.
 
 Both save each case as a JSON file named for its CourtListener cluster id, in
 a folder named for its court (such as "courtlistener/ca1/4567890.json"),
 which `read_case` turns into a `Case` for parsing.
 
+The bulk data is published every three months (on the last day of March,
+June, September, and December), in a public bucket:
+https://com-courtlistener-storage.s3-us-west-2.amazonaws.com/list.html?prefix=bulk-data/
+
+Five files hold what courtpy needs, and every one is always read, so that
+each case is put in the court of its docket:
+
+| File | Size (2026) | Holds |
+| --- | --- | --- |
+| courts | < 1 MB | Each court's name and jurisdiction. |
+| dockets | about 5 GB | Each case's court, docket number, and dates. |
+| opinion-clusters | about 2.5 GB | Each decision's parties, judges, date, and status. |
+| citations | about 130 MB | Each decision's reporter citations. |
+| opinions | about 55 GB | The text of each opinion. |
+
+They are read in that order, keeping the cases of the courts and dates asked
+for, and each case is saved in the same form as the API's, so the same parser
+reads both. Every case is saved with its whole docket (all of its fields but
+those in `options._DOCKET_SKIPPED`), so the dockets file is read twice: first
+to find which dockets belong to the courts, and again, once the cases are
+known, to keep the dockets of those cases alone. Reading the opinions file
+takes hours, so it is worth extracting every court and year you may need at
+once.
+
+The files are read with `amos.loaders.read_chunks`, which decompresses and
+parses them on every core and keeps only the rows asked for. By default, they
+are downloaded first (to a folder outside of any project, see
+`courtpy.utilities.data_folder`) with `amos.loaders.download_file` and kept,
+so that they can be used again and an interrupted download resumes. With
+`stream = True`, they are read straight from the bucket instead, which needs
+no disk space but starts over if the connection fails.
+
 Contents:
-    ApiDownload: downloads cases with the API ("download = api").
-    CourtListener: a client for the CourtListener REST API.
-    CourtListenerSource: reads cases saved by `CourtListener` or
-        `courtpy.bulk.BulkData`.
+    DOWNLOAD_METHODS: the ways that `CourtListener.download` can download.
+    CourtListener: downloads cases from CourtListener's bulk data or API.
+    CourtListenerSource: reads cases saved by `CourtListener`.
     CourtListenerError: raised when the API returns an error.
     RateLimitError: raised when the API asks for a longer pause than allowed.
     add_opinions: adds opinions to a saved case.
@@ -32,26 +65,28 @@ Contents:
     read_case: reads a saved case for parsing.
     save_case: saves a case.
     slim_opinion: keeps one field of an opinion's text, to save space.
-    logger: the module's logger, which reports the progress of downloads and
-        pauses asked for by CourtListener.
+    logger: the module's logger, which reports the progress of downloads,
+        of reading the bulk files, and pauses asked for by CourtListener.
 
 """
 
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import email.utils
 import json
 import logging
 import pathlib
 import re
+import sys
 import time
 import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, ClassVar
+from xml.etree import ElementTree as ET
 
 import amos
+import pandas as pd
 import requests
 
 from ..core import cases, options, secrets, utilities
@@ -59,6 +94,7 @@ from ..references import courts
 from . import base
 
 logger = logging.getLogger(__name__)
+DOWNLOAD_METHODS: tuple[str, ...] = ('bulk', 'api')
 _SITE: str = 'https://www.courtlistener.com'
 _TEMPORARY: frozenset[int] = frozenset({500, 502, 503, 504})
 _RETRIES: int = 4
@@ -81,6 +117,23 @@ _ROLES: tuple[tuple[str, str], ...] = (
     ('on the merits', 'majority'),
     ('trialcourt', 'majority'),
     ('trial court', 'majority'))
+_BULK_KINDS: tuple[str, ...] = (
+    'courts', 'dockets', 'opinion-clusters', 'citations', 'opinions')
+_BULK_BUFFER_BYTES: int = 200 * 1024 * 1024
+_BULK_DATE: re.Pattern[str] = re.compile(r'(\d{4}-\d{2}-\d{2})\.csv\.bz2$')
+# "source" is left out because it is a number in the dockets file but letters
+# in the opinion clusters file.
+_BULK_INTEGERS: frozenset[str] = frozenset({
+    'id', 'cluster_id', 'docket_id', 'author_id', 'citation_count',
+    'ordering_key', 'page_count', 'scdb_decision_direction',
+    'scdb_votes_majority', 'scdb_votes_minority', 'assigned_to_id',
+    'referred_to_id', 'idb_data_id', 'originating_court_information_id',
+    'parent_docket_id', 'federal_defendant_number'})
+_BULK_BOOLEANS: frozenset[str] = frozenset({
+    'per_curiam', 'blocked', 'date_filed_is_approximate', 'extracted_by_ocr'})
+_BULK_CLUSTER_SKIPPED: frozenset[str] = frozenset({
+    'date_created', 'date_modified', 'filepath_json_harvard',
+    'filepath_pdf_harvard', 'filepath_pdf_scan', 'filepath_xml_scan'})
 
 
 class CourtListenerError(RuntimeError):
@@ -104,36 +157,53 @@ class RateLimitError(CourtListenerError):
             f'CourtListener asked courtpy to wait {hours:.1f} hours before '
             f"making more requests (the account's limit was reached). Run "
             f'the same download again later: it resumes where it stopped. '
-            f'The bulk data (courtpy.bulk) has no limits.')
+            f'The bulk data (method "bulk") has no limits.')
         super().__init__(message)
 
 
 @dataclasses.dataclass
 class CourtListener:
-    """A client for the CourtListener REST API (version 4).
+    """Downloads cases from CourtListener's bulk data or its REST API.
 
-    Every request includes the API key, which is found with
-    `courtpy.secrets.get_api_key` if it is not passed. Requests are spaced at
-    least `min_interval` seconds apart. If CourtListener asks for a pause (an
-    HTTP 429 response), the client waits as long as it is asked, up to
-    `max_wait` seconds. A longer pause (such as the daily limit) raises a
-    `RateLimitError`, and `download` can be run again later to resume.
+    `download` takes the "method" to download with: "bulk" (the default),
+    which extracts the cases from the bulk data files and needs no key, or
+    "api", which downloads them with the REST API (version 4).
+
+    Every request to the API includes the API key, which is found with
+    `courtpy.secrets.get_api_key` when the first request is made if it was
+    not passed, so the bulk data can be used without a key. Requests to the
+    API are spaced at least `min_interval` seconds apart. If CourtListener
+    asks for a pause (an HTTP 429 response), the client waits as long as it
+    is asked, up to `max_wait` seconds. A longer pause (such as the daily
+    limit) raises a `RateLimitError`, and `download` can be run again later
+    to resume.
 
     Args:
         api_key: a CourtListener API key. Defaults to `None`, in which case it
-            is found with `courtpy.secrets.get_api_key`.
-        base_url: address of the API. Defaults to `options._API_URL`.
-        min_interval: fewest seconds between requests. Defaults to
+            is found with `courtpy.secrets.get_api_key` when it is needed.
+        api_url: address of the API. Defaults to `options._API_URL`.
+        bulk_url: address of the bucket of bulk data. Defaults to
+            `options._BULK_URL`.
+        bulk_folder: folder to keep the downloaded bulk files in. Defaults
+            to `None`, in which case "bulk" in `utilities.data_folder()` is
+            used.
+        bulk_date: the date of the bulk files to use, as YYYY-MM-DD. Defaults
+            to `None`, in which case the newest files are used (and it is set
+            when they are found, see `resolve_bulk_date`).
+        stream: whether to read the bulk files straight from the bucket
+            instead of downloading them. Defaults to `False`.
+        min_interval: fewest seconds between requests to the API. Defaults to
             `options._MIN_INTERVAL`.
-        max_wait: most seconds to wait when asked to pause. Defaults to
-            `options._MAX_WAIT`.
+        max_wait: most seconds to wait when the API asks for a pause.
+            Defaults to `options._MAX_WAIT`.
         timeout: seconds to wait for a response. Defaults to
             `options._TIMEOUT`.
         session: an object with a `get` method like a `requests.Session`.
-            Defaults to `None`, in which case a `requests.Session` is made.
+            Defaults to `None`, in which case a `requests.Session` that
+            identifies courtpy is made.
 
     Attributes:
-        requests_made: number of requests made by this client.
+        requests_made: number of requests made to the API by this client.
         _courts: information about each court that has been looked up (see
             `court`), by its id, so that each court is asked for only once.
         _last_request: when the last request was made, from
@@ -144,7 +214,11 @@ class CourtListener:
     """
 
     api_key: str | None = dataclasses.field(default = None, repr = False)
-    base_url: str = options._API_URL
+    api_url: str = options._API_URL
+    bulk_url: str = options._BULK_URL
+    bulk_folder: pathlib.Path | str | None = None
+    bulk_date: str | None = None
+    stream: bool = False
     min_interval: float = options._MIN_INTERVAL
     max_wait: float = options._MAX_WAIT
     timeout: float = options._TIMEOUT
@@ -158,27 +232,38 @@ class CourtListener:
     """ Initialization Methods """
 
     def __post_init__(self) -> None:
-        """Finds the API key and prepares the session.
+        """Prepares the session.
 
-        If no `api_key` was passed, it is found with
-        `courtpy.secrets.get_api_key`. If no `session` was passed, a
-        `requests.Session` is made. The session's headers (if it has any) are
-        set so that every request includes the key, asks for JSON, and
-        identifies courtpy.
+        If no `session` was passed, a `requests.Session` that identifies
+        courtpy is made. The API key is not looked for until the first
+        request to the API (see `get`), and it is sent with requests to the
+        API alone, never to the bucket of bulk data.
 
         """
-        if self.api_key is None:
-            self.api_key = secrets.get_api_key()
-        if self.session is None:
-            self.session = requests.Session()
-        headers = getattr(self.session, 'headers', None)
-        if headers is not None:
-            headers.update({
-                'Authorization': f'Token {self.api_key}',
-                'Accept': 'application/json',
-                'User-Agent': options._USER_AGENT})
+        self.session = utilities.open_session(self.session)
 
     """ Public Methods """
+
+    def bulk_dates(self, kind: str = 'opinions') -> list[str]:
+        """Returns the dates of the bulk files of one kind in the bucket.
+
+        Args:
+            kind: "courts", "dockets", "opinion-clusters", "citations", or
+                "opinions". Defaults to "opinions".
+
+        Returns:
+            The dates, from oldest to newest.
+
+        """
+        dates = []
+        for key in self._list_bucket(f'{options._BULK_PREFIX}{kind}-'):
+            match = _BULK_DATE.search(key)
+            # Skips files whose kind only starts with `kind` (such as
+            # "opinions-cited" for "opinions").
+            if match and key == (
+                f'{options._BULK_PREFIX}{kind}-{match.group(1)}.csv.bz2'):
+                dates.append(match.group(1))
+        return sorted(set(dates))
 
     def court(self, court: str) -> dict[str, Any]:
         """Returns information about a court.
@@ -204,17 +289,23 @@ class CourtListener:
         end_date: str | None = None,
         folder: pathlib.Path | str = 'courtlistener',
         *,
+        method: str = 'bulk',
         max_cases: int | None = None,
         dockets: bool = False,
-        overwrite: bool = False) -> list[pathlib.Path]:
+        refresh: bool = False) -> list[pathlib.Path]:
         """Downloads the cases of `courts` filed between two dates.
 
-        Each page of cases (opinion clusters) takes one request, and their
-        opinions take one more (or more, if they have many opinions). Cases
-        that were already saved (with their opinions) are skipped, and the
-        place in each court's list of cases is saved, so running a download
-        again resumes it. Running a finished download again takes one request
-        for each court and saves any cases added to CourtListener since.
+        With "bulk", the bulk files are read in turn (see the module's
+        documentation), and the cases that were already saved with their
+        opinions are skipped. Every case is saved with its docket.
+
+        With "api", each page of cases (opinion clusters) takes one request,
+        and their opinions take one more (or more, if they have many
+        opinions). Cases that were already saved (with their opinions) are
+        skipped, and the place in each court's list of cases is saved, so
+        running a download again resumes it. Running a finished download
+        again takes one request for each court and saves any cases added to
+        CourtListener since.
 
         Args:
             courts: CourtListener court ids (such as "ca1") or names of groups
@@ -224,31 +315,45 @@ class CourtListener:
             end_date: latest date filed, as YYYY-MM-DD. Defaults to `None` (no
                 latest date).
             folder: folder to save the cases in. Defaults to "courtlistener".
-            max_cases: most cases to save in each court in this run. Defaults
-                to `None` (every case).
-            dockets: whether to also download each case's docket (every
-                field but those in `options._DOCKET_SKIPPED`, such as its
-                docket number, dates, and the court appealed from). This
+            method: "bulk" or "api" (see `DOWNLOAD_METHODS`), in any case.
+                Defaults to "bulk".
+            max_cases: most cases to save: in all with "bulk", and in each
+                court with "api". Defaults to `None` (every case).
+            dockets: with "api", whether to also download each case's docket
+                (every field but those in `options._DOCKET_SKIPPED`, such as
+                its docket number, dates, and the court appealed from). This
                 takes one more request for each case. Defaults to `False`.
                 The bulk data always includes the docket.
-            overwrite: whether to download cases that were already saved.
+            refresh: whether to download cases that were already saved.
                 Defaults to `False`.
 
         Raises:
+            ValueError: if `method` is not one of `DOWNLOAD_METHODS`, or if no
+                courts are named.
             RateLimitError: if CourtListener asks for a pause longer than
                 `max_wait`. What was downloaded is kept.
 
         Returns:
-            The paths of the cases saved in this run.
+            The paths of the cases saved (or updated) in this run.
 
         """
+        chosen = str(method).strip().lower()
+        if chosen not in DOWNLOAD_METHODS:
+            names = ' or '.join(f'"{m}"' for m in DOWNLOAD_METHODS)
+            message = f'method must be {names}, not {method!r}'
+            raise ValueError(message)
+        wanted = utilities.expand_courts(courts)
         folder = pathlib.Path(folder)
+        if chosen == 'bulk':
+            return self._download_from_bulk_data(
+                wanted, start_date, end_date, folder,
+                max_cases = max_cases, refresh = refresh)
         saved: list[pathlib.Path] = []
-        for court in utilities.expand_courts(courts):
+        for court in wanted:
             saved.extend(self._download_court(
                 court, start_date, end_date, folder,
                 max_cases = max_cases, dockets = dockets,
-                overwrite = overwrite))
+                refresh = refresh))
         logger.info(
             'saved %d cases in %s with %d requests', len(saved), folder,
             self.requests_made)
@@ -279,6 +384,38 @@ class CourtListener:
             cluster, opinions.get(int(cluster['id']), []), pathlib.Path(folder),
             court = None, docket = True)
 
+    def fetch_bulk_file(self, kind: str) -> pathlib.Path:
+        """Downloads one bulk file, resuming a download that was interrupted.
+
+        The file is downloaded with `amos.loaders.download_file`, which
+        writes it beside its path (with ".part" added) until it is whole, so
+        a file in the bulk folder is always complete.
+
+        Args:
+            kind: "courts", "dockets", "opinion-clusters", "citations", or
+                "opinions".
+
+        Raises:
+            OSError: if the download stopped before the whole file arrived
+                (run it again to resume).
+            requests.HTTPError: if the file cannot be downloaded.
+
+        Returns:
+            The path of the downloaded file.
+
+        """
+        name = self._bulk_name(kind)
+        folder = self._bulk_folder_path()
+        path = folder / name
+        if not path.is_file():
+            logger.info('downloading %s to %s', name, folder)
+        return amos.loaders.download_file(
+            self._bulk_file_url(kind),
+            path,
+            timeout = self.timeout,
+            session = self.session,
+            resume = True)
+
     def get(
         self,
         path: str,
@@ -293,6 +430,8 @@ class CourtListener:
         Raises:
             CourtListenerError: if the API returns an error, rejects the key,
                 or cannot be reached after several tries.
+            MissingAPIKeyError: if no key was passed and none can be found
+                (see `courtpy.secrets.get_api_key`).
             RateLimitError: if the API asks for a pause longer than
                 `max_wait`.
 
@@ -301,13 +440,15 @@ class CourtListener:
 
         """
         url = path if path.startswith('http') else urllib.parse.urljoin(
-            self.base_url, path)
+            self.api_url, path)
+        headers = self._api_headers()
         failures = 0
         while True:
             self._space_requests()
             try:
                 response = self.session.get(
-                    url, params = params, timeout = self.timeout)
+                    url, params = params, headers = headers,
+                    timeout = self.timeout)
             except requests.RequestException as error:
                 failures += 1
                 if failures > _RETRIES:
@@ -371,7 +512,391 @@ class CourtListener:
             yield list(data.get('results', [])), next_url
             url, query = next_url, None
 
+    def read_bulk_chunks(
+        self,
+        kind: str,
+        *,
+        columns: Sequence[str] | None = None,
+        keep: Mapping[str, Any] | None = None) -> Iterator[pd.DataFrame]:
+        """Yields chosen rows and columns of one bulk file, a chunk at a time.
+
+        The file is read with `amos.loaders.read_chunks`, which parses and
+        decompresses it on every core and finds the rows in `keep` before
+        any of their text becomes Python objects. If `stream` is true, the
+        file is read from the bucket as it arrives, without being saved.
+        Otherwise, it is downloaded first (or found in the bulk folder) with
+        `fetch_bulk_file`.
+
+        Args:
+            kind: "courts", "dockets", "opinion-clusters", "citations", or
+                "opinions".
+            columns: the columns to return. Defaults to `None`, which
+                returns every column.
+            keep: the values to keep of each of some columns, such as
+                `{'court_id': ['ca1']}` (see `amos.loaders.read_chunks`).
+                Defaults to `None`, which keeps every row.
+
+        Yields:
+            pd.DataFrame: the rows of each chunk that are kept, with every
+                value as text. Missing values are empty `str`s.
+
+        """
+        source = (
+            self._bulk_file_url(kind) if self.stream
+            else self.fetch_bulk_file(kind))
+        yield from amos.loaders.read_chunks(
+            source,
+            columns = columns,
+            keep = keep,
+            double_quote = False,
+            escape_char = '\\',
+            session = self.session,
+            timeout = self.timeout)
+
+    def read_bulk_rows(
+        self,
+        kind: str,
+        *,
+        columns: Sequence[str] | None = None,
+        keep: Mapping[str, Any] | None = None) -> Iterator[dict[str, str]]:
+        """Yields chosen rows of one bulk file.
+
+        Args:
+            kind: "courts", "dockets", "opinion-clusters", "citations", or
+                "opinions".
+            columns: the columns to return. Defaults to `None`, which
+                returns every column.
+            keep: the values to keep of each of some columns (see
+                `read_bulk_chunks`). Defaults to `None`, which keeps every
+                row.
+
+        Yields:
+            dict[str, str]: each row, mapping column names to text. Missing
+                values are empty `str`s.
+
+        """
+        chunks = self.read_bulk_chunks(kind, columns = columns, keep = keep)
+        for chunk in chunks:
+            for row in chunk.to_dict('records'):
+                yield {str(key): value for key, value in row.items()}
+
+    def resolve_bulk_date(self) -> str:
+        """Returns `bulk_date`, finding the newest complete set if needed.
+
+        Raises:
+            LookupError: if no date has every kind of file that courtpy needs.
+
+        Returns:
+            The date of the bulk files to use, as YYYY-MM-DD.
+
+        """
+        if self.bulk_date is None:
+            common: set[str] | None = None
+            for kind in _BULK_KINDS:
+                dates = set(self.bulk_dates(kind))
+                common = dates if common is None else common & dates
+            if not common:
+                message = 'no date in the bulk data has every file needed'
+                raise LookupError(message)
+            self.bulk_date = max(common)
+        return self.bulk_date
+
     """ Private Methods """
+
+    def _api_headers(self) -> dict[str, str]:
+        """Returns the headers of a request to the API.
+
+        The API key is found with `courtpy.secrets.get_api_key` the first
+        time, if none was passed.
+
+        Raises:
+            MissingAPIKeyError: if no key was passed and none can be found.
+
+        Returns:
+            Headers that include the key and ask for JSON.
+
+        """
+        if self.api_key is None:
+            self.api_key = secrets.get_api_key()
+        return {
+            'Authorization': f'Token {self.api_key}',
+            'Accept': 'application/json'}
+
+    def _bulk_citations(self, cluster_ids: set[int]) -> dict[int, list[str]]:
+        """Returns the citations of the clusters in `cluster_ids`.
+
+        The citations file is read only if there are clusters to look for.
+
+        Args:
+            cluster_ids: ids of the opinion clusters (cases) being extracted.
+
+        Returns:
+            The citations of each cluster, as text such as "950 F.3d 12", by
+                its id. Clusters without citations are left out.
+
+        """
+        found: dict[int, list[str]] = {}
+        if not cluster_ids:
+            return found
+        kept = {'cluster_id': cluster_ids}
+        for row in self.read_bulk_rows('citations', keep = kept):
+            cluster_id = _integer(row.get('cluster_id'))
+            if cluster_id is not None:
+                found.setdefault(cluster_id, []).extend(
+                    citation_strings([row]))
+        return found
+
+    def _bulk_clusters(
+        self,
+        dockets: Mapping[int, Any],
+        start_date: str | None,
+        end_date: str | None,
+        max_cases: int | None) -> dict[int, dict[str, Any]]:
+        """Returns the clusters of `dockets` filed between two dates.
+
+        The clusters file is read only if there are dockets to look for, and
+        reading stops once `max_cases` clusters are found. Dates are compared
+        as text, which works because they are written as YYYY-MM-DD.
+
+        Args:
+            dockets: the dockets of the courts being extracted, by their ids
+                (only the ids are used).
+            start_date: earliest date filed, as YYYY-MM-DD, or `None` for no
+                earliest date.
+            end_date: latest date filed, as YYYY-MM-DD, or `None` for no latest
+                date.
+            max_cases: most clusters to find, or `None` for every cluster.
+
+        Returns:
+            Each cluster (converted with `_convert_bulk_row`, without the
+                columns in `_BULK_CLUSTER_SKIPPED`), by its id.
+
+        """
+        found: dict[int, dict[str, Any]] = {}
+        if not dockets:
+            return found
+        kept = {'docket_id': dockets.keys()}
+        for row in self.read_bulk_rows('opinion-clusters', keep = kept):
+            filed = row.get('date_filed') or ''
+            if (start_date and filed < start_date) or (
+                end_date and filed > end_date):
+                continue
+            cluster = _convert_bulk_row(row)
+            for column in _BULK_CLUSTER_SKIPPED:
+                cluster.pop(column, None)
+            found[int(cluster['id'])] = cluster
+            if max_cases is not None and len(found) >= max_cases:
+                break
+        logger.info('found %d cases', len(found))
+        return found
+
+    def _bulk_courts(self, wanted: list[str]) -> dict[str, dict[str, Any]]:
+        """Returns information about the courts in `wanted`.
+
+        A warning is logged for any court in `wanted` that is not in the
+        courts file (usually a misspelled court id).
+
+        Args:
+            wanted: CourtListener court ids.
+
+        Returns:
+            The "id", "full_name", "short_name", "citation_string", and
+                "jurisdiction" of each court that was found, by its id.
+
+        """
+        kept = (
+            'id', 'full_name', 'short_name', 'citation_string', 'jurisdiction')
+        found = {
+            row['id']: {k: row.get(k) for k in kept}
+            for row in self.read_bulk_rows('courts', keep = {'id': wanted})}
+        missing = [c for c in wanted if c not in found]
+        if missing:
+            logger.warning('these courts are not in the bulk data: %s', missing)
+        return found
+
+    def _bulk_docket_courts(self, wanted: set[str]) -> dict[int, str]:
+        """Returns the court of each docket of the courts in `wanted`.
+
+        Only the court is kept, because a court has far more dockets than
+        cases with opinions, and all of their fields would not fit in memory
+        for large courts. `_bulk_dockets` reads the fields of the dockets
+        that are needed once the cases are known.
+
+        Args:
+            wanted: CourtListener court ids.
+
+        Returns:
+            The court id of each docket of those courts, by the docket's id.
+
+        """
+        found: dict[int, str] = {}
+        rows = self.read_bulk_rows(
+            'dockets', columns = ['id', 'court_id'],
+            keep = {'court_id': wanted})
+        for row in rows:
+            court = row['court_id']
+            docket_id = _integer(row['id'])
+            if docket_id is not None:
+                # One `str` is shared by every docket of a court.
+                found[docket_id] = sys.intern(court)
+        logger.info('found %d dockets', len(found))
+        return found
+
+    def _bulk_dockets(self, docket_ids: set[int]) -> dict[int, dict[str, Any]]:
+        """Returns the dockets in `docket_ids`.
+
+        The dockets file is read only if there are dockets to look for, and
+        reading stops once they are all found.
+
+        Args:
+            docket_ids: ids of the dockets of the cases being extracted.
+
+        Returns:
+            Each docket (converted with `_convert_bulk_row`, without the
+                columns in `options._DOCKET_SKIPPED`), by its id.
+
+        """
+        found: dict[int, dict[str, Any]] = {}
+        if not docket_ids:
+            return found
+        for row in self.read_bulk_rows('dockets', keep = {'id': docket_ids}):
+            docket_id = int(row['id'])
+            docket = _convert_bulk_row(row)
+            for column in options._DOCKET_SKIPPED:
+                docket.pop(column, None)
+            found[docket_id] = docket
+            if len(found) == len(docket_ids):
+                break
+        logger.info('read %d dockets', len(found))
+        return found
+
+    def _bulk_file_url(self, kind: str) -> str:
+        """Returns the address of the bulk file of one kind.
+
+        Args:
+            kind: one of `_BULK_KINDS`.
+
+        Raises:
+            ValueError: if `kind` is not one of `_BULK_KINDS`.
+
+        Returns:
+            The address of the file in the bucket.
+
+        """
+        return f'{self.bulk_url}{options._BULK_PREFIX}{self._bulk_name(kind)}'
+
+    def _bulk_folder_path(self) -> pathlib.Path:
+        """Returns the folder to keep the downloaded bulk files in.
+
+        Returns:
+            `bulk_folder`, or "bulk" in `utilities.data_folder()` if it is
+                `None`.
+
+        """
+        if self.bulk_folder is None:
+            return utilities.data_folder() / 'bulk'
+        return pathlib.Path(self.bulk_folder)
+
+    def _bulk_name(self, kind: str) -> str:
+        """Returns the name of the bulk file of one kind.
+
+        Args:
+            kind: one of `_BULK_KINDS`.
+
+        Raises:
+            ValueError: if `kind` is not one of `_BULK_KINDS`.
+
+        Returns:
+            The file's name, such as "opinions-2026-09-30.csv.bz2", for the date
+                from `resolve_bulk_date`.
+
+        """
+        if kind not in _BULK_KINDS:
+            message = f'kind must be one of {list(_BULK_KINDS)}, not {kind!r}'
+            raise ValueError(message)
+        return f'{kind}-{self.resolve_bulk_date()}.csv.bz2'
+
+    def _bulk_opinions(self, paths: Mapping[int, pathlib.Path]) -> None:
+        """Adds the opinions of the cases in `paths` to their files.
+
+        The opinions file is not sorted by case, so a case's opinions can be
+        anywhere in it. Opinions are held in memory (with one field of text
+        each, see `slim_opinion`) until their text reaches
+        `_BULK_BUFFER_BYTES`, and then written to their cases, which keeps
+        memory use bounded without rewriting a case's file for every opinion.
+
+        Args:
+            paths: the path of each saved case, by its cluster id.
+
+        """
+        buffer: dict[int, list[dict[str, Any]]] = {}
+        size = 0
+        kept = {'cluster_id': paths.keys()}
+        for row in self.read_bulk_rows('opinions', keep = kept):
+            cluster_id = int(row['cluster_id'])
+            opinion = slim_opinion(_convert_bulk_row(row))
+            buffer.setdefault(cluster_id, []).append(opinion)
+            size += sum(len(v) for v in opinion.values() if isinstance(v, str))
+            if size >= _BULK_BUFFER_BYTES:
+                _write_buffered_opinions(buffer, paths)
+                size = 0
+        _write_buffered_opinions(buffer, paths)
+
+    def _download_from_bulk_data(
+        self,
+        courts: list[str],
+        start_date: str | None,
+        end_date: str | None,
+        folder: pathlib.Path,
+        *,
+        max_cases: int | None,
+        refresh: bool) -> list[pathlib.Path]:
+        """Saves the cases of `courts` from the bulk data (see `download`).
+
+        Args:
+            courts: CourtListener court ids, with groups already expanded.
+            start_date: earliest date filed, as YYYY-MM-DD, or `None` for no
+                earliest date.
+            end_date: latest date filed, as YYYY-MM-DD, or `None` for no
+                latest date.
+            folder: folder to save the cases in.
+            max_cases: most cases to save, or `None` for every case.
+            refresh: whether to replace cases that were already saved with
+                their opinions.
+
+        Returns:
+            The paths of the cases saved (or updated) by this call.
+
+        """
+        date = self.resolve_bulk_date()
+        logger.info('extracting cases from the bulk data of %s', date)
+        court_records = self._bulk_courts(courts)
+        docket_courts = self._bulk_docket_courts(set(courts))
+        clusters = self._bulk_clusters(
+            docket_courts, start_date, end_date, max_cases)
+        dockets = self._bulk_dockets(
+            {int(c['docket_id']) for c in clusters.values()})
+        citations = self._bulk_citations(set(clusters))
+        paths: dict[int, pathlib.Path] = {}
+        for cluster_id, cluster in clusters.items():
+            docket = dockets[int(cluster['docket_id'])]
+            court = docket_courts[int(cluster['docket_id'])]
+            path = case_path(folder, court, cluster_id)
+            if not refresh and is_complete(path):
+                continue
+            save_case(path, {
+                'source': 'courtlistener',
+                'bulk_date': date,
+                'court': court_records.get(court, {'id': court}),
+                'cluster': cluster,
+                'docket': docket,
+                'citations': citations.get(cluster_id, []),
+                'opinions': []})
+            paths[cluster_id] = path
+        logger.info('saved %d cases; now adding their opinions', len(paths))
+        if paths:
+            self._bulk_opinions(paths)
+        return list(paths.values())
 
     def _download_court(
         self,
@@ -382,8 +907,8 @@ class CourtListener:
         *,
         max_cases: int | None,
         dockets: bool,
-        overwrite: bool) -> list[pathlib.Path]:
-        """Downloads the cases of one court (see `download`).
+        refresh: bool) -> list[pathlib.Path]:
+        """Downloads the cases of one court with the API (see `download`).
 
         The court's cases (opinion clusters) are listed one page at a time, in
         the order they were added to CourtListener. For each page, the
@@ -405,7 +930,7 @@ class CourtListener:
                 case. A page that would go past it is cut short and read again
                 the next time, so that the cases left out are not skipped.
             dockets: whether to also download each case's docket.
-            overwrite: whether to start from the first page and download cases
+            refresh: whether to start from the first page and download cases
                 that were already saved.
 
         Returns:
@@ -432,16 +957,16 @@ class CourtListener:
         # saved and requested again to resume. Cases are listed in the order
         # they were added to CourtListener, so after the last page has been
         # read, reading it again finds any cases added since.
-        first = urllib.parse.urljoin(self.base_url, 'clusters/')
+        first = urllib.parse.urljoin(self.api_url, 'clusters/')
         url = (
-            None if overwrite else state.get('next') or state.get('last')
+            None if refresh else state.get('next') or state.get('last')
         ) or f'{first}?{urllib.parse.urlencode(params)}'
         while url:
             data = self.get(url)
             clusters = list(data.get('results', []))
             next_url = data.get('next')
             needed = [
-                c for c in clusters if overwrite or not is_complete(
+                c for c in clusters if refresh or not is_complete(
                     case_path(folder, court, c['id']))]
             remaining = None if max_cases is None else max_cases - len(saved)
             trimmed = remaining is not None and len(needed) > remaining
@@ -466,6 +991,46 @@ class CourtListener:
                 break
             url = next_url
         return saved
+
+    def _list_bucket(self, prefix: str) -> list[str]:
+        """Returns the keys in the bucket of bulk data that start with `prefix`.
+
+        The bucket is listed with Amazon S3's "ListObjectsV2" request, which
+        returns at most 1,000 keys at a time as XML, with a token for the next
+        part of the list when there are more.
+
+        Args:
+            prefix: the start of the keys (file paths) to list, such as
+                "bulk-data/opinions-".
+
+        Raises:
+            requests.HTTPError: if the bucket cannot be listed.
+
+        Returns:
+            The keys, in the order the bucket lists them.
+
+        """
+        keys: list[str] = []
+        token = None
+        while True:
+            params = {'list-type': '2', 'prefix': prefix}
+            if token:
+                params['continuation-token'] = token
+            response = self.session.get(
+                self.bulk_url, params = params, timeout = self.timeout)
+            response.raise_for_status()
+            # The listing comes from the bucket's own server.
+            root = ET.fromstring(response.content)  # noqa: S314
+            namespace = (
+                root.tag.split('}')[0] + '}' if root.tag.startswith('{')
+                else '')
+            keys.extend(
+                element.text or ''
+                for element in root.iter(f'{namespace}Key'))
+            truncated = root.findtext(f'{namespace}IsTruncated') == 'true'
+            token = root.findtext(f'{namespace}NextContinuationToken')
+            if not truncated or not token:
+                return keys
 
     def _opinions_of(
         self,
@@ -582,75 +1147,8 @@ class CourtListener:
 
 
 @dataclasses.dataclass
-class ApiDownload(base.Download):
-    """Downloads cases with the CourtListener API (a key is needed).
-
-    It is `CourtListener.download`, with the key from `courtpy.secrets`.
-
-    """
-
-    name: ClassVar[str] = 'api'
-
-    """ Class Methods """
-
-    @classmethod
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
-        """Adds "--dockets" to "courtpy download api".
-
-        Args:
-            parser: the parser of "courtpy download api".
-
-        """
-        parser.add_argument(
-            '--dockets', action = 'store_true',
-            help = 'also download dockets (one request per case)')
-
-    """ Required Methods """
-
-    def download(
-        self,
-        folder: pathlib.Path,
-        *,
-        courts: list[str] | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
-        max_cases: int | None = None,
-        overwrite: bool = False,
-        dockets: Any = False,
-        **options: Any) -> list[pathlib.Path]:
-        """Downloads the cases of `courts` filed between two dates.
-
-        Args:
-            folder: the folder to save the cases in.
-            courts: CourtListener court ids. Defaults to `None`, which raises
-                an error.
-            start_date: earliest date filed, as YYYY-MM-DD. Defaults to
-                `None`.
-            end_date: latest date filed, as YYYY-MM-DD. Defaults to `None`.
-            max_cases: most cases to save in each court. Defaults to `None`
-                (every case).
-            overwrite: whether to download cases that were already saved.
-                Defaults to `False`.
-            dockets: whether to download each case's docket too. Defaults to
-                `False`.
-            **options: options of other ways to download, which are ignored.
-
-        Raises:
-            ValueError: if no courts are named.
-
-        Returns:
-            The paths of the cases saved.
-
-        """
-        return CourtListener().download(
-            courts or [], start_date, end_date, folder,
-            max_cases = max_cases, dockets = utilities.to_bool(dockets),
-            overwrite = overwrite)
-
-
-@dataclasses.dataclass
 class CourtListenerSource(base.Source):
-    """Reads cases saved by `CourtListener` or `courtpy.bulk.BulkData`.
+    """Reads cases saved by `CourtListener`, from the bulk data or the API.
 
     Each case is a JSON file (see `read_case`), whose sections come from its
     data, so no rules are needed to find them. The "courtlistener_header"
@@ -815,7 +1313,7 @@ def read_case(path: pathlib.Path | str) -> cases.Case:
     in the history).
 
     Args:
-        path: path of a case saved by `CourtListener` or `BulkData`.
+        path: path of a case saved by `CourtListener`.
 
     Returns:
         The case.
@@ -1025,6 +1523,30 @@ def _first(*values: Any) -> str:
     return ''
 
 
+def _convert_bulk_row(row: Mapping[str, str]) -> dict[str, Any]:
+    """Returns a row of a bulk file with numbers, booleans, and missing values.
+
+    Args:
+        row: the row, with every value as text.
+
+    Returns:
+        The row, with ids and counts as `int`s, "t" and "f" as `bool`s, and
+            empty text as `None`.
+
+    """
+    converted: dict[str, Any] = {}
+    for key, value in row.items():
+        if value == '':
+            converted[key] = None
+        elif key in _BULK_INTEGERS:
+            converted[key] = _integer(value)
+        elif key in _BULK_BOOLEANS:
+            converted[key] = value == 't'
+        else:
+            converted[key] = value
+    return converted
+
+
 def _court_id_from(value: Any) -> str | None:
     """Returns CourtListener's id for a court that a docket refers to.
 
@@ -1067,6 +1589,22 @@ def _id_from_url(url: Any) -> int | None:
         return url
     match = re.search(r'(\d+)/?$', str(url))
     return int(match.group(1)) if match else None
+
+
+def _integer(value: Any) -> int | None:
+    """Returns `value` as an `int`, if it is a whole number.
+
+    Args:
+        value: a value from a bulk file, usually text such as "4567890".
+
+    Returns:
+        The number, or `None` if `value` is missing or is not a whole number.
+
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _load_json(path: pathlib.Path) -> dict[str, Any] | None:
@@ -1174,3 +1712,19 @@ def _url(cluster: Mapping[str, Any]) -> str | None:
         slug = cluster.get('slug') or 'case'
         return f'{_SITE}/opinion/{cluster["id"]}/{slug}/'
     return None
+
+
+def _write_buffered_opinions(
+    buffer: dict[int, list[dict[str, Any]]],
+    paths: Mapping[int, pathlib.Path]) -> None:
+    """Writes buffered opinions to their cases and empties the buffer.
+
+    Args:
+        buffer: opinions that have not been written yet, by the cluster id of
+            their case. It is emptied.
+        paths: the path of each saved case, by its cluster id.
+
+    """
+    for cluster_id, opinions in buffer.items():
+        add_opinions(paths[cluster_id], opinions)
+    buffer.clear()

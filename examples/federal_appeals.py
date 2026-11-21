@@ -1,7 +1,8 @@
 """The study in "federal_appeals.ini", from Python.
 
 `whole_study` runs the study as the settings file describes it: its wrangler's
-first technique, `load_court_listener`, collects, parses, and codes the cases.
+first technique, `download_courtlistener`, downloads, parses, and codes the
+cases.
 `step_by_step` does the same work one step at a time, which is useful for
 looking at the cases before analyzing them.
 """
@@ -39,12 +40,13 @@ def whole_study() -> courtpy.Project:
 def step_by_step() -> None:
     """Collects, parses, codes, and loads the cases one step at a time."""
     # 1. Collect the cases from the bulk data (or, for a small or recent set
-    # of cases, with courtpy.CourtListener().download and your API key).
-    courtpy.BulkData().extract(
-        courts = 'federal_circuits',
+    # of cases, with method = 'api' and your API key).
+    courtpy.CourtListener().download(
+        courts = 'federal_geographic_circuits',
         start_date = '2019-01-01',
         end_date = '2019-12-31',
-        folder = CASES)
+        folder = CASES,
+        method = 'bulk')
     # 2. Parse them with the federal rules and code the outcomes.
     cases = courtpy.code(courtpy.parse(CASES, workers = 4))
     cases.save(TABLE)

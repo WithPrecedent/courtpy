@@ -68,7 +68,7 @@ _COURT_GROUPS: dict[str, tuple[str, ...]] = {
     'federal_appellate': (
         'ca1', 'ca2', 'ca3', 'ca4', 'ca5', 'ca6', 'ca7', 'ca8', 'ca9', 'ca10',
         'ca11', 'cadc', 'cafc'),
-    'federal_circuits': (
+    'federal_geographic_circuits': (
         'ca1', 'ca2', 'ca3', 'ca4', 'ca5', 'ca6', 'ca7', 'ca8', 'ca9', 'ca10',
         'ca11', 'cadc'),
     'scotus': ('scotus',)}

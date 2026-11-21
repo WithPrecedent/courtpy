@@ -45,6 +45,8 @@ def test_listify_and_normalize() -> None:
 def test_expand_courts() -> None:
     courts = utilities.expand_courts('federal_appellate, scotus, ca1')
     assert courts[:2] == ['ca1', 'ca2'] and courts[-1] == 'scotus' and len(courts) == 14
+    geographic = utilities.expand_courts('federal_geographic_circuits')
+    assert len(geographic) == 12 and 'cadc' in geographic and 'cafc' not in geographic
     with pytest.raises(ValueError, match = 'name at least one court'):
         utilities.expand_courts('')
 

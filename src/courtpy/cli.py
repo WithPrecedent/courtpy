@@ -7,9 +7,7 @@ Run `courtpy --help` (or `courtpy {command} --help`) in a terminal for help.
 | `courtpy key set` | Stores your CourtListener API key outside of any project. |
 | `courtpy key show` | Shows where your key is found (with most of it hidden). |
 | `courtpy key delete` | Removes your stored key. |
-| `courtpy download bulk` | Extracts cases from CourtListener's bulk data (no key needed). |
-| `courtpy download api` | Downloads cases with the CourtListener API (a key is needed). |
-| `courtpy download {way}` | Downloads cases in a way that a study adds (see `courtpy.sources.Download`). |
+| `courtpy download` | Downloads cases from CourtListener's bulk data (no key needed), or with its API ("--method api", a key is needed). |
 | `courtpy split` | Divides Lexis-Nexis files of many cases into one file per case. |
 | `courtpy parse` | Parses saved cases into a table (a CSV or parquet file). |
 | `courtpy rules` | Checks a rulebook and lists the variables it makes. |
@@ -39,8 +37,6 @@ def _add_commands(commands: Any) -> None:
 
 Contents:
     main: runs a command.
-    _DOWNLOAD_SHARED: the arguments of "courtpy download" that are not
-        options of a way to download.
 
 """
 
@@ -58,19 +54,12 @@ import amos
 import requests
 
 from . import __version__
-from .core import datasets, options, secrets, utilities
+from .core import datasets, options, secrets
 from .references import judges
 
-# Importing the modules of the sources adds them and their ways to download
-# to `base.SOURCES` and `base.DOWNLOADS`.
-from .sources import base, bulk, courtlistener, lexis  # noqa: F401
+# Importing the modules of the sources adds them to `base.SOURCES`.
+from .sources import base, courtlistener, lexis
 from .wrangler import coders, parsers
-
-# The arguments of "courtpy download" that are not options of a way to
-# download.
-_DOWNLOAD_SHARED: frozenset[str] = frozenset({
-    'command', 'method', 'quiet', 'courts', 'start', 'end', 'folder',
-    'max_cases', 'overwrite'})
 
 
 def main(
@@ -126,37 +115,35 @@ def main(
 
 
 def _download(arguments: argparse.Namespace) -> int:
-    """Downloads cases ("courtpy download {way}").
+    """Downloads cases from CourtListener ("courtpy download").
 
-    The way to download is a `courtpy.sources.Download`, such as "bulk"
-    (which extracts the cases from CourtListener's bulk data) or "api"
-    (which downloads them with the API and needs a key), or one that a study
-    adds.
+    The cases are downloaded with `courtlistener.CourtListener.download`:
+    from the bulk data (the default, which needs no key) or with the API
+    ("--method api", which needs a key).
 
     Args:
-        arguments: the parsed arguments: "method" (the name of the way to
-            download), "courts", "start", "end", "folder", "max_cases", and
-            "overwrite", and the options that the way to download added
-            (such as "dockets" for "api" or "bulk_date" for "bulk").
+        arguments: the parsed arguments: "method", "courts", "start", "end",
+            "folder", "max_cases", "refresh", "dockets", "bulk_folder",
+            "bulk_date", and "stream".
 
     Returns:
         0.
 
     """
-    method = base.find_download(arguments.method)
-    folder = pathlib.Path(arguments.folder or method.source)
-    options = {
-        k: v for k, v in vars(arguments).items() if k not in _DOWNLOAD_SHARED}
-    saved = method().download(
+    folder = pathlib.Path(arguments.folder)
+    client = courtlistener.CourtListener(
+        bulk_folder = arguments.bulk_folder,
+        bulk_date = arguments.bulk_date,
+        stream = arguments.stream)
+    saved = client.download(
+        arguments.courts or [],
+        arguments.start,
+        arguments.end,
         folder,
-        courts = (
-            utilities.expand_courts(arguments.courts)
-            if arguments.courts else None),
-        start_date = arguments.start,
-        end_date = arguments.end,
+        method = arguments.method,
         max_cases = arguments.max_cases,
-        overwrite = arguments.overwrite,
-        **options)
+        dockets = arguments.dockets,
+        refresh = arguments.refresh)
     print(f'{len(saved)} cases saved in {folder}')
     return 0
 
@@ -413,31 +400,39 @@ def _parser(
             command = _key_delete)
 
     download = commands.add_parser(
-        'download', help = 'download cases (see "download {way} --help")')
-    ways = download.add_subparsers(
-        title = 'ways to download', dest = 'method', required = True)
-    shared = argparse.ArgumentParser(add_help = False)
-    shared.add_argument(
+        'download', help = 'download cases from CourtListener')
+    download.add_argument(
+        '--method', choices = courtlistener.DOWNLOAD_METHODS, default = 'bulk',
+        help = (
+            'bulk (the default) extracts them from the bulk data (no key '
+            'needed); api downloads them with the API (a key is needed)'))
+    download.add_argument(
         '--courts', nargs = '+',
-        help = 'court ids (such as ca1) or groups (such as federal_appellate)')
-    shared.add_argument('--start', help = 'earliest date filed (YYYY-MM-DD)')
-    shared.add_argument('--end', help = 'latest date filed (YYYY-MM-DD)')
-    shared.add_argument(
-        '--folder',
-        help = 'folder to save the cases in (default: the name of the '
-               'source, such as courtlistener)')
-    shared.add_argument(
-        '--max-cases', type = int, help = 'most cases to save')
-    shared.add_argument(
-        '--overwrite', action = 'store_true',
+        help = (
+            'court ids (such as ca1) or groups (such as '
+            'federal_geographic_circuits)'))
+    download.add_argument('--start', help = 'earliest date filed (YYYY-MM-DD)')
+    download.add_argument('--end', help = 'latest date filed (YYYY-MM-DD)')
+    download.add_argument(
+        '--folder', default = 'courtlistener',
+        help = 'folder to save the cases in (default: courtlistener)')
+    download.add_argument(
+        '--max-cases', type = int,
+        help = 'most cases to save (in each court, with the API)')
+    download.add_argument(
+        '--refresh', action = 'store_true',
         help = 'download cases that were already saved')
-    for name in sorted({c.name for c in base.DOWNLOADS.values()}):
-        method = base.DOWNLOADS[name]
-        way = ways.add_parser(
-            name, parents = [shared], help = method.describe(),
-            description = method.describe())
-        method.add_arguments(way)
-        way.set_defaults(command = _download)
+    download.add_argument(
+        '--dockets', action = 'store_true',
+        help = 'with the API, also download dockets (one request per case)')
+    download.add_argument(
+        '--bulk-folder', help = 'folder to keep the bulk files in')
+    download.add_argument(
+        '--bulk-date', help = 'date of the bulk files (default: newest)')
+    download.add_argument(
+        '--stream', action = 'store_true',
+        help = 'read the bulk files without saving them')
+    download.set_defaults(command = _download)
 
     split = commands.add_parser(
         'split', help = 'divide Lexis-Nexis files of many cases')

@@ -202,10 +202,12 @@ class FakeSession:
         self.handler = handler
         self.headers: dict[str, str] = {}
         self.calls: list[tuple[str, dict[str, Any] | None]] = []
+        self.sent_headers: list[dict[str, str] | None] = []
 
     def get(self, url: str, params: dict[str, Any] | None = None, **kwargs: Any) -> FakeResponse:
         """Records the request and returns the handler's response."""
         self.calls.append((url, params))
+        self.sent_headers.append(kwargs.get('headers'))
         return self.handler(url, params)
 
 

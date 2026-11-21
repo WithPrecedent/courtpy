@@ -11,7 +11,9 @@ folder.
 courtpy's loaders collect court cases (downloading or dividing them first, if
 asked), parse them with rulebooks, and code them, so the label of a study
 (such as "outcome_reversal", which a coder makes) exists when the data is
-loaded:
+loaded. As with reference data, `load_courtlistener` parses the cases that
+were saved before, and `download_courtlistener` downloads them first (from
+CourtListener's bulk data, unless "method" is "api"):
 
 ```ini
 [general]
@@ -25,12 +27,12 @@ input_folder = data
 appeals_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_court_listener, drop_text_columns
+techniques = download_courtlistener, drop_text_columns
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = courtlistener
-download = bulk
-courts = federal_circuits
+method = bulk
+courts = federal_geographic_circuits
 start_date = 2019-01-01
 end_date = 2019-12-31
 save = cases.csv
@@ -65,12 +67,14 @@ Contents:
     CaseLoader: base class for techniques that load court cases.
     LoadCases: loads a dataset of cases saved by `Cases.save`, or a table of
         one.
-    LoadCourtListener: collects, parses, and codes CourtListener cases.
+    DownloadCourtlistener: downloads CourtListener cases, and parses and
+        codes them.
+    LoadCourtlistener: parses and codes saved CourtListener cases.
     LoadLexisNexis: divides, parses, and codes Lexis-Nexis cases.
     ReferenceLoader: base class for techniques that load a table of
         reference data, such as `load_scdb` and `download_biographies`.
-    SourceLoader: base class for loaders that download cases from a source
-        (if asked) and parse them.
+    SourceLoader: base class for loaders that parse a folder of a source's
+        saved cases.
 
 """
 
@@ -86,9 +90,8 @@ import pandas as pd
 
 from ..core import datasets, options, utilities
 
-# Importing the modules of the sources adds their ways to download to
-# `base.DOWNLOADS`.
-from ..sources import base, bulk, courtlistener, lexis  # noqa: F401
+# Importing the modules of the sources adds them to `base.SOURCES`.
+from ..sources import courtlistener, lexis
 from . import coders, parsers
 
 
@@ -272,29 +275,19 @@ class LoadCases(CaseLoader):
 
 @dataclasses.dataclass
 class SourceLoader(CaseLoader, abc.ABC):
-    """Base class for loaders that download cases (if asked) and parse them.
+    """Base class for loaders that parse a folder of a source's saved cases.
 
     The source is a folder of saved cases of the `courtpy.sources.Source`
-    named by `reads`. If "download" names a way to download
-    (`courtpy.sources.Download`, such as "bulk" or one that a study adds),
-    the cases are downloaded into the folder first, and then the folder is
-    parsed. A subclass sets `reads` and `default_source`, and can extend
-    `load` (as `LoadLexisNexis` does to divide files first).
+    named by `reads`. A subclass sets `reads` and `default_source`, and can
+    extend `load` to collect the cases first (as `DownloadCourtlistener`
+    downloads them and `LoadLexisNexis` divides files of many cases).
 
     | Parameter | Meaning |
     | --- | --- |
-    | `download` | The name of a way to download (see `courtpy.sources.DOWNLOADS`), or "none" (the default). |
-    | `courts` | CourtListener court ids (such as "ca1, ca2") or groups (such as "federal_appellate") to download. |
-    | `start_date`, `end_date` | Dates filed to download (YYYY-MM-DD). |
-    | `max_cases` | Most cases to download. |
-    | `overwrite` | Whether to download cases that were already saved. |
     | `rulebooks` | Rules to parse with (such as "civil, criminal"), after the source's header rules and "general", which are always applied. Defaults to "federal". |
     | `keep_text` | Whether to keep the text of the cases' sections (such as "party", "history", and "opinion") in the table, which `parse_all` can parse again. |
     | `limit` | Most cases to parse, for trying out rules. |
     | `workers` | Number of processes to parse with. |
-
-    Any other parameter is an option of the way to download (such as
-    "bulk_date" for "bulk").
 
     Attributes:
         reads: the name of the source of the saved cases, such as
@@ -310,36 +303,15 @@ class SourceLoader(CaseLoader, abc.ABC):
         self,
         source: Any,
         *,
-        download: Any = None,
-        courts: Any = None,
-        start_date: Any = None,
-        end_date: Any = None,
-        max_cases: Any = None,
-        overwrite: Any = False,
         rulebooks: Any = None,
         keep_text: Any = False,
         limit: Any = None,
         workers: Any = None,
-        **options: Any) -> pd.DataFrame:
-        """Downloads the cases (if asked) and parses the folder `source`.
-
-        Settings can be text (as a settings file gives them), so each is
-        converted to the type it needs.
+        **kwargs: Any) -> pd.DataFrame:
+        """Parses the folder `source`.
 
         Args:
             source: the folder of saved cases, found with the clerk.
-            download: the name of a way to download, or "none". Defaults to
-                `None` (none).
-            courts: CourtListener court ids or groups to download. Defaults
-                to `None`.
-            start_date: earliest date filed to download (YYYY-MM-DD).
-                Defaults to `None`.
-            end_date: latest date filed to download (YYYY-MM-DD). Defaults
-                to `None`.
-            max_cases: most cases to download. Defaults to `None` (every
-                case).
-            overwrite: whether to download cases that were already saved.
-                Defaults to `False`.
             rulebooks: rules to parse with. Defaults to `None`, in which case
                 `options._DEFAULT_JURISDICTION` is used.
             keep_text: whether to keep the text of the cases' sections.
@@ -347,64 +319,131 @@ class SourceLoader(CaseLoader, abc.ABC):
             limit: most cases to parse. Defaults to `None` (every case).
             workers: number of processes to parse with. Defaults to `None`
                 (one).
-            **options: options of the way to download, such as "bulk_date".
-                A folder or file that one names (such as "bulk_folder") is
-                found with the clerk.
+            **kwargs: not used.
 
         Raises:
-            ValueError: if "download" names no way to download, or one that
-                saves cases of another source, or if no cases are found.
+            ValueError: if no cases are found.
+
+        Returns:
+            The table of parsed cases, labeled by "case_id".
+
+        """
+        return _parse(
+            pathlib.Path(source), self.reads, rulebooks = rulebooks,
+            keep_text = keep_text, limit = limit, workers = workers)
+
+
+@dataclasses.dataclass
+class LoadCourtlistener(SourceLoader):
+    """Parses and codes cases saved from CourtListener.
+
+    The source is a folder of cases saved by `courtpy.CourtListener` (by
+    default, "courtlistener" in the clerk's input folder), from its bulk
+    data or its API. To download them first, use `download_courtlistener`.
+    It takes the parameters of `SourceLoader`.
+
+    """
+
+    default_source: ClassVar[str | None] = 'courtlistener'
+    reads: ClassVar[str] = 'courtlistener'
+
+
+@dataclasses.dataclass
+class DownloadCourtlistener(LoadCourtlistener):
+    """Downloads cases from CourtListener, and parses and codes them.
+
+    The cases are downloaded into the source folder (by default,
+    "courtlistener" in the clerk's input folder) with
+    `courtpy.CourtListener.download`, and then the folder is parsed as
+    `load_courtlistener` parses it. With "bulk" (the default), they are
+    extracted from CourtListener's bulk data, which needs no API key. With
+    "api", they are downloaded with the API, with the key from
+    `courtpy.secrets`. Cases that were saved before are not downloaded again
+    unless "refresh" is true.
+
+    It takes the parameters of `SourceLoader`, and these:
+
+    | Parameter | Meaning |
+    | --- | --- |
+    | `method` | "bulk" (the default) or "api". |
+    | `courts` | CourtListener court ids (such as "ca1, ca2") or groups (such as "federal_appellate") to download. |
+    | `start_date`, `end_date` | Dates filed to download (YYYY-MM-DD). |
+    | `max_cases` | Most cases to download: in all with "bulk", and in each court with "api". |
+    | `refresh` | Whether to download cases that were already saved. |
+    | `dockets` | For "api", whether to download each case's docket too (the bulk data always has it). |
+    | `bulk_folder`, `bulk_date`, `stream` | For "bulk", where to keep the bulk files (found with the clerk), which date's files to use, and whether to read them without saving them. |
+
+    """
+
+    """ Required Methods """
+
+    def load(
+        self,
+        source: Any,
+        *,
+        method: Any = 'bulk',
+        courts: Any = None,
+        start_date: Any = None,
+        end_date: Any = None,
+        max_cases: Any = None,
+        refresh: Any = False,
+        dockets: Any = False,
+        bulk_folder: Any = None,
+        bulk_date: Any = None,
+        stream: Any = False,
+        **kwargs: Any) -> pd.DataFrame:
+        """Downloads the cases into the folder `source` and parses it.
+
+        Settings can be text (as a settings file gives them), so each is
+        converted to the type it needs.
+
+        Args:
+            source: the folder to save the cases in, found with the clerk.
+            method: "bulk" or "api". Defaults to "bulk".
+            courts: CourtListener court ids or groups to download. Defaults
+                to `None`, which raises an error.
+            start_date: earliest date filed to download (YYYY-MM-DD).
+                Defaults to `None`.
+            end_date: latest date filed to download (YYYY-MM-DD). Defaults
+                to `None`.
+            max_cases: most cases to download. Defaults to `None` (every
+                case).
+            refresh: whether to download cases that were already saved.
+                Defaults to `False`.
+            dockets: with "api", whether to download each case's docket too.
+                Defaults to `False`.
+            bulk_folder: with "bulk", the folder to keep the bulk files in,
+                found with the clerk. Defaults to `None`, in which case
+                "bulk" in `utilities.data_folder()` is used.
+            bulk_date: with "bulk", the date of the files to use. Defaults to
+                `None` (the newest).
+            stream: with "bulk", whether to read the files without saving
+                them. Defaults to `False`.
+            **kwargs: the parameters of `SourceLoader.load`.
+
+        Raises:
+            ValueError: if "method" is not "bulk" or "api", if no courts are
+                named, or if no cases are found.
 
         Returns:
             The table of parsed cases, labeled by "case_id".
 
         """
         folder = pathlib.Path(source)
-        if not utilities.is_none_setting(download):
-            method = base.find_download(str(download))
-            if method.source != self.reads:
-                message = (
-                    f'the "{method.name}" download saves {method.source} '
-                    f'cases, but {self.name!r} reads {self.reads} cases')
-                raise ValueError(message)
-            method(locate = self._locate).download(
-                folder,
-                courts = utilities.expand_courts(courts) if courts else None,
-                start_date = utilities.to_date(start_date),
-                end_date = utilities.to_date(end_date),
-                max_cases = utilities.to_integer(max_cases),
-                overwrite = utilities.to_bool(overwrite),
-                **options)
-        return _parse(
-            folder, self.reads, rulebooks = rulebooks,
-            keep_text = keep_text, limit = limit, workers = workers)
-
-
-@dataclasses.dataclass
-class LoadCourtListener(SourceLoader):
-    """Collects, parses, and codes cases from CourtListener.
-
-    The source is a folder of cases saved by `courtpy.BulkData` or
-    `courtpy.CourtListener` (by default, "courtlistener" in the clerk's input
-    folder). If "download" is set, the cases are downloaded into it first:
-    "bulk" extracts them from CourtListener's bulk data (no API key needed),
-    and "api" downloads them with the API (with the key from
-    `courtpy.secrets`). A study can add other ways (see
-    `courtpy.sources.Download`). Cases that were saved before are not
-    downloaded again.
-
-    It takes the parameters of `SourceLoader`, and these options of the ways
-    to download:
-
-    | Parameter | Meaning |
-    | --- | --- |
-    | `dockets` | For "api", whether to download each case's docket too. |
-    | `bulk_folder`, `bulk_date`, `stream` | For "bulk", where to keep the bulk files, which date's files to use, and whether to read them without saving them. |
-
-    """
-
-    default_source: ClassVar[str | None] = 'courtlistener'
-    reads: ClassVar[str] = 'courtlistener'
+        client = courtlistener.CourtListener(
+            bulk_folder = self._locate(bulk_folder) if bulk_folder else None,
+            bulk_date = utilities.to_date(bulk_date),
+            stream = utilities.to_bool(stream))
+        client.download(
+            courts or [],
+            utilities.to_date(start_date),
+            utilities.to_date(end_date),
+            folder,
+            method = str(method),
+            max_cases = utilities.to_integer(max_cases),
+            dockets = utilities.to_bool(dockets),
+            refresh = utilities.to_bool(refresh))
+        return super().load(folder, **kwargs)
 
 
 @dataclasses.dataclass
@@ -416,8 +455,7 @@ class LoadLexisNexis(SourceLoader):
     files (or folders) of many cases, as Lexis-Nexis downloads them, they are
     divided into the source folder first (see `courtpy.lexis.split`).
 
-    It takes the parameters of `SourceLoader` (none of courtpy's ways to
-    download saves Lexis-Nexis cases), and:
+    It takes the parameters of `SourceLoader`, and:
 
     | Parameter | Meaning |
     | --- | --- |

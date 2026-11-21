@@ -279,7 +279,7 @@ def test_add_idb_in_a_wrangler(tmp_path: pathlib.Path) -> None:
         '[court_project]\n'
         'court_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, add_idb\n'
+        'techniques = load_courtlistener, add_idb\n'
         '[add_idb_parameters]\n'
         'source = appeals.csv\n'
         'columns = appeal_type, judgment_date\n'

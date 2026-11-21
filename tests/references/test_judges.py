@@ -669,7 +669,7 @@ def test_cases_to_votes_in_a_loader(court_listener_folder: pathlib.Path, roster:
     # With a roster saved where the techniques look for it, a loader can make
     # the judges' votes, and a vote can be the label of a study.
     roster.save()
-    dataset = loaders.LoadCourtListener().apply(
+    dataset = loaders.LoadCourtlistener().apply(
         None, source = court_listener_folder,
         coders = 'code_parties, code_case_type, code_outcome, code_panels, cases_to_votes',
         label = 'vote_reversal', groups = 'case_id')
@@ -749,12 +749,14 @@ def test_cases_to_votes_example(roster: judges.Roster, tmp_path: pathlib.Path) -
             opinions)
     roster.save()
     idea = chrisjen.Idea.create(EXAMPLES / 'cases_to_votes.ini')
-    idea['load_court_listener_parameters']['download'] = 'none'
+    # The cases are in the folder already, so they are loaded, not downloaded.
+    idea['wrangler']['techniques'][0] = 'load_courtlistener'
+    idea['load_courtlistener_parameters'] = idea.contents.pop('download_courtlistener_parameters')
     project = courtpy.Project.create(idea, clerk = tmp_path)
     result = project.result
     assert result.label == 'vote_reversal' and result.groups == ['case_id']
     assert [e['technique'] for e in result.history][:7] == [
-        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome',
+        'load_courtlistener', 'code_parties', 'code_case_type', 'code_outcome',
         'code_panels', 'add_executive', 'cases_to_votes']
     assert (tmp_path / 'data' / 'votes.csv').is_file()
     assert len(result.data) == 270
@@ -801,7 +803,7 @@ def test_techniques_in_a_wrangler(
         '[panels_project]\n'
         'panels_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, add_biography, code_panels, add_executive, cases_to_votes\n'
+        'techniques = load_courtlistener, add_biography, code_panels, add_executive, cases_to_votes\n'
         '[add_biography_parameters]\n'
         'source = my_roster.csv\n'
         'name = author\n'
@@ -915,7 +917,7 @@ def test_cases_to_judges_is_a_shaper(court_listener_folder: pathlib.Path, roster
         parameters = {'cases_to_judges': {'outcomes': 'outcome_reversal'}})
     assert list(project.data.index) == [101, 102, 103]
     # As in the recipe, a loader's coders can make a table of judges.
-    dataset = loaders.LoadCourtListener().apply(
+    dataset = loaders.LoadCourtlistener().apply(
         None, source = court_listener_folder,
         coders = 'code_parties, code_case_type, code_outcome, cases_to_votes, cases_to_judges',
         label = 'judge_dissented')

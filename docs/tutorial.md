@@ -17,15 +17,16 @@ on its own, and each saves its work.
 
 ## 1. Collect cases
 
-CourtListener offers its opinions in two ways. The **bulk data** needs no API
-key and has no limits, but its files are large (the opinions alone are more
-than 50 GB), so extracting cases takes a few hours. It is the best way to
+CourtListener offers its opinions in two ways, and `courtpy.CourtListener`
+downloads with either (its "method"). The **bulk data** (the default) needs no
+API key and has no limits, but its files are large (the opinions alone are
+more than 50 GB), so extracting cases takes a few hours. It is the best way to
 collect a large set of cases:
 
 ```python
 import courtpy
 
-courtpy.BulkData().extract(
+courtpy.CourtListener().download(
     courts = "ca1",
     start_date = "2019-01-01",
     end_date = "2019-12-31",
@@ -40,11 +41,12 @@ API key and limits how many requests an account can make. Get a key from the
 courtpy key set
 ```
 
-Then download:
+Then download with `method = "api"`:
 
 ```python
 courtpy.CourtListener().download(
-    "ca1", "2026-09-01", "2026-09-30", "courtlistener", max_cases = 40)
+    "ca1", "2026-09-01", "2026-09-30", "courtlistener", method = "api",
+    max_cases = 40)
 ```
 
 Either way, each case is saved as a JSON file in a folder for its court, such
@@ -148,11 +150,11 @@ label = outcome_reversal
 study_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_court_listener, keep_columns, drop_missing
+techniques = download_courtlistener, keep_columns, drop_missing
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = courtlistener
-download = api
+method = api
 courts = ca1
 start_date = 2026-09-01
 end_date = 2026-09-30

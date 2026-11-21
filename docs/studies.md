@@ -43,7 +43,7 @@ Each file is now a rulebook named for its stem (such as "review"), which the
 settings can name with courtpy's own:
 
 ```toml
-[load_court_listener_parameters]
+[load_courtlistener_parameters]
 rulebooks = "federal, review"
 ```
 
@@ -91,60 +91,35 @@ them:
 
 ## Sources of your own
 
-courtpy reads saved cases with a source (`courtpy.Source`) and collects them
-with a way to download (`courtpy.Download`). Like techniques, both add
-themselves to courtpy when they are defined, so a study can add its own in a
-module that its `__init__.py` imports.
+courtpy reads saved cases with a source (`courtpy.Source`), which adds
+itself to courtpy when it is defined, as techniques do, so a study can add
+its own in a module that its `__init__.py` imports.
 
-A way to download saves cases in a folder. Its `download` method takes the
-folder, the courts (with groups already expanded), the dates, "max_cases",
-and "overwrite", and any options of its own, which come from the loader's
-parameters (as text, from a settings file) or from its command line options:
+To download CourtListener cases in a way of its own, a study subclasses
+`courtpy.CourtListener` (the client) or the loader that uses it,
+`download_courtlistener`. Like any `amos` technique, a subclass is a new
+technique named for its class, whose parameters come from its
+"{name}_parameters" section:
 
 ```python
-import argparse
 import dataclasses
 import pathlib
-from typing import Any, ClassVar
+from typing import Any
 
 import courtpy
 
-from .bulk import OpinionData  # the study's own subclass of courtpy.BulkData
-
 
 @dataclasses.dataclass
-class OpinionsDownload(courtpy.Download):
-    """Extracts cases from the bulk files that hold opinions."""
+class DownloadAppeals(courtpy.loaders.DownloadCourtlistener):
+    """Downloads the appeals of the regional circuits, and parses them."""
 
-    name: ClassVar[str] = 'opinions'
-
-    @classmethod
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument('--parties', help = 'a pattern of case names')
-
-    def download(
-        self,
-        folder: pathlib.Path,
-        *,
-        courts: list[str] | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
-        max_cases: int | None = None,
-        overwrite: bool = False,
-        parties: Any = None,
-        bulk_folder: Any = None,
-        **options: Any) -> list[pathlib.Path]:
-        data = OpinionData(
-            folder = self.locate(bulk_folder) if bulk_folder else None)
-        return data.extract(
-            courts or ['ca1', 'ca2'], start_date, end_date, folder,
-            max_cases = max_cases, overwrite = overwrite, parties = parties)
+    def load(self, source: Any, *, courts: Any = None, **kwargs: Any) -> Any:
+        courts = courts or 'federal_geographic_circuits'
+        return super().load(source, courts = courts, **kwargs)
 ```
 
-Now `load_court_listener` takes `download = "opinions"` (and `parties`),
-and `my-study download opinions --parties "United States"` runs it. `locate`
-finds a folder named in the settings as the loader finds its source. A
-`name` that courtpy already uses (such as "bulk") replaces courtpy's way.
+Now `download_appeals` takes every parameter of `download_courtlistener`
+(such as `method`, `start_date`, and `bulk_date`), and needs no `courts`.
 
 A new kind of saved case needs a source, which reads one file into a
 `courtpy.Case`, and a loader, which needs only the source's name:
@@ -173,11 +148,12 @@ class LoadTexasCourt(courtpy.SourceLoader):
 
 The source is named "texas_court" (the snake case name of its class, unless
 it sets `name`), and the loader is the technique `load_texas_court`, which
-takes the parameters of `load_court_listener`. A way to download for it sets
-`source = 'texas_court'`. A source can also set `structure` (a rulebook that
+takes the parameters of `load_courtlistener`. To download its cases too, it
+can extend `load` to save them in the source folder first, as
+`download_courtlistener` does. A source can also set `structure` (a rulebook that
 finds the sections of each case, as Lexis-Nexis needs) and `finish` (which
 adds columns to each parsed case). The [catalog](catalog.md) lists the
-sources and ways to download that courtpy has.
+sources that courtpy has.
 
 ## Settings
 
@@ -197,12 +173,12 @@ output_folder = "results"
 my_study_workers = "wrangler, analyst"
 
 [wrangler]
-techniques = "load_court_listener, code_panels, cases_to_votes"
+techniques = "download_courtlistener, code_panels, cases_to_votes"
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = "courtlistener"
-download = "bulk"
-courts = "federal_circuits"
+method = "bulk"
+courts = "federal_geographic_circuits"
 start_date = "2010-01-01"
 rulebooks = "federal, review"
 save = "cases.parquet"

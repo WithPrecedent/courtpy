@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.6.0
+
+### Added
+
+* `download_courtlistener` is a new loader, like `download_idb` and the other
+  "download_" techniques: it downloads CourtListener cases into its source
+  folder and then parses and codes them. Its "method" is "bulk" (the
+  default), which extracts the cases from the bulk data and needs no key, or
+  "api", which downloads them with the API. Its other parameters are
+  `courts`, `start_date`, `end_date`, `max_cases`, `refresh`, `dockets` (for
+  "api"), and `bulk_folder`, `bulk_date`, and `stream` (for "bulk").
+
+### Changed
+
+* courtpy needs amos 0.10.3 or later. That version compares classifiers by
+  the Matthews correlation coefficient wherever amos chooses the metric, and
+  adds the `gpboost`, `bambi`, and `pymc` models.
+* `CourtListener` downloads from the bulk data as well as the API, and
+  `BulkData` is gone. `CourtListener.download` takes `method = "bulk"` (the
+  default) or `"api"`. `BulkData`'s fields are now `bulk_folder`,
+  `bulk_date`, `stream`, and `bulk_url`, and the API's address is
+  `api_url`. Its methods are `bulk_dates` (was `available`),
+  `fetch_bulk_file` (`fetch`), `read_bulk_chunks` (`chunks`),
+  `read_bulk_rows` (`rows`), and `resolve_bulk_date` (`resolve_date`).
+* `CourtListener` looks for the API key only when it first makes a request
+  to the API, so the bulk data needs no key, and it sends the key with
+  requests to the API alone, not in the session's headers.
+* `load_court_listener` is now `load_courtlistener`, and it only parses and
+  codes the cases already in its folder. Use `download_courtlistener` to
+  download them first.
+* `overwrite` is now `refresh` in `CourtListener.download`, in
+  `download_courtlistener`, and in `courtpy download` ("--refresh"), as in
+  the other "download_" techniques.
+* `courtpy download` takes "--method bulk" (the default) or "--method api"
+  in place of the "bulk" and "api" subcommands, and its folder defaults to
+  "courtlistener".
+* The group of courts "federal_circuits" is now
+  "federal_geographic_circuits" (the twelve regional circuits, without the
+  Federal Circuit).
+* CITATION.cff and the README's citation give version 0.6.0.
+
+### Removed
+
+* `courtpy.Download`, `courtpy.sources.DOWNLOADS`, and
+  `courtpy.sources.find_download`, with `BulkDownload` and `ApiDownload`.
+  To download in a way of its own, a study subclasses `CourtListener` or
+  `download_courtlistener`'s class, `DownloadCourtlistener`.
+* The `courtpy.bulk` module, whose code is now part of
+  `courtpy.courtlistener`.
+
 ## 0.5.2
 
 ### Changed

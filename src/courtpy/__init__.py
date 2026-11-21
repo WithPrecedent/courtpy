@@ -1,17 +1,14 @@
 """Accessible tools for collecting, parsing, and analyzing court opinions
 
 Contents:
-    BulkData: extracts cases from CourtListener's bulk data.
     Case: the text and information of one case, ready to be parsed.
     CaseLoader: base class for techniques that load court cases.
     CaseTypes: a dataset with one row for each case type.
     Cases: a dataset with one row for each case.
     CourtData: base class for courtpy's datasets.
-    CourtListener: downloads cases with the CourtListener API.
+    CourtListener: downloads cases from CourtListener's bulk data or API.
     Courts: a dataset with one row for each court.
     Dockets: a dataset with one row for each docket number of each case.
-    Download: base class for a way to download cases, which a study can
-        subclass to add its own.
     Judges: a dataset with one row for each judge.
     Parser: parses cases with rulebooks.
     PartyTypes: a dataset with one row for each party type.
@@ -19,8 +16,8 @@ Contents:
     ReferenceLoader: base class for techniques that load reference data.
     Source: base class for a source of saved cases, which a study can
         subclass to add its own.
-    SourceLoader: base class for techniques that download cases from a
-        source and parse them.
+    SourceLoader: base class for techniques that parse a folder of a
+        source's saved cases.
     Votes: a dataset with one row for each judge on each case.
     code: applies coders to a table of parsed cases.
     parse: parses a folder of saved cases into a table.
@@ -29,12 +26,11 @@ Contents:
 
 from __future__ import annotations
 
-__version__ = '0.5.2'
+__version__ = '0.6.0'
 
 __author__: str = 'Corey Rayburn Yung'
 
 __all__: list[str] = [
-    'BulkData',
     'Case',
     'CaseLoader',
     'CaseTypes',
@@ -43,7 +39,6 @@ __all__: list[str] = [
     'CourtListener',
     'Courts',
     'Dockets',
-    'Download',
     'Judges',
     'Parser',
     'PartyTypes',
@@ -53,7 +48,6 @@ __all__: list[str] = [
     'SourceLoader',
     'Votes',
     'audits',
-    'bulk',
     'cases',
     'code',
     'coders',
@@ -102,9 +96,8 @@ from .core.datasets import (
 )
 from .critic import audits, inferers
 from .references import courts, fjc_idb, jcs, judges, politics, scdb, scores
-from .sources import bulk, courtlistener, lexis
-from .sources.base import Download, Source
-from .sources.bulk import BulkData
+from .sources import courtlistener, lexis
+from .sources.base import Source
 from .sources.courtlistener import CourtListener
 from .wrangler import coders, loaders, parsers, rules, shapers
 from .wrangler.coders import code
@@ -114,8 +107,8 @@ from .wrangler.parsers import Parser, parse
 # Each module can be imported from `courtpy` itself (such as `courtpy.judges`),
 # wherever it is in the folders of its part, as `amos` does with its steps.
 for _module in (
-        cases, datasets, options, secrets, utilities, bulk, courtlistener,
-        lexis, coders, loaders, parsers, rules, shapers, courts, fjc_idb, jcs,
+        cases, datasets, options, secrets, utilities, courtlistener, lexis,
+        coders, loaders, parsers, rules, shapers, courts, fjc_idb, jcs,
         judges, politics, scdb, scores, plots, audits, inferers):
     _short = _module.__name__.rpartition('.')[2]
     sys.modules.setdefault(f'{__name__}.{_short}', _module)

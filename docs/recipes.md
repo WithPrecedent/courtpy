@@ -69,9 +69,9 @@ groups = case_id
 votes_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_court_listener, filter_rows, keep_columns, drop_missing
+techniques = load_courtlistener, filter_rows, keep_columns, drop_missing
 
-[load_court_listener_parameters]
+[load_courtlistener_parameters]
 source = courtlistener
 coders = code_parties, code_case_type, code_outcome, code_panels, add_executive, cases_to_votes
 
@@ -119,7 +119,7 @@ of the judge's cases with a dissent by the judge):
 seed = 43
 label = judge_dissented
 
-[load_court_listener_parameters]
+[load_courtlistener_parameters]
 source = courtlistener
 coders = code_parties, code_case_type, code_outcome, cases_to_votes, cases_to_judges
 ```
@@ -133,7 +133,7 @@ a prefix for the new columns:
 
 ```ini
 [wrangler]
-techniques = load_court_listener, add_biography, filter_rows, keep_columns
+techniques = load_courtlistener, add_biography, filter_rows, keep_columns
 
 [add_biography_parameters]
 name = author
@@ -161,7 +161,7 @@ downloads the scores from their sources the first time):
 
 ```ini
 [wrangler]
-techniques = load_court_listener, add_executive, add_legislature, add_high_court, add_circuit, drop_text_columns
+techniques = load_courtlistener, add_executive, add_legislature, add_high_court, add_circuit, drop_text_columns
 ```
 
 Each matches the case's date ("date_filed") to a table of date ranges, so a
@@ -208,11 +208,11 @@ latest release the first time:
 label = outcome_reversal
 
 [wrangler]
-techniques = load_court_listener, add_scdb, filter_rows, keep_columns
+techniques = download_courtlistener, add_scdb, filter_rows, keep_columns
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = courtlistener
-download = bulk
+method = bulk
 courts = scotus
 start_date = 2000-01-01
 
@@ -247,12 +247,12 @@ label = outcome_reversal
 groups = case_id
 
 [wrangler]
-techniques = load_court_listener, cases_to_dockets, add_idb, filter_rows, keep_columns, drop_missing
+techniques = download_courtlistener, cases_to_dockets, add_idb, filter_rows, keep_columns, drop_missing
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = courtlistener
-download = bulk
-courts = federal_circuits
+method = bulk
+courts = federal_geographic_circuits
 start_date = 2015-01-01
 end_date = 2019-12-31
 
@@ -289,7 +289,7 @@ table = courtpy.parse("courtlistener", rulebooks = ["federal", "deference.csv"])
 ```
 
 or, in a settings file, `rulebooks = federal, deference.csv` in the loader's
-parameters (such as the "load_court_listener_parameters" section). Check the
+parameters (such as the "load_courtlistener_parameters" section). Check the
 file first with `courtpy rules deference.csv`.
 
 For a quick look without a file of rules, keep the opinions' text and search
@@ -298,9 +298,9 @@ loader. `drop_text_columns` then removes the text before the analysis:
 
 ```toml
 [wrangler]
-techniques = "load_court_listener, parse_flags, parse_counts, drop_text_columns"
+techniques = "load_courtlistener, parse_flags, parse_counts, drop_text_columns"
 
-[load_court_listener_parameters]
+[load_courtlistener_parameters]
 keep_text = true
 
 [parse_flags_parameters]
@@ -343,7 +343,7 @@ cases added since. Run the same command each week (for example, with Windows
 Task Scheduler or cron):
 
 ```sh
-courtpy download api --courts federal_circuits --start 2026-01-01 --folder courtlistener
+courtpy download --method api --courts federal_geographic_circuits --start 2026-01-01
 ```
 
 ## Parse cases downloaded from Lexis-Nexis

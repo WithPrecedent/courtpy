@@ -19,26 +19,26 @@ def test_loaders_are_in_the_library() -> None:
     assert sorted(amos.library.get_genre('case_loader')) == [
         'load_cases', 'source_loader']
     assert sorted(amos.library.get_genre('source_loader')) == [
-        'load_court_listener', 'load_lexis_nexis']
-    assert issubclass(loaders.LoadCourtListener, amos.Loader)
+        'download_courtlistener', 'load_courtlistener', 'load_lexis_nexis']
+    assert issubclass(loaders.LoadCourtlistener, amos.Loader)
 
 
-def test_load_court_listener(court_listener_folder: pathlib.Path) -> None:
-    dataset = loaders.LoadCourtListener().apply(
+def test_load_courtlistener(court_listener_folder: pathlib.Path) -> None:
+    dataset = loaders.LoadCourtlistener().apply(
         None, source = court_listener_folder, label = 'outcome_reversal')
     assert dataset.label == 'outcome_reversal'
     assert dataset.task == 'classify'
     assert len(dataset.data) == 3
     assert [e['technique'] for e in dataset.history] == [
-        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome']
+        'load_courtlistener', 'code_parties', 'code_case_type', 'code_outcome']
     assert dataset.history[0]['rows'] == 3
 
 
 def test_coders_none(court_listener_folder: pathlib.Path) -> None:
-    dataset = loaders.LoadCourtListener().apply(
+    dataset = loaders.LoadCourtlistener().apply(
         None, source = court_listener_folder, coders = 'none')
     assert 'outcome_reversal' not in dataset.data.columns
-    pending = loaders.LoadCourtListener().apply(
+    pending = loaders.LoadCourtlistener().apply(
         None, source = court_listener_folder, coders = 'none',
         label = 'outcome_reversal')
     assert pending.label == 'outcome_reversal'
@@ -49,7 +49,7 @@ def test_coders_none(court_listener_folder: pathlib.Path) -> None:
 
 def test_save_and_reuse(court_listener_folder: pathlib.Path, tmp_path: pathlib.Path) -> None:
     clerk = nagata.FileManager(root_folder = tmp_path, interim_folder = 'interim')
-    loader = loaders.LoadCourtListener(clerk = clerk)
+    loader = loaders.LoadCourtlistener(clerk = clerk)
     loader.apply(None, source = court_listener_folder, save = 'cases.csv')
     saved = pathlib.Path(clerk.interim_folder) / 'cases.csv'
     whole = saved.with_suffix('.joblib')
@@ -61,8 +61,8 @@ def test_save_and_reuse(court_listener_folder: pathlib.Path, tmp_path: pathlib.P
     # The saved dataset goes on from where it was saved, history and all.
     assert reused.history[-1]['reused'] == str(whole)
     assert [e['technique'] for e in reused.history] == [
-        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome', 'save_data',
-        'load_court_listener']
+        'load_courtlistener', 'code_parties', 'code_case_type', 'code_outcome', 'save_data',
+        'load_courtlistener']
     assert reused.data.loc['1', 'panel_judges'] == 'LYNCH; HOWARD; THOMPSON'
     # Without the joblib file, the table is reused.
     whole.unlink()
@@ -80,13 +80,13 @@ def test_project_with_a_loader(court_listener_folder: pathlib.Path, tmp_path: pa
         'general': {'seed': 43, 'label': 'outcome_reversal'},
         'files': {'input_folder': 'data'},
         'appeals_project': {'appeals_workers': 'wrangler, explorer'},
-        'wrangler': {'techniques': 'load_court_listener, drop_text_columns'},
+        'wrangler': {'techniques': 'load_courtlistener, drop_text_columns'},
         'explorer': {'techniques': 'summarize, label_balance'}}
     project = courtpy.Project.create(settings, clerk = tmp_path)
     result = project.result
     assert result.label == 'outcome_reversal'
     assert result.history[0] == {
-        'technique': 'load_court_listener', 'source': 'courtlistener',
+        'technique': 'load_courtlistener', 'source': 'courtlistener',
         'rows': 3, 'columns': result.history[0]['columns']}
     assert 'party1' not in result.data.columns
     assert set(result.tables) == {'summarize', 'label_balance'}
@@ -103,8 +103,8 @@ def test_amos_parsers_search_kept_text(court_listener_folder: pathlib.Path, tmp_
         '[coding_project]\n'
         'coding_workers = "wrangler"\n'
         '[wrangler]\n'
-        'techniques = "load_court_listener, parse_flags, parse_counts, drop_text_columns"\n'
-        '[load_court_listener_parameters]\n'
+        'techniques = "load_courtlistener, parse_flags, parse_counts, drop_text_columns"\n'
+        '[load_courtlistener_parameters]\n'
         'keep_text = true\n'
         '[parse_flags_parameters]\n'
         'column = "opinion"\n'
@@ -118,7 +118,7 @@ def test_amos_parsers_search_kept_text(court_listener_folder: pathlib.Path, tmp_
         encoding = 'utf-8')
     result = courtpy.Project.create(settings, clerk = tmp_path).result
     assert [e['technique'] for e in result.history] == [
-        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome',
+        'load_courtlistener', 'code_parties', 'code_case_type', 'code_outcome',
         'parse_flags', 'parse_counts', 'drop_text_columns']
     assert result.data.loc['2', 'affirmed']
     assert result.data.loc['2', 'title_vii'] == 1
@@ -138,8 +138,8 @@ def test_parse_all_in_a_wrangler(court_listener_folder: pathlib.Path, tmp_path: 
         '[reparse_project]\n'
         'reparse_workers = "wrangler"\n'
         '[wrangler]\n'
-        'techniques = "load_court_listener, parse_all, drop_text_columns"\n'
-        '[load_court_listener_parameters]\n'
+        'techniques = "load_courtlistener, parse_all, drop_text_columns"\n'
+        '[load_courtlistener_parameters]\n'
         'keep_text = true\n'
         '[parse_all_parameters]\n'
         f'rulebooks = "federal, {rules.as_posix()}"\n',
@@ -152,30 +152,45 @@ def test_parse_all_in_a_wrangler(court_listener_folder: pathlib.Path, tmp_path: 
 
 def test_no_cases(tmp_path: pathlib.Path) -> None:
     with pytest.raises(ValueError, match = 'no courtlistener cases were found'):
-        loaders.LoadCourtListener().apply(None, source = tmp_path)
+        loaders.LoadCourtlistener().apply(None, source = tmp_path)
 
 
-def test_download(
+def test_download_courtlistener(
     court_listener_folder: pathlib.Path,
+    tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
-    monkeypatch.setattr(
-        courtpy.bulk.BulkData, 'extract',
-        lambda self, **kwargs: calls.append((self.date, kwargs)) or [])
-    loaders.LoadCourtListener().apply(
-        None, source = court_listener_folder, download = 'bulk', courts = 'ca1, ca2',
-        start_date = '2020-01-01', bulk_date = '2026-09-30', max_cases = '5')
-    date, arguments = calls[0]
-    assert date == '2026-09-30'
-    assert arguments['courts'] == ['ca1', 'ca2']
-    assert arguments['max_cases'] == 5
-    assert arguments['folder'] == court_listener_folder
-    with pytest.raises(ValueError, match = 'download must be'):
-        loaders.LoadCourtListener().apply(
-            None, source = court_listener_folder, download = 'ftp', courts = 'ca1')
+
+    def record(self: courtpy.CourtListener, *args: object, **kwargs: object) -> list[pathlib.Path]:
+        calls.append((self, args, kwargs))
+        return []
+
+    monkeypatch.setattr(courtpy.CourtListener, 'download', record)
+    monkeypatch.chdir(tmp_path)
+    loader = loaders.DownloadCourtlistener()
+    dataset = loader.apply(
+        None, source = court_listener_folder, courts = 'ca1, ca2',
+        start_date = '2020-01-01 00:00:00', bulk_date = '2026-09-30', max_cases = '5',
+        refresh = 'yes', bulk_folder = 'bulk_files', rulebooks = 'federal')
+    assert len(dataset.data) == 3
+    assert dataset.history[0]['technique'] == 'download_courtlistener'
+    client, args, kwargs = calls[0]
+    assert client.bulk_date == '2026-09-30'
+    assert client.bulk_folder == pathlib.Path(loader._get_clerk().input_folder) / 'bulk_files'
+    assert args == ('ca1, ca2', '2020-01-01', None, court_listener_folder)
+    assert kwargs == {
+        'method': 'bulk', 'max_cases': 5, 'dockets': False, 'refresh': True}
+
+
+def test_download_courtlistener_fails_clearly(court_listener_folder: pathlib.Path) -> None:
+    with pytest.raises(ValueError, match = 'method must be'):
+        loaders.DownloadCourtlistener().apply(
+            None, source = court_listener_folder, method = 'ftp', courts = 'ca1')
+    with pytest.raises(ValueError, match = 'name at least one court'):
+        loaders.DownloadCourtlistener().apply(None, source = court_listener_folder)
     with pytest.raises(courtpy.secrets.MissingAPIKeyError):
-        loaders.LoadCourtListener().apply(
-            None, source = court_listener_folder, download = 'api', courts = 'ca1')
+        loaders.DownloadCourtlistener().apply(
+            None, source = court_listener_folder, method = 'api', courts = 'ca1')
 
 
 def test_load_lexis_nexis(tmp_path: pathlib.Path) -> None:

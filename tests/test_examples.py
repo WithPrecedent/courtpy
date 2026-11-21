@@ -39,12 +39,14 @@ def test_federal_appeals_example(tmp_path: pathlib.Path) -> None:
             [make_opinion(number * 10, number, html_with_citations = f'<p>{text}</p>')],
             court = court)
     idea = chrisjen.Idea.create(EXAMPLES / 'federal_appeals.ini')
-    idea['load_court_listener_parameters']['download'] = 'none'
+    # The cases are in the folder already, so they are loaded, not downloaded.
+    idea['wrangler']['techniques'][0] = 'load_courtlistener'
+    idea['load_courtlistener_parameters'] = idea.contents.pop('download_courtlistener_parameters')
     project = courtpy.Project.create(idea, clerk = tmp_path)
     result = project.result
     assert result.label == 'outcome_reversal'
     assert [e['technique'] for e in result.history][:4] == [
-        'load_court_listener', 'code_parties', 'code_case_type', 'code_outcome']
+        'load_courtlistener', 'code_parties', 'code_case_type', 'code_outcome']
     assert (tmp_path / 'data' / 'cases.csv').is_file()
     assert set(result.tables) >= {'summarize', 'label_balance', 'analyst_comparison', 'scorecard'}
     assert 'panel_judges' not in result.data.columns

@@ -64,7 +64,7 @@ a settings file can name them like any other:
 <tr><th>Stage</th><th>Steps</th><th>Techniques</th></tr>
 </thead>
 <tbody>
-<tr><td rowspan="6" valign="middle">wrangler</td><td>Loaders</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.DownloadBiographies"><code>download_biographies</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.DownloadIdb"><code>download_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/jcs/#courtpy.references.jcs.DownloadJcs"><code>download_jcs</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.DownloadPolitics"><code>download_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.DownloadScdb"><code>download_scdb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCases"><code>load_cases</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCourtListener"><code>load_court_listener</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.LoadIdb"><code>load_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadLexisNexis"><code>load_lexis_nexis</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.LoadPolitics"><code>load_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.LoadRoster"><code>load_roster</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.LoadScdb"><code>load_scdb</code></a></td></tr>
+<tr><td rowspan="6" valign="middle">wrangler</td><td>Loaders</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.DownloadBiographies"><code>download_biographies</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.DownloadCourtlistener"><code>download_courtlistener</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.DownloadIdb"><code>download_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/jcs/#courtpy.references.jcs.DownloadJcs"><code>download_jcs</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.DownloadPolitics"><code>download_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.DownloadScdb"><code>download_scdb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCases"><code>load_cases</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadCourtlistener"><code>load_courtlistener</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/fjc_idb/#courtpy.references.fjc_idb.LoadIdb"><code>load_idb</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/loaders/#courtpy.wrangler.loaders.LoadLexisNexis"><code>load_lexis_nexis</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/politics/#courtpy.references.politics.LoadPolitics"><code>load_politics</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.LoadRoster"><code>load_roster</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/scdb/#courtpy.references.scdb.LoadScdb"><code>load_scdb</code></a></td></tr>
 <tr><td>Parsers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseAgencies"><code>parse_agencies</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/parsers/#courtpy.wrangler.parsers.ParseAll"><code>parse_all</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCitations"><code>parse_citations</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCivil"><code>parse_civil</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseConstitutional"><code>parse_constitutional</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseCriminal"><code>parse_criminal</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseFederal"><code>parse_federal</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseGeneral"><code>parse_general</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseHeader"><code>parse_header</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseLexisNexis"><code>parse_lexis_nexis</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/rules/#courtpy.wrangler.rules.ParseReview"><code>parse_review</code></a></td></tr>
 <tr><td>Cleaners</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.DropTextColumns"><code>drop_text_columns</code></a></td></tr>
 <tr><td>Mungers</td><td><a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeCaseType"><code>code_case_type</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeOutcome"><code>code_outcome</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/references/judges/#courtpy.references.judges.CodePanels"><code>code_panels</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.CodeParties"><code>code_parties</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.SplitValues"><code>split_values</code></a>, <a href="https://WithPrecedent.github.io/courtpy/reference/courtpy/wrangler/coders/#courtpy.wrangler.coders.TidyCases"><code>tidy_cases</code></a></td></tr>
@@ -128,8 +128,9 @@ To work on `courtpy` itself, see the
 
 #### Collecting opinions from CourtListener
 
-CourtListener offers its opinions in two ways, and `courtpy` uses both. Both save
-each case as a JSON file in a folder named for its court (such as
+CourtListener offers its opinions in two ways, and `courtpy.CourtListener`
+downloads with both: its "method" is `"bulk"` (the default) or `"api"`. Both
+save each case as a JSON file in a folder named for its court (such as
 `courtlistener/ca1/4567890.json`), and the parser reads them the same way.
 
 **The bulk data** is the whole CourtListener database, published as compressed
@@ -141,8 +142,8 @@ outside your project so that they can be used again:
 ```python
 import courtpy
 
-courtpy.BulkData().extract(
-    courts = "federal_circuits",
+courtpy.CourtListener().download(
+    courts = "federal_geographic_circuits",
     start_date = "2019-01-01",
     end_date = "2019-12-31",
     folder = "courtlistener")
@@ -156,12 +157,13 @@ saves its place, so a download stopped by the daily limit resumes where it
 stopped when it is run again:
 
 ```python
-courtpy.CourtListener().download("ca1", "2026-09-01", "2026-09-30", "courtlistener")
+courtpy.CourtListener().download(
+    "ca1", "2026-09-01", "2026-09-30", "courtlistener", method = "api")
 ```
 
 Courts are named by their CourtListener ids (such as `ca1`, `cadc`, `cafc`,
-and `scotus`) or by groups: `federal_appellate`, `federal_circuits`, and
-`scotus`.
+and `scotus`) or by groups: `federal_appellate`, `federal_geographic_circuits`
+(the twelve regional circuits, without the Federal Circuit), and `scotus`.
 
 Store your API key once with `courtpy key set`. See
 [Keeping your API key secret](https://WithPrecedent.github.io/courtpy/advanced/#keeping-your-api-key-secret)
@@ -282,10 +284,10 @@ for a study of judges' votes.
 #### Describing a whole study in one file
 
 A study is an [amos](https://github.com/WithPrecedent/amos) project, described
-in one settings file. `courtpy` adds loaders to amos: `load_court_listener`,
-`load_lexis_nexis`, and `load_cases`. Named first in the wrangler, a loader
-collects the cases (downloading them, if asked), parses them, and codes them,
-so the project needs no other data. See
+in one settings file. `courtpy` adds loaders to amos: `download_courtlistener`,
+`load_courtlistener`, `load_lexis_nexis`, and `load_cases`. Named first in the
+wrangler, a loader collects the cases (`download_courtlistener` downloads them
+first), parses them, and codes them, so the project needs no other data. See
 [examples/federal_appeals.ini](https://github.com/WithPrecedent/courtpy/blob/main/examples/federal_appeals.ini):
 
 ```ini
@@ -301,12 +303,12 @@ interim_folder = data
 appeals_workers = wrangler, analyst, critic
 
 [wrangler]
-techniques = load_court_listener, filter_rows, keep_columns, drop_missing
+techniques = download_courtlistener, filter_rows, keep_columns, drop_missing
 
-[load_court_listener_parameters]
+[download_courtlistener_parameters]
 source = courtlistener
-download = bulk
-courts = federal_circuits
+method = bulk
+courts = federal_geographic_circuits
 start_date = 2019-01-01
 end_date = 2019-12-31
 save = cases.csv
@@ -345,9 +347,8 @@ works.
 | Command | Does |
 | --- | --- |
 | `courtpy key set`, `show`, `delete` | Manages your CourtListener API key. |
-| `courtpy download bulk --courts ca1 --start 2019-01-01 --end 2019-12-31` | Extracts cases from the bulk data. |
-| `courtpy download api --courts ca1 --start 2026-09-01` | Downloads cases with the API. |
-| `courtpy download bulk --help` | Lists the options of one way to download. |
+| `courtpy download --courts ca1 --start 2019-01-01 --end 2019-12-31` | Extracts cases from the bulk data. |
+| `courtpy download --method api --courts ca1 --start 2026-09-01` | Downloads cases with the API. |
 | `courtpy split FILES --folder lexis_nexis` | Divides Lexis-Nexis files of many cases. |
 | `courtpy parse FOLDER --output cases.csv` | Parses and codes saved cases into a table. |
 | `courtpy rules my_rules.csv` | Checks a file of rules and lists the variables it makes. |
@@ -383,7 +384,7 @@ repository" button reads the same information from
 @software{yung_courtpy,
   author  = {Yung, Corey Rayburn},
   title   = {courtpy: Accessible tools for collecting, parsing, and analyzing court opinions},
-  version = {0.5.2},
+  version = {0.6.0},
   year    = {2026},
   url     = {https://github.com/WithPrecedent/courtpy},
   license = {Apache-2.0}

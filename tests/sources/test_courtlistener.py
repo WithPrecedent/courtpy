@@ -71,7 +71,7 @@ def test_download_saves_cases_and_resumes(tmp_path: pathlib.Path) -> None:
     clusters = [make_cluster(i) for i in (1, 2, 3)]
     opinions = [make_opinion(10 + i, i) for i in (1, 2, 3)]
     api = client(FakeAPI(clusters, opinions))
-    saved = api.download('ca1', '2020-01-01', '2020-12-31', tmp_path)
+    saved = api.download('ca1', '2020-01-01', '2020-12-31', tmp_path, method = 'api')
     assert sorted(p.name for p in saved) == ['1.json', '2.json', '3.json']
     record = json.loads((tmp_path / 'ca1' / '1.json').read_text(encoding = 'utf-8'))
     assert record['court']['full_name'] == 'Court of Appeals for the First Circuit'
@@ -84,15 +84,15 @@ def test_download_saves_cases_and_resumes(tmp_path: pathlib.Path) -> None:
     assert filters['docket__court'] == 'ca1'
     assert filters['date_filed__gte'] == '2020-01-01'
     assert filters['order_by'] == 'id'
-    assert api.session.headers['Authorization'] == 'Token secret'
+    assert api.session.sent_headers[0]['Authorization'] == 'Token secret'
     # Running it again reads only the last page, and saves only new cases.
     again = client(FakeAPI(clusters, opinions))
-    assert again.download('ca1', '2020-01-01', '2020-12-31', tmp_path) == []
+    assert again.download('ca1', '2020-01-01', '2020-12-31', tmp_path, method = 'api') == []
     assert again.requests_made == 1
     clusters.append(make_cluster(4))
     opinions.append(make_opinion(14, 4))
     later = client(FakeAPI(clusters, opinions))
-    assert later.download('ca1', '2020-01-01', '2020-12-31', tmp_path) == [
+    assert later.download('ca1', '2020-01-01', '2020-12-31', tmp_path, method = 'API') == [
         tmp_path / 'ca1' / '4.json']
     # One request for the last page and one for the new case's opinions.
     assert later.requests_made == 2
@@ -102,9 +102,9 @@ def test_max_cases_resumes_on_the_same_page(tmp_path: pathlib.Path) -> None:
     clusters = [make_cluster(i) for i in (1, 2, 3, 4)]
     opinions = [make_opinion(10 + i, i) for i in (1, 2, 3, 4)]
     fake = FakeAPI(clusters, opinions, page_size = 3)
-    first = client(fake).download('ca1', folder = tmp_path, max_cases = 2)
+    first = client(fake).download('ca1', folder = tmp_path, method = 'api', max_cases = 2)
     assert sorted(p.name for p in first) == ['1.json', '2.json']
-    second = client(fake).download('ca1', folder = tmp_path)
+    second = client(fake).download('ca1', folder = tmp_path, method = 'api')
     assert sorted(p.name for p in second) == ['3.json', '4.json']
 
 
@@ -141,7 +141,25 @@ def test_unfiltered_opinions_raise(tmp_path: pathlib.Path) -> None:
             return FakeResponse({'id': 'ca1'})
         return FakeResponse({'next': None, 'results': [make_cluster(1)]})
     with pytest.raises(courtlistener.CourtListenerError, match = 'not asked for'):
-        client(handler).download('ca1', folder = tmp_path)
+        client(handler).download('ca1', folder = tmp_path, method = 'api')
+
+
+def test_api_key_is_found_only_for_the_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    looked: list[bool] = []
+    monkeypatch.setattr(
+        courtlistener.secrets, 'get_api_key', lambda: looked.append(True) or 'found')
+    api = courtlistener.CourtListener(
+        session = FakeSession(lambda url, params: FakeResponse({'ok': True})), min_interval = 0)
+    assert not looked
+    api.get('x/')
+    assert looked == [True]
+    assert api.session.sent_headers[0]['Authorization'] == 'Token found'
+    assert 'Authorization' not in api.session.headers
+
+
+def test_unknown_method(tmp_path: pathlib.Path) -> None:
+    with pytest.raises(ValueError, match = 'method must be "bulk" or "api"'):
+        courtlistener.CourtListener().download('ca1', folder = tmp_path, method = 'ftp')
 
 
 def test_download_case(tmp_path: pathlib.Path) -> None:

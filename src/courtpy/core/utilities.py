@@ -148,8 +148,7 @@ def instructions_folder() -> pathlib.Path:
 def is_none_setting(value: Any) -> bool:
     """Returns whether a setting names nothing, such as "none" or "false".
 
-    Settings such as "download = none" or "coders = none" turn something
-    off.
+    Settings such as "coders = none" turn something off.
 
     Args:
         value: a setting: `None`, a `bool`, or text.

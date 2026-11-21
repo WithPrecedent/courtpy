@@ -231,7 +231,7 @@ def test_add_scdb_with_court_listener(
     # As one of a loader's coders, it uses the latest release, which it
     # downloads, and the history records the release.
     monkeypatch.setattr(courtpy.utilities.requests, 'Session', lambda: site)
-    dataset = courtpy.loaders.LoadCourtListener().apply(
+    dataset = courtpy.loaders.LoadCourtlistener().apply(
         None, source = folder, coders = 'code_outcome, add_scdb', label = 'outcome_reversal')
     assert list(dataset.data['scdb_caseName']) == ['D.C. v. HELLER', 'MCCARTHY v. HERNANDEZ']
     assert list(dataset.data['scdb_majVotes']) == [5, 6]
@@ -263,7 +263,7 @@ def test_add_scdb_in_a_wrangler(
         '[court_project]\n'
         'court_workers = wrangler\n'
         '[wrangler]\n'
-        'techniques = load_court_listener, add_scdb\n'
+        'techniques = load_courtlistener, add_scdb\n'
         '[add_scdb_parameters]\n'
         'source = mine.zip\n'
         'columns = issueArea, majVotes\n'
