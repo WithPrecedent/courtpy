@@ -2875,15 +2875,15 @@ wheels = [
 
 [[package]]
 name = "markdown-exec"
-version = "1.12.4"
+version = "1.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
     { name = "pymdown-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/11/4484c13c38c293cb485fb730790ace11f898dd98ff758c27647369574ecd/markdown_exec-1.12.4.tar.gz", hash = "sha256:9eb8d535f69bbc85dc70b62dd9d04e65f29144de57448a87e25788c61667fbd8", size = 80857, upload-time = "2026-10-06T09:31:59.381Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/68/8df4ff74b368632f50b837d552c3d7538576ea2f67225565730db390d400/markdown_exec-1.13.0.tar.gz", hash = "sha256:f32af515d0da71a948331e32bac39b3d629e2017fd107af5013e88c2791153f6", size = 87227, upload-time = "2026-11-10T16:12:04.384Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/21/97/912d221d873cfd6b03a76957503897b31a3e40ce6df7dcf4ed2efdd332cc/markdown_exec-1.12.4-py3-none-any.whl", hash = "sha256:a688e1e91bc84d8b08a26e6b8380b6ca0d83a7235f81c1609de9d832ee1b49c8", size = 54712, upload-time = "2026-10-06T09:31:58.116Z" },
+    { url = "https://files.pythonhosted.org/packages/83/26/45b285f091529421dbe7b8af3ae2924c8cd36c805b198d9f3884c0432a3d/markdown_exec-1.13.0-py3-none-any.whl", hash = "sha256:f0e3f85a8e9d03393e3d4a41fe9901db79f02c589ee0462c0409527a97f34600", size = 56837, upload-time = "2026-11-10T16:12:03.04Z" },
 ]
 
 [[package]]
@@ -5731,12 +5731,12 @@ resolution-markers = [
 dependencies = [
     { name = "formulaic" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform != 'emscripten') or (python_full_version == '3.12.*' and sys_platform == 'emscripten') or (python_full_version >= '3.14' and sys_platform == 'emscripten')" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.12.*' or python_full_version >= '3.14' or (python_full_version == '3.13.*' and sys_platform != 'emscripten')" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "patsy" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform != 'emscripten') or (python_full_version == '3.12.*' and sys_platform == 'emscripten') or (python_full_version >= '3.14' and sys_platform == 'emscripten')" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.12.*' or python_full_version >= '3.14' or (python_full_version == '3.13.*' and sys_platform != 'emscripten')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/1f/a3cbf6ed7cf6286afec694bfef561f3e51483197716717fb8476f1f0c50e/statsmodels-0.15.0.tar.gz", hash = "sha256:5d257fe58d0772bc46a557880ca78e2a8e07fec7bfd9d11074aef8e33e1aecbc", size = 15736853, upload-time = "2026-08-27T10:45:21.988Z" }
 wheels = [
