@@ -97,6 +97,7 @@ Contents:
     clean_name: returns a name the way that names are compared.
     download: downloads the Federal Judicial Center's files about judges
         with fjc-biographies.
+    edit_distance: returns how many edits turn one name into another.
     name_forms: returns the ways that an opinion may write a judge's name,
         grouped by how much of the name they give.
     panel_compositions: returns the composition of each case's panel by
@@ -104,6 +105,8 @@ Contents:
         "DDR".
     shorter_names: returns shorter ways of writing a name that an opinion
         gives, to try when the name itself fits no judge.
+    repaired_names: returns a name with the damage that some opinions' text
+        does undone.
     republican_appointees: returns how many judges of each case's panel a
         Republican president appointed.
     vote_table: returns a table with one row for each judge on each case.
@@ -114,7 +117,13 @@ from __future__ import annotations
 
 from ._biographies import AddBiography, AddJcs
 from ._circuits import AddCircuit
-from ._names import clean_name, name_forms, shorter_names
+from ._names import (
+    clean_name,
+    edit_distance,
+    name_forms,
+    repaired_names,
+    shorter_names,
+)
 from ._panels import (
     CasesToJudges,
     CasesToVotes,
@@ -148,8 +157,10 @@ __all__ = [
     'build_roster',
     'clean_name',
     'download',
+    'edit_distance',
     'name_forms',
     'panel_compositions',
+    'repaired_names',
     'republican_appointees',
     'shorter_names',
     'vote_table']

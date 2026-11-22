@@ -4,6 +4,64 @@ All notable changes to this project will be documented in this file.
 
 <!-- insertion marker -->
 
+## 0.6.1
+
+### Changed
+
+* `code_parties` finds who appealed in cases whose caption gives the
+  parties no roles ("United States v. Bullock"), when one party is the
+  United States. The opening of the opinion decides: the role that it gives
+  the United States or the defendant, or else a sentence that says who
+  appeals. Before, such appeals had no "appeal_by_defendant" and no winner
+  by side, and a study that filtered on them left them out. In the
+  CourtListener criminal appeals of the twelve regional circuits since
+  2010, this finds who appealed in 9,707 of the 11,509 with no roles (9,606
+  by the defendant), most of them affirmances, Anders cases, and the Seventh
+  Circuit's orders.
+* New general header rules make the columns that it uses:
+  "opening_united_states_role", "opening_defendant_appellant",
+  "opening_defendant_appellee", "opening_government_appeals", and
+  "opening_party_appeals". The cases have to be parsed again to have them.
+* More panels are found whole. In the CourtListener criminal appeals of the
+  twelve regional circuits since 2010, 2,912 more have three judges who are
+  all found (110,941 of 119,330, up from 108,029), and none has fewer:
+  * The panel rule reads the Seventh Circuit's lists of judges, which have
+    only spaces between them ("Before JOHN DOE, Circuit Judge JANE ROE,
+    Circuit Judge ..."), and so found one judge where there were three.
+  * The names rule leaves out words that sources put among the judges'
+    names but are not names: dispositions ("Dismissed"), "Curium", and the
+    words of courts' names ("Eastern", "Ninth").
+  * `Roster.match` repairs a name that fits no judge, if it then fits
+    exactly one: small capitals ("P OSNER"), broken hyphens, a word of the
+    panel run into a name, the last word of a last name of several words
+    ("EVE" for St. Eve), a first and last name run together, or a scanning
+    error of one letter in a name of five or more ("KRAVTTCH"), among the
+    judges of the case's court. `Roster.candidates` returns every judge
+    that a name fits, and `Roster.full_name` and `Roster.name_words` the
+    ways of writing a judge's name. `edit_distance` and `repaired_names` are
+    new functions of `courtpy.judges`.
+  * `code_panels` reads a panel's names together: a last name that two
+    judges of the court share (such as "PRYOR" in the Eleventh Circuit) is
+    the judge whose first name is another word of the panel (as
+    CourtListener's list of judges gives them) or whose full name is the
+    author's, and words that are only a judge's first name are not judges
+    of their own. It rewrites "panel_judges" and counts "panel_size" again,
+    each judge once.
+  * Judge Forrest of the Ninth Circuit is found by her earlier name,
+    Danielle J. Hunsaker. The roster has to be made again to have it.
+* `CourtListener.fetch_pdf_headers` downloads the courts' own PDFs of saved
+  cases and saves the text of each first page in the case's file as
+  "pdf_header", which `read_case` makes a section and the rule that finds the
+  panel reads after the opinion's opening. CourtListener's text of many
+  opinions lacks the header with the panel, and its list of judges may give
+  only last names that two judges share (such as the Ninth Circuit's two
+  Judges Smith), so the PDF tells them apart. The Ninth and Eleventh
+  Circuits' moved PDFs are found at their new addresses. courtpy needs
+  pypdf. Of the 6,538 criminal appeals above whose panel was still not
+  found whole and whose case has a PDF's address, 4,866 PDFs were read
+  (1,111 were not found), and with them 114,129 of the 119,330 have three
+  judges who are all found.
+
 ## 0.6.0
 
 ### Added

@@ -41,7 +41,9 @@ dependencies = [
     "keyring>=24",
     "nagata>=0.2.1",
     "pandas>=3.0",
-    "requests>=2.31"]
+    "pypdf>=5.0",
+    "requests>=2.31",
+]
 
 [project.optional-dependencies]
 # Every optional package that amos can use for analysis.

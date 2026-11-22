@@ -204,7 +204,10 @@ def test_lexis_dates_are_lines() -> None:
     # "J." and "JJ." after names are still titles.
     ('ROBERTS, C. J., delivered the opinion of the Court, in which SCALIA, '
      'KENNEDY, and THOMAS, JJ., joined. GINSBURG, J., filed a dissenting '
-     'opinion.', ['ROBERTS', 'SCALIA', 'KENNEDY', 'THOMAS', 'GINSBURG'])])
+     'opinion.', ['ROBERTS', 'SCALIA', 'KENNEDY', 'THOMAS', 'GINSBURG']),
+    # CourtListener's list of judges can have words that are not names.
+    ('Agee, Dismissed, King, Per Curiam, Thacker', ['AGEE', 'KING', 'THACKER']),
+    ('Gregory, Keenan, Eastern, Curium', ['GREGORY', 'KEENAN'])])
 def test_header_rules_split_judges(judges: str, expected: list[str]) -> None:
     found = apply('header', judges = judges)
     assert found['panel_judges'] == '; '.join(expected)
@@ -221,6 +224,11 @@ def test_header_rules_split_judges(judges: str, expected: list[str]) -> None:
      'Judge. Following a trial', ['PAEZ', 'OWENS', 'SEEBORG']),
     ('Before SYKES, Chief Judge, and BRENNAN and ST. EVE, Cir- cuit Judges. '
      'BRENNAN, Circuit Judge. Police stopped', ['SYKES', 'BRENNAN', 'ST EVE']),
+    # The Seventh Circuit lists the judges with only spaces between them.
+    ('Decided March 28, 2022 Before JOHN DOE, Circuit Judge AMY J. ST. ROE, '
+     'Circuit Judge RICHARD ROE, Chief Judge No. 21-1819 UNITED STATES OF '
+     'AMERICA, Plaintiff-Appellee, v. JANE DOE, Defendant-Appellant.',
+     ['JOHN DOE', 'AMY J ST ROE', 'RICHARD ROE']),
     # Not a panel.
     ('Before April 25, 2016, Sabaini made deposits of over $2,000.', []),
     ('LYNCH, Circuit Judge. Before trial, Doe moved to suppress.', [])])
@@ -277,6 +285,49 @@ def test_courtlistener_rules_find_the_caption_in_the_opinion(
         found['party1_appellant'], found['party1_appellee'],
         found['party2_appellant'], found['party2_appellee']) == roles
     assert (found['caption'] is None) == (roles == (False, False, False, False))
+
+
+@pytest.mark.parametrize(('opening', 'expected'), [
+    # The Seventh Circuit's orders print the caption in two columns, so the
+    # district court's name falls between the roles and "v.".
+    ('No. 10-2228 Appeal from the United States District UNITED STATES OF '
+     'AMERICA, Court for the Northern District of Illinois, Plaintiff\u2010'
+     'Appellee, Eastern Division. v. No. 09 CR 78\u20101 JOHN DOE, Jane Roe, '
+     'Defendant\u2010Appellant. Judge. O R D E R John Doe pleaded guilty.',
+     ('Plaintiff\u2010Appellee', True, False, False, False)),
+    # "Appeal from the United States" is the district court, not the party,
+    # even with the other party's name between the words.
+    ('Appeal from the United States JOHN DOE, District Court for the '
+     'Northern Petitioner-Appellant, District of Illinois. v. No. 14-3216 '
+     'UNITED STATES OF AMERICA, Respondent-Appellee.',
+     ('Respondent-Appellee', True, False, False, False)),
+    # A government appeal, with the roles in a caption of numbered lines.
+    ('UNITED STATES OF AMERICA, 13 14 Appellant, 15 16 -v.- 17 18 JOHN DOE, '
+     '19 20 Defendant-Appellee.', ('Appellant', False, True, False, False)),
+    # No caption: the opening's sentences say who appeals.
+    ('PER CURIAM: John Doe, proceeding pro se, appeals from the order '
+     'denying his motion.', (None, False, False, False, True)),
+    ('PER CURIAM: Counsel for John Doe has filed a brief in accordance with '
+     'Anders v. California, 386 U.S. 738 (1967).',
+     (None, False, False, False, True)),
+    ('SMITH, Circuit Judge: Defendant-appellant John Doe asserts that the '
+     'search was unlawful.', (None, True, False, False, False)),
+    ('MEMORANDUM The United States appeals from the sentence imposed on '
+     'John Doe.', (None, False, False, True, False)),
+    # An earlier appeal is not this one, and a citation is not a party.
+    ('The government appealed the sentence, and we reversed. Under United '
+     'States v. Booker, 543 U.S. 220 (2005), the guidelines are advisory.',
+     (None, False, False, False, False))])
+def test_general_rules_find_who_appeals_in_the_opening(
+    opening: str,
+    expected: tuple[str | None, bool, bool, bool, bool]) -> None:
+    found = apply('courtlistener_header', party = 'United States v. Doe', opinion = opening)
+    assert (
+        found['opening_united_states_role'],
+        found['opening_defendant_appellant'],
+        found['opening_defendant_appellee'],
+        found['opening_government_appeals'],
+        found['opening_party_appeals']) == expected
 
 
 def test_courtlistener_rules_keep_the_caption_of_the_header() -> None:

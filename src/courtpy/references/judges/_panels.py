@@ -101,6 +101,19 @@ class CodePanels(amos.Munger):
     the case gets summaries of its rows (as the `merge_summary` technique of
     `amos` adds them).
 
+    The names are read as a panel, not one at a time, before they are
+    matched (see `_resolve_panel`): a last name that fits more than one
+    judge of the court (such as "PRYOR" on a panel of the Eleventh Circuit,
+    which has had two) is the judge whose first name is another word of the
+    panel (as CourtListener's list of judges gives it: "Jill, Marcus,
+    Martin, Pryor") or whose full name is among the case's "authors",
+    "concurring", or "dissenting" ("JULIE CARNES, Circuit Judge:"). A word
+    that is only the first name of another judge of the panel is not a name
+    of its own. "panel_judges" is rewritten with the names as they are read,
+    and "panel_size" (if the cases have it) is counted again from them, each
+    judge once (or the number of the source's panel ids, if there are more
+    of them).
+
     Needs "panel_judges", "court_num", and "year".
 
     """
@@ -127,9 +140,14 @@ class CodePanels(amos.Munger):
             data, ['panel_judges', 'court_num', 'year'], self.name)
         judges = Roster.create(roster)
         described = judges.described
+        data['panel_judges'] = _resolve_panels(data, judges)
         seated = _named(
             data, 'panel_judges', judges, ['judge', *described],
             unmatched = True)
+        if 'panel_size' in data.columns:
+            named = seated.groupby(_CASE).size().reindex(
+                range(len(data)), fill_value = 0).to_numpy()
+            data['panel_size'] = np.maximum(named, _ids(data))
         panel = seated[seated['nid'].notna()].astype({'nid': 'int64'})
         panels = _summarize(
             panel,
@@ -738,6 +756,43 @@ def _named(
         {'nid': 'Int64' if unmatched else 'int64'}).reset_index(drop = True)
 
 
+def _ids(data: pd.DataFrame) -> np.ndarray:
+    """Returns the number of the source's panel ids of each case.
+
+    Args:
+        data: the parsed cases.
+
+    Returns:
+        The number of "panel_ids" of each case (0 without the column).
+
+    """
+    if 'panel_ids' not in data.columns:
+        return np.zeros(len(data), dtype = 'int64')
+    return np.array(
+        [len(_name_list(value)) for value in data['panel_ids']],
+        dtype = 'int64')
+
+
+def _name_list(value: Any) -> list[str]:
+    """Returns the names in a cell of a column of names.
+
+    Args:
+        value: names as the federal rules write them (text with "; "
+            between them), a list of them, or a missing value.
+
+    Returns:
+        The names, without blanks.
+
+    """
+    if isinstance(value, list | tuple):
+        names = [str(name) for name in value]
+    elif isinstance(value, str):
+        names = value.split(cases._SEPARATOR)
+    else:
+        return []
+    return [name.strip() for name in names if name and name.strip()]
+
+
 def _numbered(panel: pd.DataFrame, size: int) -> pd.DataFrame:
     """Returns the name and number of each judge of each case, in columns.
 
@@ -761,6 +816,99 @@ def _numbered(panel: pd.DataFrame, size: int) -> pd.DataFrame:
         'judge_name': panel['judge'].astype(object).array,
         'judge_nid': panel['nid'].astype('Int64').array})
     return by_seat(seated, size)
+
+
+def _resolve_panel(
+    names: list[str],
+    hints: list[str],
+    roster: Roster,
+    court_num: int | None,
+    year: int | None) -> list[str]:
+    """Returns the names of a panel as they are read together.
+
+    A word that fits no judge of its own but is a word of the name of a
+    judge whose last name is another of the names (the first name, the first
+    name and middle initial run together, as "ROBERTA" for "Robert A.", or a
+    word of a last name of several words; see `Roster.name_words`) belongs
+    to that name, and is left out. A last name that fits more than one judge is
+    written as the full name of the one whose first name is such a word, or
+    whose full name is one of `hints`, if exactly one is.
+
+    Args:
+        names: the names of the panel, as the federal rules find them.
+        hints: other names of judges of the case (its authors, and the
+            judges who concurred or dissented).
+        roster: the roster to find the judges in.
+        court_num: the number of the case's court.
+        year: the year of the case.
+
+    Returns:
+        The names, with the ambiguous names that the others resolve written
+            in full, and without the words that were first names.
+
+    """
+    fits = [roster.candidates(name, court_num, year) for name in names]
+    loose = [
+        place for place, found in enumerate(fits) if not found
+        and ' ' not in names[place].strip()]
+    words = {place: names[place].strip().upper() for place in loose}
+    hinted = {
+        roster.nids([row])[0] for hint in hints
+        for row in [roster.match(hint, court_num, year)] if row is not None}
+    used: set[int] = set()
+    resolved = list(names)
+    for place, found in enumerate(fits):
+        if not found:
+            continue
+        given = {
+            row: {
+                spot for spot in loose
+                if spot not in used and words[spot] in roster.name_words(row)}
+            for row in found}
+        if len(found) > 1:
+            chosen = [
+                row for row in found
+                if given[row] or roster.nids([row])[0] in hinted]
+            if len(chosen) != 1:
+                continue
+            row = chosen[0]
+            resolved[place] = roster.full_name(row)
+        else:
+            row = found[0]
+        used |= given[row]
+    return [name for place, name in enumerate(resolved) if place not in used]
+
+
+def _resolve_panels(data: pd.DataFrame, roster: Roster) -> pd.Series:
+    """Returns the names of each case's panel as they are read together.
+
+    Args:
+        data: the parsed cases, with "panel_judges", "court_num", and
+            "year", and any of "authors", "concurring", and "dissenting".
+        roster: the roster to find the judges in.
+
+    Returns:
+        The names of each panel (see `_resolve_panel`), as text with "; "
+            between them, or a missing value for a panel with none.
+
+    """
+    roles = [column for column in _ROLES if column in data.columns]
+    courts = pd.to_numeric(data['court_num'], errors = 'coerce')
+    years = pd.to_numeric(data['year'], errors = 'coerce')
+    rows = zip(
+        data['panel_judges'].tolist(), courts.tolist(), years.tolist(),
+        *(data[column].tolist() for column in roles), strict = True)
+    resolved = []
+    for panel, court, year, *named in rows:
+        names = _name_list(panel)
+        if names:
+            hints = [name for value in named for name in _name_list(value)]
+            names = _resolve_panel(
+                names, hints, roster,
+                None if pd.isna(court) else int(court),
+                None if pd.isna(year) else int(year))
+        resolved.append(cases._SEPARATOR.join(names) if names else None)
+    return pd.Series(resolved, index = data.index, dtype = object)
 
 
 def _summarize(

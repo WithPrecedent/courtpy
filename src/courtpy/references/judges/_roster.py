@@ -15,6 +15,8 @@ Contents:
         a roster is made from.
     _DISTRICT_COURT: the Federal Judicial Center's name for a district
         court.
+    _FEWEST_TO_REPAIR: the fewest letters of a name that is matched with
+        one edit.
     _IDENTIFIERS: columns of numbers that identify or date a judge's
         service, which are not attributes of the judge.
     _NEEDED: the columns that every roster needs.
@@ -41,17 +43,25 @@ import pandas as pd
 
 from ...core import cases, options, utilities
 from ...wrangler import loaders, rules
-from ._names import _LEVELS, clean_name, name_forms, shorter_names
+from ._names import (
+    _LEVELS,
+    clean_name,
+    edit_distance,
+    name_forms,
+    repaired_names,
+    shorter_names,
+)
 
 # Judge Johnson of the Fifth Circuit signed opinions as "Sam D. Johnson",
 # Judge King of the Fifth Circuit sat as Carolyn Dineen Randall until 1988,
-# and Judge Richman of the Fifth Circuit sat as Priscilla Owen until 2019
-# (the Federal Judicial Center's files give only the names that judges have
-# now).
+# Judge Richman of the Fifth Circuit sat as Priscilla Owen until 2019, and
+# Judge Forrest of the Ninth Circuit sat as Danielle J. Hunsaker (the
+# Federal Judicial Center's files give only the names that judges have now).
 _ALIASES: dict[int, str] = {
     1382851: 'Sam D. Johnson',
     1386716: 'Carolyn Dineen Randall',
-    1392271: 'Priscilla Owen'}
+    1392271: 'Priscilla Owen',
+    7328941: 'Danielle J. Hunsaker'}
 _APPELLATE: frozenset[str] = frozenset({
     'U.S. Court of Appeals', 'Supreme Court'})
 # The categories of the Federal Judicial Center's files that a roster is made
@@ -59,6 +69,9 @@ _APPELLATE: frozenset[str] = frozenset({
 # them.
 _CATEGORIES: tuple[str, ...] = ('service', 'demographics', 'career')
 _DISTRICT_COURT: str = 'U.S. District Court'
+# The fewest letters of a name that `Roster` matches with one edit, since a
+# shorter name is too near too many others.
+_FEWEST_TO_REPAIR: int = 5
 _IDENTIFIERS: frozenset[str] = frozenset({
     'nid', 'sequence', 'court_num', 'circuit_num', 'start_year', 'end_year',
     'senior_year', 'birth_year'})
@@ -116,7 +129,13 @@ class Roster:
        district court of another circuit, who may sit by designation.
 
     If more than one judge fits at the first step that any judge fits, the
-    name is not matched, since there is no telling which judge was meant.
+    name is not matched, since there is no telling which judge was meant
+    (`candidates` returns them all, so that other names on the case can
+    tell them apart). A name that fits no judge at all is repaired, if it
+    then fits exactly one judge: written without the damage that some
+    opinions' text does to names ("P OSNER" for "POSNER"), or compared with
+    the judges of the case's court for a scanning error ("KRAVTTCH" for
+    "Kravitch"; see `_repaired`).
     Nor is a name on a case of a court that has no judges in the table (such
     as a bankruptcy appellate panel, whose judges are not in the Federal
     Judicial Center's files), since a judge of another court who shares the
@@ -148,9 +167,11 @@ class Roster:
                 default_factory = dict, init = False, repr = False))
     _forms: dict[str, dict[str, list[int]]] = dataclasses.field(
         default_factory = dict, init = False, repr = False)
-    _found: dict[tuple[str, int | None, int | None], int | None] = (
+    _found: dict[tuple[str, int | None, int | None], tuple[int, ...]] = (
         dataclasses.field(default_factory = dict, init = False, repr = False))
     _numbers: dict[str, list[int | None]] = dataclasses.field(
+        default_factory = dict, init = False, repr = False)
+    _seated: dict[tuple[int, int], list[int]] = dataclasses.field(
         default_factory = dict, init = False, repr = False)
     _text: dict[str, list[str]] = dataclasses.field(
         default_factory = dict, init = False, repr = False)
@@ -454,10 +475,81 @@ class Roster:
                 (see the class's documentation).
 
         """
+        rows = self.candidates(name, court_num, year)
+        return rows[0] if len(rows) == 1 else None
+
+    def candidates(
+        self,
+        name: str,
+        court_num: int | None = None,
+        year: int | None = None) -> list[int]:
+        """Returns every judge that a name on a case may refer to.
+
+        They are the judges that `match` chooses among: those whose names
+        fit at the first of the steps that any judge's name fits (see the
+        class's documentation). More than one means that the name is
+        ambiguous, such as "SMITH" on a panel of the Ninth Circuit, which had
+        two Judges Smith.
+
+        Args:
+            name: the name, as the opinion writes it.
+            court_num: the number of the case's court. Defaults to `None`.
+            year: the year of the case. Defaults to `None`.
+
+        Returns:
+            The row of each judge's service (the most recent of each judge's
+                rows that fit), or none.
+
+        """
         key = (clean_name(name), court_num, year)
         if key not in self._found:
-            self._found[key] = self._match(*key)
-        return self._found[key]
+            self._found[key] = self._candidates(*key)
+        return list(self._found[key])
+
+    def full_name(self, row: int) -> str:
+        """Returns a judge's first, middle, and last names, as one name.
+
+        It is a full name of the judge (see `name_forms`), which `match`
+        finds before any shorter name that other judges share.
+
+        Args:
+            row: a row of the table.
+
+        Returns:
+            The name, such as "SANDRA LEA LYNCH".
+
+        """
+        parts = (
+            self._text[column][row]
+            for column in ('first_name', 'middle_name', 'last_name', 'suffix'))
+        return clean_name(' '.join(part for part in parts if part))
+
+    def name_words(self, row: int) -> set[str]:
+        """Returns the words of a judge's name that a source may list alone.
+
+        A source that lists the words of a panel's names separately (as
+        CourtListener's list of judges can: "Jill, Marcus, Martin, Pryor", or
+        "Brennan, Eve, Rovner, St") gives a judge's first name, the first name
+        and middle initial run together ("ROBERTA" for "Robert A."), or a
+        word of a last name of several words as a word of its own.
+
+        Args:
+            row: a row of the table.
+
+        Returns:
+            The first name, the middle name, the first name and middle
+                initial run together, and each word of a last name of several
+                words, as `clean_name` writes them, if they are longer than
+                an initial.
+
+        """
+        first = clean_name(self._text['first_name'][row])
+        middle = clean_name(self._text['middle_name'][row])
+        last = clean_name(self._text['last_name'][row]).split()
+        words = {
+            first, middle, f'{first}{middle[:1]}' if middle else '',
+            *(last if len(last) > 1 else [])}
+        return {word for word in words if len(word) > 1}
 
     def names(self, rows: Iterable[int]) -> list[str]:
         """Returns the names of judges as the roster reports them.
@@ -505,12 +597,16 @@ class Roster:
 
     """ Private Methods """
 
-    def _match(
+    def _candidates(
         self,
         name: str,
         court_num: int | None,
-        year: int | None) -> int | None:
-        """Returns the judge that a cleaned name on a case refers to.
+        year: int | None) -> tuple[int, ...]:
+        """Returns the judges that a cleaned name on a case may refer to.
+
+        The name as it is, at every level, and then its shorter forms as
+        full names or initials (never the last name alone) are tried first.
+        Only a name that none of them fits is repaired (see `_repaired`).
 
         Args:
             name: the name, as `clean_name` returns it.
@@ -518,42 +614,85 @@ class Roster:
             year: the year of the case, or `None`.
 
         Returns:
-            The row of the judge's service, or `None`.
+            The row of each judge's service, or none.
 
         """
         courts = self._numbers['court_num']
         if court_num is not None and court_num not in courts:
-            return None
-        # The name as it is, at every level, and then its shorter forms as
-        # full names or initials (never the last name alone).
+            return ()
         attempts = [(name, _LEVELS)] + [
             (form, _LEVELS[:-1]) for form in shorter_names(name)]
         for form, levels in attempts:
-            for level in levels:
-                rows = [
-                    row for row in self._forms[level].get(form, ())
-                    if year is None or self._serving(row, year)]
-                if rows:
-                    return self._choose(rows, court_num)
-        return None
+            rows = self._fitting(form, levels, year)
+            if rows:
+                return self._narrow(rows, court_num)
+        return self._repaired(name, court_num, year)
 
-    def _choose(self, rows: list[int], court_num: int | None) -> int | None:
-        """Returns the judge that a name refers to among judges it fits.
+    def _court_judges(self, court_num: int, year: int) -> list[int]:
+        """Returns the judges of a court who were serving in a year.
+
+        Args:
+            court_num: the number of the court.
+            year: the year.
+
+        Returns:
+            The row of each judge's service on the court (the most recent of
+                each judge's), in the order of the table.
+
+        """
+        key = (court_num, year)
+        if key not in self._seated:
+            rows = [
+                row for row, court in enumerate(self._numbers['court_num'])
+                if court == court_num and self._serving(row, year)]
+            self._seated[key] = list(self._narrow(rows, court_num))
+        return self._seated[key]
+
+    def _fitting(
+        self,
+        form: str,
+        levels: Iterable[str],
+        year: int | None) -> list[int]:
+        """Returns the serving judges with a form of a name, at its first level.
+
+        Args:
+            form: a form of a name, as `clean_name` writes it.
+            levels: the levels of the forms of names to look in, in order.
+            year: the year of the case, or `None`.
+
+        Returns:
+            The rows of the judges who have the form at the first level that
+                any serving judge has it, or none.
+
+        """
+        for level in levels:
+            rows = [
+                row for row in self._forms[level].get(form, ())
+                if year is None or self._serving(row, year)]
+            if rows:
+                return rows
+        return []
+
+    def _narrow(
+        self,
+        rows: list[int],
+        court_num: int | None) -> tuple[int, ...]:
+        """Returns the judges that a name refers to among judges it fits.
 
         Args:
             rows: the rows of the judges whose names fit, who were serving.
             court_num: the number of the case's court, or `None`.
 
         Returns:
-            The row of the judge's service at the first of the steps (the
-                case's court, a district court of its circuit, and any
-                court) at which any judge fits, the most recent if more than
-                one of the judge's rows fits, or `None` if more than one
-                judge fits there.
+            The rows of the judges at the first of the steps (the case's
+                court, a district court of its circuit, and any court) at
+                which any judge fits, the most recent of each judge's rows.
 
         """
         courts = self._numbers['court_num']
         circuits = self._numbers['circuit_num']
+        nids = self._numbers['nid']
+        starts = self._numbers['start_year']
         tiers = (
             [r for r in rows if court_num is not None
              and courts[r] == court_num],
@@ -561,13 +700,62 @@ class Roster:
              and circuits[r] == court_num],
             rows)
         for tier in tiers:
-            judges = {self._numbers['nid'][row] for row in tier}
-            if len(judges) > 1:
-                return None
-            if judges:
-                starts = self._numbers['start_year']
-                return max(tier, key = lambda row: starts[row] or 0)
-        return None
+            latest: dict[int | None, int] = {}
+            for row in tier:
+                kept = latest.get(nids[row])
+                if kept is None or (starts[row] or 0) > (starts[kept] or 0):
+                    latest[nids[row]] = row
+            if latest:
+                return tuple(latest.values())
+        return ()
+
+    def _repaired(
+        self,
+        name: str,
+        court_num: int | None,
+        year: int | None) -> tuple[int, ...]:
+        """Returns the judge that a name that fits no judge was meant to be.
+
+        The name is first written in the forms that undo the damage of some
+        opinions' text (see `repaired_names`), each tried as a name is. Then
+        it is compared with the judges of the case's court who were serving
+        in its year: it is a judge's if it is the last word of the judge's
+        last name of several words ("EVE" for "St. Eve", or "ANTWERPEN" for
+        "Van Antwerpen"), the judge's first and last names run together
+        ("REENARAGGI"), or, for a name of five letters or more, one edit from
+        the judge's last name (`edit_distance`), as scanning errors make it
+        ("KRAVTTCH" for "Kravitch", or "SCANNLAIN" for "O'Scannlain"). Only
+        a name that fits exactly one judge there is repaired.
+
+        Args:
+            name: the name, as `clean_name` returns it.
+            court_num: the number of the case's court, or `None`.
+            year: the year of the case, or `None`.
+
+        Returns:
+            The row of the judge's service, or none.
+
+        """
+        for form in repaired_names(name):
+            rows = self._fitting(form, _LEVELS, year)
+            if rows:
+                found = self._narrow(rows, court_num)
+                if len(found) == 1:
+                    return found
+        if court_num is None or year is None or ' ' in name:
+            return ()
+        fits = []
+        for row in self._court_judges(court_num, year):
+            last = clean_name(self._text['last_name'][row])
+            first = clean_name(self._text['first_name'][row])
+            words = last.split()
+            if (
+                (len(words) > 1 and name == words[-1])
+                or name == f'{first}{last}'.replace(' ', '')
+                or (len(name) >= _FEWEST_TO_REPAIR
+                    and edit_distance(name, last.replace(' ', '')) <= 1)):
+                fits.append(row)
+        return tuple(fits) if len(fits) == 1 else ()
 
     def _serving(self, row: int, year: int) -> bool:
         """Returns whether an opinion of a year may name a judge.

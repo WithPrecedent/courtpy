@@ -72,8 +72,10 @@ Contents:
 
 from __future__ import annotations
 
+import concurrent.futures
 import dataclasses
 import email.utils
+import io
 import json
 import logging
 import pathlib
@@ -87,6 +89,7 @@ from xml.etree import ElementTree as ET
 
 import amos
 import pandas as pd
+import pypdf
 import requests
 
 from ..core import cases, options, secrets, utilities
@@ -97,6 +100,16 @@ logger = logging.getLogger(__name__)
 DOWNLOAD_METHODS: tuple[str, ...] = ('bulk', 'api')
 _SITE: str = 'https://www.courtlistener.com'
 _TEMPORARY: frozenset[int] = frozenset({500, 502, 503, 504})
+# Courts that moved their opinions' PDFs since CourtListener recorded their
+# addresses: the Ninth Circuit serves its old "www" addresses from "cdn",
+# and the Eleventh moved its files to "media".
+_PDF_MOVES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r'^https?://www\.ca9\.uscourts\.gov/datastore/'),
+     'https://cdn.ca9.uscourts.gov/datastore/'),
+    (re.compile(r'^https?://www\.ca11\.uscourts\.gov/unpub/ops/'),
+     'https://media.ca11.uscourts.gov/opinions/unpub/files/'),
+    (re.compile(r'^https?://www\.ca11\.uscourts\.gov/opinions/ops/'),
+     'https://media.ca11.uscourts.gov/opinions/pub/files/'))
 _RETRIES: int = 4
 _OPINION_KEPT: tuple[str, ...] = (
     'id', 'cluster_id', 'type', 'author_id', 'author_str', 'per_curiam',
@@ -415,6 +428,106 @@ class CourtListener:
             timeout = self.timeout,
             session = self.session,
             resume = True)
+
+    def fetch_pdf_headers(
+        self,
+        paths: Iterable[pathlib.Path | str],
+        *,
+        refresh: bool = False,
+        delay: float | None = None,
+        workers: int = 4) -> pd.DataFrame:
+        """Saves the first page of each case's PDF, from its court's website.
+
+        CourtListener's text of many opinions starts after their header, so
+        it lacks the panel ("Before: FERNANDEZ, GOULD, and M. SMITH, Circuit
+        Judges"), and its list of judges may give only their last names,
+        which two judges of a court can share. The court's own PDF of the
+        opinion has the header on its first page. For each saved case, the
+        PDF at its first opinion's "download_url" is downloaded, the text of
+        its first page is saved in the case's file as "pdf_header" (with
+        "pdf_header_status"), and the PDF is not kept. `read_case` makes it a
+        section of its own, which the rule that finds the panel reads after
+        the opinion's opening.
+
+        The requests to each website are made one at a time, `delay` seconds
+        apart, and up to `workers` websites are asked at once. The API key is
+        never sent. A case whose file already has a header (or a status, if
+        its PDF could not be read) is skipped unless `refresh` is true.
+
+        Args:
+            paths: paths of saved cases.
+            refresh: whether to fetch the PDF of a case again. Defaults to
+                `False`.
+            delay: seconds between requests to one website. Defaults to
+                `None`, which uses `options._PDF_DELAY`.
+            workers: websites to ask at once. With 1, every request is made
+                with `session`; otherwise each website gets a session of its
+                own. Defaults to 4.
+
+        Returns:
+            A row for each case, with its "path", "url", and "status": "ok",
+                "saved before", "no url", "http {code}" (such as "http 404"),
+                "not a pdf", "unreadable", or "failed: {error}".
+
+        """
+        pause = options._PDF_DELAY if delay is None else float(delay)
+        rows: list[dict[str, Any]] = []
+        hosts: dict[str, list[tuple[pathlib.Path, dict[str, Any], str]]] = {}
+        for path in (pathlib.Path(p) for p in paths):
+            record = json.loads(path.read_text(encoding = 'utf-8'))
+            url = _pdf_url(record)
+            if 'pdf_header_status' in record and not refresh:
+                status = 'saved before'
+            elif not url:
+                status = 'no url'
+            else:
+                host = urllib.parse.urlparse(url).netloc
+                hosts.setdefault(host, []).append((path, record, url))
+                continue
+            rows.append({'path': str(path), 'url': url, 'status': status})
+
+        def fetch(
+            cases_of_host: list[tuple[pathlib.Path, dict[str, Any], str]],
+            session: Any) -> list[dict[str, Any]]:
+            """Fetches the PDFs of one website's cases, one at a time.
+
+            Args:
+                cases_of_host: the path, record, and PDF's address of each
+                    case.
+                session: the session to request them with.
+
+            Returns:
+                A row for each case.
+
+            """
+            done = []
+            for place, (path, record, url) in enumerate(cases_of_host):
+                if place:
+                    time.sleep(pause)
+                text, status = _fetch_pdf_header(session, url, self.timeout)
+                record['pdf_header'] = text
+                record['pdf_header_status'] = status
+                save_case(path, record)
+                done.append({'path': str(path), 'url': url, 'status': status})
+            return done
+
+        groups = list(hosts.values())
+        if int(workers) <= 1:
+            for group in groups:
+                rows.extend(fetch(group, self.session))
+        else:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers = int(workers)) as pool:
+                jobs = [
+                    pool.submit(fetch, group, utilities.open_session())
+                    for group in groups]
+                for job in jobs:
+                    rows.extend(job.result())
+        table = pd.DataFrame(rows, columns = ['path', 'url', 'status'])
+        logger.info(
+            'fetched the PDF headers of %d cases: %s', len(table),
+            table['status'].value_counts().to_dict())
+        return table
 
     def get(
         self,
@@ -1370,6 +1483,7 @@ def read_case(path: pathlib.Path | str) -> cases.Case:
         'dissenting_lines': authors('dissent', 'mixed'),
         'posture': _first(cluster.get('posture')),
         'syllabus': _first(cluster.get('syllabus')),
+        'pdf_header': _first(record.get('pdf_header')),
         'opinion': '\n\n'.join(t for t in texts if t)}
     sections = {
         k: amos.mungers.html_to_text(v) if '<' in v else v
@@ -1505,6 +1619,49 @@ def _detail(response: Any) -> str:
     return str(detail or getattr(response, 'text', ''))[:300]
 
 
+def _fetch_pdf_header(
+    session: Any,
+    url: str,
+    timeout: float) -> tuple[str, str]:
+    """Returns the text of the first page of an opinion's PDF.
+
+    Args:
+        session: an object with a `get` method like a `requests.Session`.
+        url: the address of the PDF.
+        timeout: seconds to wait for a response.
+
+    A court that moved its PDFs is asked at their new address (see
+    `_PDF_MOVES`) when the old one is not found.
+
+    Returns:
+        The text, with single spaces (or blank if it could not be read), and
+            the status of the request (see `CourtListener.fetch_pdf_headers`).
+
+    """
+    addresses = [url] + [
+        pattern.sub(moved, url) for pattern, moved in _PDF_MOVES
+        if pattern.search(url)]
+    for place, address in enumerate(addresses):
+        try:
+            response = session.get(address, timeout = timeout)
+        except requests.RequestException as error:
+            return '', f'failed: {type(error).__name__}'
+        code = getattr(response, 'status_code', 200)
+        if code == 200:
+            break
+        if code != 404 or place == len(addresses) - 1:
+            return '', f'http {code}'
+    content = bytes(response.content or b'')
+    if not content.startswith(b'%PDF'):
+        return '', 'not a pdf'
+    try:
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        text = reader.pages[0].extract_text() if reader.pages else ''
+    except (pypdf.errors.PyPdfError, ValueError, KeyError, IndexError):
+        return '', 'unreadable'
+    return ' '.join((text or '').split()), 'ok'
+
+
 def _first(*values: Any) -> str:
     """Returns the first value that is not blank, as text.
 
@@ -1620,6 +1777,24 @@ def _load_json(path: pathlib.Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
     return dict(json.loads(path.read_text(encoding = 'utf-8')))
+
+
+def _pdf_url(record: Mapping[str, Any]) -> str:
+    """Returns the address of a saved case's PDF on its court's website.
+
+    Args:
+        record: a saved case.
+
+    Returns:
+        The first web address among the "download_url" of its opinions, or
+            an empty `str`.
+
+    """
+    for opinion in record.get('opinions') or []:
+        url = str(opinion.get('download_url') or '').strip()
+        if url.lower().startswith(('http://', 'https://')):
+            return url
+    return ''
 
 
 def _retry_after(response: Any) -> float:

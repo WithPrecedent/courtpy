@@ -8,8 +8,9 @@ import urllib.parse
 from typing import Any
 
 import pytest
-from conftest import FakeResponse, FakeSession, make_cluster, make_opinion
+from conftest import FakeResponse, FakeSession, make_cluster, make_opinion, write_case
 
+import courtpy
 from courtpy import courtlistener
 
 API = 'https://www.courtlistener.com/api/rest/v4/'
@@ -168,6 +169,75 @@ def test_download_case(tmp_path: pathlib.Path) -> None:
     assert path == tmp_path / 'ca1' / '7.json'
     case = courtlistener.read_case(path)
     assert case.metadata['court'] == 'ca1'
+
+
+def one_page_pdf(text: str) -> bytes:
+    """Returns a PDF of one page with a line of text."""
+    stream = f'BT /F1 12 Tf 72 720 Td ({text}) Tj ET'.encode('latin-1')
+    objects = [
+        b'<< /Type /Catalog /Pages 2 0 R >>',
+        b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R '
+        b'/Resources << /Font << /F1 5 0 R >> >> >>',
+        b'<< /Length ' + str(len(stream)).encode() + b' >>\nstream\n' + stream + b'\nendstream',
+        b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+    pdf = bytearray(b'%PDF-1.4\n')
+    offsets = []
+    for number, body in enumerate(objects, start = 1):
+        offsets.append(len(pdf))
+        pdf += f'{number} 0 obj\n'.encode() + body + b'\nendobj\n'
+    start = len(pdf)
+    pdf += f'xref\n0 {len(objects) + 1}\n0000000000 65535 f \n'.encode()
+    for offset in offsets:
+        pdf += f'{offset:010d} 00000 n \n'.encode()
+    pdf += (
+        f'trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n'
+        f'startxref\n{start}\n%%EOF\n').encode()
+    return bytes(pdf)
+
+
+def test_fetch_pdf_headers(tmp_path: pathlib.Path, no_sleeping: list[float]) -> None:
+    moved = 'http://www.ca9.uscourts.gov/datastore/memoranda/2011/1.pdf'
+    addresses = [moved, 'https://court.example/2.pdf', None, 'https://court.example/4.pdf']
+    paths = [
+        write_case(
+            tmp_path, make_cluster(number, judges = 'Doe, Roe, Smith'),
+            [make_opinion(number * 10, number, download_url = address,
+                          html_with_citations = '<p>MEMORANDUM Doe appeals.</p>')])
+        for number, address in enumerate(addresses, start = 1)]
+    pages = {
+        'https://cdn.ca9.uscourts.gov/datastore/memoranda/2011/1.pdf': (
+            200, one_page_pdf('Before: DOE, ROE, and M. SMITH, Circuit Judges.')),
+        'https://court.example/2.pdf': (200, b'<html>Not here</html>')}
+
+    def handler(url: str, params: Any) -> FakeResponse:
+        status, content = pages.get(url, (404, b''))
+        response = FakeResponse(status_code = status)
+        response.content = content  # type: ignore[attr-defined]
+        return response
+
+    session = FakeSession(handler)
+    api = courtlistener.CourtListener(session = session, min_interval = 0)
+    table = api.fetch_pdf_headers(paths, workers = 1)
+    assert list(table['status']) == ['no url', 'ok', 'not a pdf', 'http 404']
+    # The old address of the Ninth Circuit's PDFs is tried at the new one,
+    # one request at a time with a pause, and the API key is never sent.
+    assert [url for url, _ in session.calls][:2] == [
+        moved, 'https://cdn.ca9.uscourts.gov/datastore/memoranda/2011/1.pdf']
+    assert all(headers is None for headers in session.sent_headers)
+    assert no_sleeping
+    header = courtlistener.read_case(paths[0]).sections['pdf_header']
+    assert header.startswith('Before: DOE, ROE, and M. SMITH')
+    assert 'pdf_header' not in courtlistener.read_case(paths[1]).sections
+    # Cases that were fetched are not fetched again.
+    asked = len(session.calls)
+    again = api.fetch_pdf_headers(paths, workers = 1)
+    assert list(again['status']).count('saved before') == 3
+    assert len(session.calls) == asked
+    # The panel is found in the header before CourtListener's list of judges.
+    parsed = courtpy.parse(paths[:2], source = 'courtlistener', rulebooks = [])
+    assert list(parsed['panel_judges']) == ['DOE; ROE; M SMITH', 'DOE; ROE; SMITH']
+    assert 'pdf_header' not in parsed.columns
 
 
 def test_read_case(court_listener_folder: pathlib.Path) -> None:

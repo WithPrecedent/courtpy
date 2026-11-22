@@ -138,7 +138,7 @@ federal rules.
 
 | Coder | Adds |
 | --- | --- |
-| `code_parties` | Completes the parties' roles from their opposites (if one party is an appellant, the other is an appellee), and adds `party1_appealing`, `party1_defending`, and the same for `party2`. |
+| `code_parties` | Completes the parties' roles from their opposites (if one party is an appellant, the other is an appellee), and adds `party1_appealing`, `party1_defending`, and the same for `party2`. When the caption gives neither party a role and one party is the United States, the opening of the opinion decides: the role it gives the United States or the defendant ("Plaintiff-Appellee", "Defendant-Appellant"), or else a sentence saying who appeals ("John Doe appeals", an Anders brief, or "The government appeals"). |
 | `code_case_type` | `type_criminal` (the United States is a party and there is a sign of a criminal case), and each party's role in the case: `party1_prosecution`, `party1_criminal_defendant`, `party1_civil_plaintiff`, and `party1_civil_defendant` (and the same for `party2`). |
 | `code_outcome` | `outcome_reversal` (from the header's disposition, or else from the decision that the opinion states, or else from the opinion's words anywhere), `outcome_party1_won` and `outcome_party2_won`, the winner by side (`outcome_criminal_defendant_won`, `outcome_prosecution_won`, `outcome_civil_plaintiff_won`, and `outcome_civil_defendant_won`), and `appeal_by_defendant`. Outcomes that cannot be known are missing. |
 | `drop_text_columns` | Removes columns of text and lists (such as names and dates), which models cannot use. Its `keep` parameter names columns to keep. |
@@ -235,6 +235,20 @@ initials, as in "M. SMITH" and "N.R. SMITH"), and neither is a name on a case
 of a court that has no judges in the roster, such as a bankruptcy appellate
 panel.
 
+A name that fits no judge at all is repaired if it then fits exactly one
+judge: written without the damage that some opinions' text does to names
+(small capitals written as "P OSNER", a hyphen broken as "JACKSON- AKIWUMI",
+or a word of the panel run into a name, as "BEFORENIEMEYER"), or compared with
+the judges of the case's court for the last word of a last name of several
+words ("EVE" for St. Eve), a first and last name run together ("REENARAGGI"),
+or a scanning error of one letter in a name of five or more ("KRAVTTCH" for
+Kravitch). `Roster.candidates` returns every judge that a name fits, and
+`code_panels` reads the names of a panel together: a last name that two judges
+of the court share is the judge whose first name is another word of the panel
+(as CourtListener's list of judges gives them, "Jill, Marcus, Martin, Pryor"),
+or whose full name the opinion gives as its author ("JULIE CARNES, Circuit
+Judge:").
+
 Cases and judges are different things: a case table has a row for each case,
 and a roster a row for each court that each judge has served on. `amos`
 joins such tables with
@@ -250,7 +264,7 @@ from them:
 | `add_biography` | A merger. Each row names one judge (in the column that its `name` parameter names, which is "judge" unless another is set), and gets the columns of that judge's row of the roster, with "judge_" (or another `prefix`) before their names: every attribute, and `age`, `senior`, `designated` (sitting on a court other than the judge's own), and `district_judge`, which depend on the case's year and court. All are numbers (1 and 0 for true and false). Its `columns` parameter names the columns to add, which can be any others of the roster too (such as `judge`, the judge's name, or `president`), and `indicator` names a column that says whether each judge was found. In `Cases` without a `name`, each case names the judges in `panel_judges`, and the columns are numbered by each judge's seat: `judge_name1`, `judge_nid1`, `judge_party1`, and so on for the first judge, `judge_name2` and the rest for the second. Its `lookup` parameter can be a function (of a judge's name, the case's court, and its year) that takes the place of the roster. |
 | `add_jcs` | A merger. `add_biography` with `jcs` as its only column (`judge_jcs`, or `judge_jcs1` and so on in `Cases`), which needs a roster made with `jcs = True`. |
 | `add_circuit` | A merger. The makeup of the active (not senior) judges of each case's circuit on the day it was decided: `circuit_median_party`, `circuit_total_party`, `circuit_median_jcs`, `circuit_total_jcs`, and `circuit_judges` (see [Political context](#political-context)). |
-| `code_panels` | A munger. `panel_names` (the judges who were found, as the roster names them), `panel_found` (how many, to compare with `panel_size`), `judge_name1`, `judge_nid1`, `judge_name2`, `judge_nid2`, and so on (each judge who was found, in the panel's order, with the Federal Judicial Center's name and `nid`), `author_name`, `concurring_names`, and `dissenting_names`, and the composition of the panel: `panel_{attribute}` is the mean of each attribute among its judges. So `panel_woman` is the share who are women, and `panel_party` is the mean party of the presidents who appointed them (from -1, all Democrats, to 1, all Republicans). `panel_age`, `panel_senior`, `panel_designated`, and `panel_district_judge` depend on the case's year and court. |
+| `code_panels` | A munger. `panel_names` (the judges who were found, as the roster names them), `panel_found` (how many, to compare with `panel_size`), `judge_name1`, `judge_nid1`, `judge_name2`, `judge_nid2`, and so on (each judge who was found, in the panel's order, with the Federal Judicial Center's name and `nid`), `author_name`, `concurring_names`, and `dissenting_names`, and the composition of the panel: `panel_{attribute}` is the mean of each attribute among its judges. So `panel_woman` is the share who are women, and `panel_party` is the mean party of the presidents who appointed them (from -1, all Democrats, to 1, all Republicans). `panel_age`, `panel_senior`, `panel_designated`, and `panel_district_judge` depend on the case's year and court. The panel's names are read together before they are matched, so `panel_judges` is rewritten (a shared last name in full, when another word of the panel or the author's name tells which judge it is, and without the words that were only first names), and `panel_size` is counted again, each judge once. |
 | `cases_to_votes` | A shaper. Replaces the table of cases with one row for each judge on each case, labeled by "vote_id" (such as "4567890-2"): the case's columns, `case_id`, `judge`, `judge_nid`, `judge_{attribute}`, `colleagues_{attribute}` (the mean among the other judges of the panel), `judge_author`, `judge_concurred`, `judge_dissented`, and for each outcome of the case, `vote_{outcome}`: the outcome, or its opposite if the judge dissented. So `vote_reversal` is whether the judge voted to reverse. Its `outcomes` parameter names the outcomes (by default, every column that starts with "outcome_"). Like every shaper, it takes `label`, `task`, and `groups` for the table that it makes, and must come before the data is split. |
 | `votes_to_cases` | A shaper. Undoes `cases_to_votes`: the rows of each case become one row again, labeled by "case_id", with the case's columns as they were. `judge` and the columns that begin with `judge_`, `colleagues_`, or `vote_` are removed, and each case keeps the other columns of its first row. A case with no judge who was found in the roster has no votes, so it does not come back. Without `label`, a label such as `vote_reversal` becomes the outcome it was made from (`outcome_reversal`), and the groups lose `case_id`. |
 | `cases_to_judges` | A shaper. Makes `Judges`, a table with one row for each judge, labeled by "judge_nid": `judge`, `cases` (how many votes; `count` names it, or "none"), and the means of the columns of numbers and booleans, as `group_rows` takes them, so `vote_reversal` is the share of the judge's votes to reverse, `judge_dissented` the share of the judge's cases with a dissent by the judge, and `type_criminal` the share of the judge's cases that are criminal. Nothing about any one case is kept: text (such as `court` or the cases' names) and ids (such as `case_id`) are left out unless its `keep` parameter names them, or its `how` parameter names a summary for them, as in `{"case_id": "list"}`. Given a table of cases, it makes the votes first, with `roster` and `outcomes`. Without `groups`, the table has none, and without `task`, the task is inferred again, since a vote is now a share. |
@@ -784,6 +798,35 @@ be used again. Set `bulk_folder` to keep them elsewhere, `bulk_date` to use
 older files (`bulk_dates()` lists the dates), or `stream = True` to read them
 from CourtListener without saving them. The bulk data needs no API key, so
 the key is looked for only when the API is used.
+
+## The courts' PDFs
+
+CourtListener's text of many opinions starts after their header, so it lacks
+the panel ("Before: FERNANDEZ, GOULD, and M. SMITH, Circuit Judges"), and its
+list of judges may give only last names that two judges of a court share
+("Fernandez, Gould, Smith"). The court's own PDF of the opinion has the header
+on its first page. `CourtListener.fetch_pdf_headers` downloads the PDF of each
+saved case that it is given (from its opinions' "download_url"), saves the
+text of the first page in the case's file as "pdf_header", and does not keep
+the PDF. The rule that finds the panel reads it after the opinion's opening,
+so parse the cases again afterward.
+
+```python
+import courtpy
+
+client = courtpy.CourtListener()
+table = client.fetch_pdf_headers(paths)
+print(table["status"].value_counts())
+```
+
+Fetch only the cases that need it, such as those whose panel was not found
+whole (`panel_size` is not 3 or `panel_found` is less than `panel_size`).
+Each court's website is asked one request at a time (half a second apart,
+`options._PDF_DELAY`), and up to `workers` websites at once. The API key is
+never sent to them. Some courts have moved their PDFs since CourtListener
+recorded their addresses; the Ninth and Eleventh Circuits' new addresses are
+tried when the old ones are not found. A case that was fetched (or could not
+be) is skipped the next time unless `refresh` is true.
 
 ## Secrets and folders
 

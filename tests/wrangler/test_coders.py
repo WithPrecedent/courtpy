@@ -82,6 +82,40 @@ def test_code_parties_prefers_each_party_own_caption() -> None:
     assert list(result['party2_defending']) == [True, False, False, True]
 
 
+def test_code_parties_reads_the_opening_when_the_caption_is_silent() -> None:
+    # 0: the opening gives the United States its role.
+    # 1: the opening names the defendant as the appellant.
+    # 2: the opening says that the defendant appeals.
+    # 3: the opening says that the government appeals.
+    # 4: a cross-appeal decides nothing.
+    # 5: a role that the opening's sentences contradict decides nothing.
+    # 6: a caption with roles decides, whatever the opening says.
+    # 7: without the United States as a party, the opening decides nothing.
+    # 8: the United States as the defendant in a civil suit.
+    data = _parsed_parties(
+        party1_united_states = [True] * 8 + [False],
+        party2_united_states = [False] * 8 + [True],
+        party2_appellee = [False] * 6 + [True, False, False])
+    data.loc[7, 'party1_united_states'] = False
+    data['opening_united_states_role'] = [
+        'Plaintiff-Appellee', None, None, None,
+        'Plaintiff-Appellee/Cross-Appellant', 'Plaintiff-Appellant', None, None,
+        'Defendant - Appellee']
+    data['opening_defendant_appellant'] = [False, True] + [False] * 7
+    data['opening_defendant_appellee'] = [False] * 9
+    data['opening_government_appeals'] = [False, False, False, True] + [False] * 5
+    data['opening_party_appeals'] = [False, False, True, False, False, True, True, True, False]
+    result = coders.CodeParties().apply(amos.Dataset(data)).data
+    assert list(result['party1_appealing']) == [
+        False, False, False, True, False, False, True, False, True]
+    assert list(result['party2_appealing']) == [
+        True, True, True, False, False, False, False, False, False]
+    assert list(result['party1_defending']) == [
+        True, True, True, False, False, False, False, False, False]
+    assert list(result['party2_defending']) == [
+        False, False, False, True, False, False, True, False, True]
+
+
 def test_consolidated_government_appeal() -> None:
     # "UNITED STATES of America, Appellant, v. Joseph PROCHILO, Defendant,
     # Appellee; United States of America, Appellant, v. Elvis Guerrero,

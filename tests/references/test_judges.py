@@ -352,6 +352,68 @@ def test_match_does_not_guess(roster: judges.Roster) -> None:
     assert found(roster, 'LYNCH', 999, 2020) is None
 
 
+def test_edit_distance_and_repaired_names() -> None:
+    assert judges.edit_distance('KRAVTTCH', 'KRAVITCH') == 1
+    assert judges.edit_distance('TJOFALT', 'TJOFLAT') == 1
+    assert judges.edit_distance('SCANNLAIN', 'OSCANNLAIN') == 1
+    assert judges.edit_distance('SMITH', 'SMITH') == 0
+    assert judges.edit_distance('SMITH', 'JONES') == 5
+    assert 'POSNER' in judges.repaired_names('P OSNER')
+    assert 'VAN BOKKELEN' in judges.repaired_names('V AN B OKKELEN')
+    assert 'JACKSON-AKIWUMI' in judges.repaired_names('JACKSON- AKIWUMI')
+    assert 'NIEMEYER' in judges.repaired_names('BEFORENIEMEYER')
+    assert judges.repaired_names('SMITH') == []
+
+
+def test_match_repairs_names_that_fit_no_judge(roster: judges.Roster) -> None:
+    seventh = 'U.S. Court of Appeals for the Seventh Circuit'
+    # Small capitals, a scanning error, and a first and last name run
+    # together.
+    assert found(roster, 'P OSER', 7, 2010) == (110, seventh)
+    assert found(roster, 'THOMSPON', 1, 2015) == (103, FIRST)
+    assert found(roster, 'RITATHOMPSON', 1, 2015) == (103, FIRST)
+    # Only one judge of the case's own court may fit, and the name must be
+    # long enough.
+    assert found(roster, 'SMIHT', 9, 2010) is None
+    assert found(roster, 'THOMSPON', 9, 2015) is None
+    assert found(roster, 'LYNH', 1, 2015) is None
+
+
+def test_candidates_and_names(roster: judges.Roster) -> None:
+    rows = roster.candidates('SMITH', 9, 2010)
+    assert sorted(roster.nids(rows)) == [104, 105]
+    assert roster.nids(roster.candidates('LYNCH', 1, 2020)) == [101]
+    assert roster.candidates('NOBODY', 1, 2020) == []
+    milton = next(row for row in rows if roster.nids([row]) == [104])
+    assert roster.full_name(milton) == 'MILTON DALE SMITH JR'
+    assert roster.name_words(milton) == {'MILTON', 'DALE', 'MILTOND'}
+    assert found(roster, roster.full_name(milton), 9, 2010) == (104, NINTH)
+
+
+def test_code_panels_reads_the_panel_together(roster: judges.Roster) -> None:
+    # 0: a first name tells apart the judges who share a last name, and is
+    #    not a judge of its own.
+    # 1: so does the author's full name.
+    # 2: nothing tells them apart.
+    # 3: a scanning error is the same judge, who is counted once.
+    # 4: a first and middle name, as separate words.
+    data = pd.DataFrame({
+        'panel_judges': [
+            'MILTON; SMITH; RAKE', 'SMITH; RAKE', 'SMITH; RAKE',
+            'POSER; P OSER', 'NORMAN; ROY; SMITH'],
+        'authors': [None, 'N.R. Smith', None, None, None],
+        'court_num': [9, 9, 9, 7, 9],
+        'year': [2010] * 5,
+        'panel_size': [3, 2, 2, 2, 3]})
+    result = judges.CodePanels().apply(amos.Dataset(data), roster = roster).data
+    assert list(result['panel_judges']) == [
+        'MILTON DALE SMITH JR; RAKE', 'NORMAN ROY SMITH; RAKE', 'SMITH; RAKE',
+        'POSER; P OSER', 'NORMAN ROY SMITH']
+    assert list(result['panel_found']) == [2, 2, 1, 1, 1]
+    assert list(result['panel_size']) == [2, 2, 2, 1, 1]
+    assert list(result['judge_nid1'].astype(object)) == [104, 105, pd.NA, 110, 105]
+
+
 def test_aliases(table: pd.DataFrame) -> None:
     table.loc[table['nid'] == 101, 'aliases'] = 'Mary Ann Lane; M. A. Lyn'
     roster = judges.Roster(table)

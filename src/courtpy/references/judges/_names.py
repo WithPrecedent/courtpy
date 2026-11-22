@@ -2,8 +2,11 @@
 
 Contents:
     clean_name: returns a name the way that names are compared.
+    edit_distance: returns how many edits turn one name into another.
     name_forms: returns the ways that an opinion may write a judge's name,
         grouped by how much of the name they give.
+    repaired_names: returns a name with the damage that some opinions' text
+        does undone.
     shorter_names: returns shorter ways of writing a name that an opinion
         gives, to try when the name itself fits no judge.
     _LEVELS: the groups of the forms of a judge's name, from the most of
@@ -120,6 +123,70 @@ def name_forms(
                 seen.add(named)
                 levels[level].append(named)
     return levels
+
+
+def edit_distance(first: str, second: str) -> int:
+    """Returns how many edits turn one name into another.
+
+    An edit adds, removes, or changes a letter, or swaps two letters next to
+    each other (the optimal string alignment distance), which are the errors
+    that scanning and typing make in names ("KRAVTTCH" for "KRAVITCH", or
+    "TJOFALT" for "TJOFLAT").
+
+    Args:
+        first: a name.
+        second: another name.
+
+    Returns:
+        The number of edits.
+
+    """
+    rows = len(first) + 1
+    columns = len(second) + 1
+    table = [[0] * columns for _ in range(rows)]
+    for row in range(rows):
+        table[row][0] = row
+    for column in range(columns):
+        table[0][column] = column
+    for row in range(1, rows):
+        for column in range(1, columns):
+            changed = int(first[row - 1] != second[column - 1])
+            table[row][column] = min(
+                table[row - 1][column] + 1,
+                table[row][column - 1] + 1,
+                table[row - 1][column - 1] + changed)
+            if (
+                row > 1 and column > 1
+                and first[row - 1] == second[column - 2]
+                and first[row - 2] == second[column - 1]):
+                table[row][column] = min(
+                    table[row][column], table[row - 2][column - 2] + 1)
+    return table[-1][-1]
+
+
+def repaired_names(name: str) -> list[str]:
+    """Returns a name with the damage that some opinions' text does undone.
+
+    Some opinions are printed in small capitals, which their text writes
+    with a space after each large first letter ("P OSNER" for "POSNER", or
+    "V AN B OKKELEN"), break a hyphenated name at its hyphen
+    ("JACKSON- AKIWUMI"), or run a word of the panel into a name
+    ("BEFORENIEMEYER"). `Roster.match` tries these forms of a name that fits
+    no judge as it is written.
+
+    Args:
+        name: the name, as `clean_name` returns it.
+
+    Returns:
+        The repaired forms, without repeats or `name` itself.
+
+    """
+    forms = [
+        re.sub(r'\b([A-Z]) (?=[A-Z]{2,})', r'\1', name),
+        re.sub(r'\s*-\s*', '-', name).strip('-'),
+        name.replace(' ', '-'),
+        re.sub(r'^(?:BEFORE|PRESENT)(?=[A-Z]{3,})', '', name)]
+    return [form for form in dict.fromkeys(forms) if form and form != name]
 
 
 def shorter_names(name: str) -> list[str]:

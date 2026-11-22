@@ -37,6 +37,8 @@ Contents:
     _MAX_WAIT: most seconds to wait when the API asks for a pause.
     _MIN_INTERVAL: fewest seconds between requests to the API.
     _OPINION_FIELDS: opinion fields requested from the CourtListener API.
+    _PDF_DELAY: seconds between requests for opinions' PDFs to one court's
+        website.
     _SCDB_FILES: the part of the name of each file of the Supreme Court
         Database that courtpy uses, by what `courtpy.scdb` calls each.
     _SCDB_LINK: the words of the links to those files on the page of a
@@ -112,13 +114,16 @@ _KEYRING_USERNAME: str = 'courtlistener'
 # Sections of text so long that they are only kept in a case table if
 # "keep_text" is true. The opinion's words are still counted and searched.
 _LARGE_SECTIONS: tuple[str, ...] = (
-    'text', 'header', 'opinion', 'opinion_lines')
+    'text', 'header', 'opinion', 'opinion_lines', 'pdf_header')
 # A free CourtListener account allows 5 requests a minute, 50 an hour, and
 # 125 a day (as of 2026). Waiting up to an hour rides out the first two
 # limits. A longer pause (the daily limit) stops the download, which can be
 # resumed later.
 _MAX_WAIT: float = 3600.0
 _MIN_INTERVAL: float = 1.0
+# Courts' websites have no stated limits, so requests for their PDFs are
+# spaced to be polite.
+_PDF_DELAY: float = 0.5
 _OPINION_FIELDS: tuple[str, ...] = (
     'id', 'cluster_id', 'type', 'author_id', 'author_str', 'per_curiam',
     'joined_by_str', 'ordering_key', 'download_url', 'html_with_citations',

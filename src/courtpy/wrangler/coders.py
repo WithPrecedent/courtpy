@@ -85,8 +85,31 @@ class CodeParties(amos.Munger):
     appellants, as in a cross-appeal), both are unknown. Both are false for a
     party whose role is unknown.
 
+    Many captions name no roles at all ("United States v. Bullock"), since
+    CourtListener's name of a case has none and some opinions print their
+    caption in a way that the caption rules cannot read (such as the Seventh
+    Circuit's orders, whose captions are in two columns). When neither
+    party's caption decides anything and exactly one party is the United
+    States, the opening of the opinion decides, through the columns that the
+    general header rules make from it, in this order:
+
+    * "opening_united_states_role": the role that the opening gives the
+      United States ("Plaintiff-Appellee" means the other party appealed,
+      and "Appellant" that the United States did). A role with both, as in
+      a cross-appeal, decides nothing.
+    * "opening_defendant_appellant" and "opening_defendant_appellee": the
+      opening names a defendant (or petitioner or movant) as the appellant,
+      or as the appellee, so the other party (or the United States) did.
+    * "opening_party_appeals" and "opening_government_appeals": the opening
+      says that a party other than the government appealed ("Eduardo Ayon
+      appeals", or counsel filed an Anders brief), or that the government
+      did.
+
+    Evidence on both sides decides nothing, and the roles stay unknown.
+
     Needs the columns "party1_{role}" and "party2_{role}" for each role:
     appellant, appellee, petitioner, respondent, plaintiff, and defendant.
+    Uses the columns of the opening, if they exist.
 
     """
 
@@ -126,6 +149,22 @@ class CodeParties(amos.Munger):
             data[f'{side}_defending'] = (
                 (mine_defending & (agree | ~other_known))
                 | (~mine_known & other_appealing))
+        found = _opening_direction(data)
+        if found is not None:
+            silent = ~(
+                own['party1'][0] | own['party1'][1]
+                | own['party2'][0] | own['party2'][1])
+            government = _prosecuting_sides(data)
+            one = government['party1'] ^ government['party2']
+            us_appealing, other_appealing = found
+            decided = silent & one & (us_appealing ^ other_appealing)
+            for side, _ in _SIDES:
+                appealing = us_appealing.where(
+                    government[side], other_appealing)
+                data[f'{side}_appealing'] = data[f'{side}_appealing'].where(
+                    ~decided, appealing)
+                data[f'{side}_defending'] = data[f'{side}_defending'].where(
+                    ~decided, ~appealing)
         return data
 
 
@@ -548,6 +587,63 @@ def _several_values() -> tuple[str, ...]:
         if name == 'federal' or name.endswith('header')))
     return tuple(dict.fromkeys(
         n for r in book if r.kind in _SEVERAL_KINDS for n in r.names))
+
+
+def _opening_direction(
+    data: pd.DataFrame) -> tuple[pd.Series, pd.Series] | None:
+    """Returns whether the opening says the United States or the other appealed.
+
+    The role that the opening gives the United States decides first. Where
+    it gives none, the defendant's role in the opening decides, and where
+    there is neither, whether the opening says that a party other than the
+    government appealed, or that the government did. Evidence on both sides,
+    or a role that the opening's sentences contradict, is true for both,
+    which decides nothing (see `CodeParties`).
+
+    Args:
+        data: the cases, with the columns of the opening that the general
+            header rules make.
+
+    Returns:
+        Whether the United States appealed and whether the other party did,
+            or `None` if `data` has none of the columns of the opening.
+
+    """
+    columns = [
+        'opening_united_states_role', 'opening_defendant_appellant',
+        'opening_defendant_appellee', 'opening_party_appeals',
+        'opening_government_appeals']
+    if not any(c in data.columns for c in columns):
+        return None
+    false = pd.Series(False, index = data.index)
+    role = (
+        data['opening_united_states_role'].astype('string').fillna('')
+        if 'opening_united_states_role' in data.columns
+        else pd.Series('', index = data.index, dtype = 'string'))
+    role = role.str.upper()
+    role_appellant = role.str.contains('APPELLANT', regex = False)
+    role_appellee = role.str.contains('APPELLEE', regex = False)
+    role_known = role_appellant | role_appellee
+    flags = {
+        c: cases.column_as_flags(data, c) if c in data.columns else false
+        for c in columns[1:]}
+    by_defendant = (
+        flags['opening_defendant_appellant']
+        | flags['opening_defendant_appellee'])
+    caption_known = role_known | by_defendant
+    caption_us = role_appellant.where(
+        role_known, flags['opening_defendant_appellee'])
+    caption_other = role_appellee.where(
+        role_known, flags['opening_defendant_appellant'])
+    said_us = flags['opening_government_appeals']
+    said_other = flags['opening_party_appeals']
+    said = said_us ^ said_other
+    # A caption that the opening's sentences contradict decides nothing.
+    conflict = caption_known & said & (
+        (caption_us & said_other) | (caption_other & said_us))
+    us_appealing = caption_us.where(caption_known, said_us) | conflict
+    other_appealing = caption_other.where(caption_known, said_other) | conflict
+    return us_appealing.astype(bool), other_appealing.astype(bool)
 
 
 def _own_direction(
