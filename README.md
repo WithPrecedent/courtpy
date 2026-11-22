@@ -6,12 +6,12 @@
 
 | | |
 | --- | --- |
-| Version | [![PyPI Latest Release](https://img.shields.io/pypi/v/courtpy.svg?style=for-the-badge&color=cornflowerblue&label=PyPI&logo=PyPI&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Latest Release](https://img.shields.io/github/v/tag/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=GitHub&logo=github)](https://github.com/WithPrecedent/courtpy/releases) |
-| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?style=for-the-badge&branch=main&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Code Coverage](https://img.shields.io/codecov/c/github/WithPrecedent/courtpy/main?style=for-the-badge&color=cadetblue&label=Coverage&logo=codecov)](https://app.codecov.io/gh/WithPrecedent/courtpy) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=for-the-badge&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=for-the-badge&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
-| Documentation | [![Hosted By](https://img.shields.io/badge/Hosted_by-Github_Pages-blue?style=for-the-badge&color=forestgreen&logo=github)](https://WithPrecedent.github.io/courtpy) |
-| Tools | [![Documentation](https://img.shields.io/badge/MkDocs-magenta?style=for-the-badge&color=deepskyblue&logo=markdown&labelColor=gray)](https://squidfunk.github.io/mkdocs-material/) [![Linter](https://img.shields.io/endpoint?style=for-the-badge&url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Type Checker](https://img.shields.io/badge/mypy-steelblue?style=for-the-badge&logo=python&logoColor=white&labelColor=gray)](https://mypy-lang.org/) [![Dependency Manager](https://img.shields.io/badge/uv-mediumpurple?style=for-the-badge&logo=uv&labelColor=gray)](https://docs.astral.sh/uv/) [![Pre-commit](https://img.shields.io/badge/pre--commit-darkolivegreen?style=for-the-badge&logo=pre-commit&logoColor=white&labelColor=gray)](https://pre-commit.com/) [![CI](https://img.shields.io/badge/GitHub_Actions-forestgreen?style=for-the-badge&logo=githubactions&labelColor=gray&logoColor=white)](https://github.com/features/actions) [![Editor Settings](https://img.shields.io/badge/Editor_Config-paleturquoise?style=for-the-badge&logo=editorconfig&labelColor=gray)](https://editorconfig.org/) [![Repository Template](https://img.shields.io/badge/snickerdoodle-bisque?style=for-the-badge&logo=cookiecutter&labelColor=gray)](https://www.github.com/WithPrecedent/snickerdoodle) [![Dependency Maintainer](https://img.shields.io/badge/dependabot-forestgreen?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=gray)](https://github.com/dependabot) |
-| Compatibility | [![Compatible Python Versions](https://img.shields.io/pypi/pyversions/courtpy?style=for-the-badge&color=cornflowerblue&label=Python&logo=python&logoColor=yellow)](https://pypi.org/project/courtpy/) [![Linux](https://img.shields.io/badge/Linux-lightseagreen?style=for-the-badge&logo=linux&labelColor=gray&logoColor=white)](https://www.linux.org/) [![MacOS](https://img.shields.io/badge/MacOS-antiquewhite?style=for-the-badge&logo=apple&labelColor=gray)](https://www.apple.com/macos/) [![Windows](https://img.shields.io/badge/Windows-blue?style=for-the-badge)](https://www.microsoft.com/en-us/windows?r=1) |
-| Stats | [![PyPI Download Rate (per month)](https://img.shields.io/pypi/dm/courtpy?style=for-the-badge&color=cornflowerblue&label=Downloads%20💾&logo=pypi&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Stars](https://img.shields.io/github/stars/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Stars%20⭐&logo=github)](https://github.com/WithPrecedent/courtpy/stargazers) [![GitHub Contributors](https://img.shields.io/github/contributors/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Contributors%20🙋&logo=github)](https://github.com/WithPrecedent/courtpy/graphs/contributors) [![GitHub Issues](https://img.shields.io/github/issues/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Issues%20📘&logo=github)](https://github.com/WithPrecedent/courtpy/issues) [![GitHub Forks](https://img.shields.io/github/forks/WithPrecedent/courtpy?style=for-the-badge&color=forestgreen&label=Forks%20🍴&logo=github)](https://github.com/WithPrecedent/courtpy/forks) |
+| Version | [![PyPI Latest Release](https://img.shields.io/pypi/v/courtpy.svg?style=plastic&color=cornflowerblue&label=PyPI&logo=PyPI&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Latest Release](https://img.shields.io/github/v/tag/WithPrecedent/courtpy?style=plastic&color=forestgreen&label=GitHub&logo=github)](https://github.com/WithPrecedent/courtpy/releases) |
+| Status | [![Build Status](https://img.shields.io/github/actions/workflow/status/WithPrecedent/courtpy/ci.yml?style=plastic&branch=main&color=cadetblue&label=Tests&logo=pytest)](https://github.com/WithPrecedent/courtpy/actions/workflows/ci.yml?query=branch%3Amain) [![Code Coverage](https://img.shields.io/codecov/c/github/WithPrecedent/courtpy/main?style=plastic&color=cadetblue&label=Coverage&logo=codecov)](https://app.codecov.io/gh/WithPrecedent/courtpy) [![Development Status](https://img.shields.io/badge/Development-Active-seagreen?style=plastic&logo=git)](https://www.repostatus.org/#active) [![Project Stability](https://img.shields.io/pypi/status/courtpy?style=plastic&logo=pypi&label=Stability&logoColor=yellow)](https://pypi.org/project/courtpy/) |
+| Documentation | [![Hosted By](https://img.shields.io/badge/Hosted_by-Github_Pages-blue?style=plastic&color=forestgreen&logo=github)](https://WithPrecedent.github.io/courtpy) |
+| Tools | [![Documentation](https://img.shields.io/badge/MkDocs-magenta?style=plastic&color=deepskyblue&logo=markdown&labelColor=gray)](https://squidfunk.github.io/mkdocs-material/) [![Linter](https://img.shields.io/endpoint?style=plastic&url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Type Checker](https://img.shields.io/badge/mypy-steelblue?style=plastic&logo=python&logoColor=white&labelColor=gray)](https://mypy-lang.org/) [![Dependency Manager](https://img.shields.io/badge/uv-mediumpurple?style=plastic&logo=uv&labelColor=gray)](https://docs.astral.sh/uv/) [![Pre-commit](https://img.shields.io/badge/pre--commit-darkolivegreen?style=plastic&logo=pre-commit&logoColor=white&labelColor=gray)](https://pre-commit.com/) [![CI](https://img.shields.io/badge/GitHub_Actions-forestgreen?style=plastic&logo=githubactions&labelColor=gray&logoColor=white)](https://github.com/features/actions) [![Repository Template](https://img.shields.io/badge/snickerdoodle-bisque?style=plastic&logo=cookiecutter&labelColor=gray)](https://www.github.com/WithPrecedent/snickerdoodle) [![Dependency Maintainer](https://img.shields.io/badge/dependabot-forestgreen?style=plastic&logo=dependabot&logoColor=white&labelColor=gray)](https://github.com/dependabot) |
+| Compatibility | [![Compatible Python Versions](https://img.shields.io/pypi/pyversions/courtpy?style=plastic&color=cornflowerblue&label=Python&logo=python&logoColor=yellow)](https://pypi.org/project/courtpy/) [![Linux](https://img.shields.io/badge/Linux-lightseagreen?style=plastic&logo=linux&labelColor=gray&logoColor=white)](https://www.linux.org/) [![MacOS](https://img.shields.io/badge/MacOS-antiquewhite?style=plastic&logo=apple&labelColor=gray)](https://www.apple.com/macos/) [![Windows](https://img.shields.io/badge/Windows-blue?style=plastic)](https://www.microsoft.com/en-us/windows?r=1) |
+| Stats | [![PyPI Download Rate (per month)](https://img.shields.io/pypi/dm/courtpy?style=plastic&color=cornflowerblue&label=Downloads%20💾&logo=pypi&logoColor=yellow)](https://pypi.org/project/courtpy/) [![GitHub Stars](https://img.shields.io/github/stars/WithPrecedent/courtpy?style=plastic&color=forestgreen&label=Stars%20⭐&logo=github)](https://github.com/WithPrecedent/courtpy/stargazers) [![GitHub Contributors](https://img.shields.io/github/contributors/WithPrecedent/courtpy?style=plastic&color=forestgreen&label=Contributors%20🙋&logo=github)](https://github.com/WithPrecedent/courtpy/graphs/contributors) [![GitHub Issues](https://img.shields.io/github/issues/WithPrecedent/courtpy?style=plastic&color=forestgreen&label=Issues%20📘&logo=github)](https://github.com/WithPrecedent/courtpy/issues) [![GitHub Forks](https://img.shields.io/github/forks/WithPrecedent/courtpy?style=plastic&color=forestgreen&label=Forks%20🍴&logo=github)](https://github.com/WithPrecedent/courtpy/forks) |
 | | |
 
 -----
@@ -37,7 +37,7 @@ new fields, and wrapping custom tools.
   biographical data and Judicial Common Space Scores (from
   [fjc-biographies](https://github.com/WithPrecedent/fjc_biographies) and
   [judicial-common-space](https://github.com/WithPrecedent/judicial_common_space)). Data about the overall
-  political and judicial context can also be easily added, including Martin-Quinn scores, NOMINATE scores of Congress, the Supreme Court Database, and the Federal Judicial Center's Integrated Database of appeals.
+  political and judicial context can also be easily added, including Martin-Quinn scores, NOMINATE scores of Congress, the Supreme Court Database, and the Federal Judicial Center's Integrated Database.
 * **Analyze** the data with [amos](https://github.com/WithPrecedent/amos) (which is built into `courtpy`),
   which compares models, preprocessing, and statistical methods, and records
   everything needed to reproduce the results.
@@ -51,6 +51,7 @@ new fields, and wrapping custom tools.
 * **Reproducible.** A whole study (which cases, how they were parsed and coded,
   and how they were analyzed) fits in one settings file, and `amos` records
   every step and the version of every package.
+* **Fast.** `courtpy` uses vectorized methods and compiled regular expressions to parse and munge the court data.
 
 ## Techniques and datasets
 
@@ -77,8 +78,7 @@ a settings file can name them like any other:
 </tbody>
 </table>
 
-Each of `courtpy`'s datasets is an `amos.Dataset` whose rows are one kind of
-thing. The loaders make `Cases`, and the shapers turn one kind into another:
+Each of `courtpy`'s datasets is an `amos.Dataset`. The loaders make `Cases`, and the shapers turn one form of the dataset into another:
 
 | Dataset | One row for each | Made by |
 | --- | --- | --- |
@@ -98,15 +98,6 @@ loaded whole (with `save` and `load`), as `amos`'s `save_data` saves it.
 
 ## Getting started
 
-### Requirements
-
-`courtpy` requires Python 3.11 or later. It runs on Linux, macOS, and Windows.
-
-Extracting cases from CourtListener's bulk data needs a good connection and
-room for the bulk files (about 63 GB for the opinions, clusters, and dockets),
-unless they are streamed. Downloading with the API needs a free CourtListener
-account.
-
 ### Installation
 
 To install `courtpy`, use `pip`:
@@ -120,9 +111,6 @@ To install the latest development version from GitHub instead:
 ```sh
 pip install git+https://github.com/WithPrecedent/courtpy
 ```
-
-To work on `courtpy` itself, see the
-[contribution guide](https://github.com/WithPrecedent/courtpy/blob/main/CONTRIBUTING.md).
 
 ### Usage
 
@@ -215,8 +203,7 @@ variables, including:
 The coders (which are `amos` techniques) add each party's role in the appeal
 and in the case (such as `party2_criminal_defendant`), the case types
 (`type_criminal`, `type_civil`, and one for each other prefix of the civil,
-criminal, and constitutional rules, such as `type_tort` and
-`type_contract`), and the outcomes: `outcome_reversal`, `outcome_party1_won`,
+criminal, and constitutional rules, and the outcomes: `outcome_reversal`, `outcome_party1_won`,
 `outcome_criminal_defendant_won`, and others.
 
 #### Adding the judges and the politics of the day
