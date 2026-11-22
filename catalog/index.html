@@ -1,0 +1,3318 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Accessible tools for collecting, parsing, and analyzing court opinions">
+      
+      
+      
+        <link rel="canonical" href="https://WithPrecedent.github.io/courtpy/catalog/">
+      
+      
+        <link rel="prev" href="../studies/">
+      
+      
+        <link rel="next" href="../recipes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Catalog - courtpy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../css/material.css">
+    
+      <link rel="stylesheet" href="../css/mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#catalog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="courtpy" class="md-header__button md-logo" aria-label="courtpy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            courtpy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Catalog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="lime"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/WithPrecedent/courtpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    WithPrecedent/courtpy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../tutorial/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/courtpy/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../contributing/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="courtpy" class="md-nav__button md-logo" aria-label="courtpy" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    courtpy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/WithPrecedent/courtpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    WithPrecedent/courtpy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Home
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced User Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../studies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building a Study
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Catalog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Techniques
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rulebooks-and-their-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rulebooks and their columns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rulebooks and their columns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--general" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        general
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--citations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        citations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--civil" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        civil
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--constitutional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        constitutional
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--criminal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        criminal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--agencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--federal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        federal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--courtlistener_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        courtlistener_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--lexis_nexis_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lexis_nexis_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--lexis_nexis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lexis_nexis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> courtpy
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> courtpy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/artist/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> artist
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_2" id="__nav_3_1_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> artist
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/artist/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/core/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> core
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_4" id="__nav_3_1_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/core/cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> cases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/core/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/core/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/core/secrets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> secrets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/core/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/critic/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> critic
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_5" id="__nav_3_1_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> critic
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/critic/audits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> audits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/critic/inferers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> inferers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/references/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> references
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_6" id="__nav_3_1_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> references
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/courts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> courts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/fjc_idb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> fjc_idb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/jcs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> jcs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/judges/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> judges
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/politics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> politics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/scdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> scdb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/references/scores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> scores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/sources/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> sources
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_7" id="__nav_3_1_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> sources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/sources/base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> base
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/sources/courtlistener/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> courtlistener
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/sources/lexis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> lexis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../reference/courtpy/wrangler/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> wrangler
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1_8" id="__nav_3_1_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> wrangler
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/wrangler/coders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> coders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/wrangler/loaders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> loaders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/wrangler/parsers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> parsers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/wrangler/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/courtpy/wrangler/shapers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> shapers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code_of_conduct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Techniques
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rulebooks-and-their-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rulebooks and their columns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rulebooks and their columns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--general" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        general
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--citations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        citations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--civil" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        civil
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--constitutional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        constitutional
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--criminal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        criminal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--agencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--federal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        federal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--courtlistener_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        courtlistener_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--lexis_nexis_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lexis_nexis_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec-3--lexis_nexis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lexis_nexis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/WithPrecedent/courtpy/edit/main/docs/catalog.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/WithPrecedent/courtpy/raw/main/docs/catalog.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="catalog">Catalog<a class="headerlink" href="#catalog" title="Permanent link">&para;</a></h1>
+<p>This page lists courtpy's techniques and the columns that its rulebooks make.
+It is built from courtpy itself each time the documentation is built, so it
+is always current. A study's settings can name any of these techniques (see
+<a href="../studies/">Building a Study</a>).</p>
+<h2 id="techniques">Techniques<a class="headerlink" href="#techniques" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Genre</th>
+<th>Technique</th>
+<th>Module</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>case_loader</td>
+<td><code>load_cases</code></td>
+<td><code>courtpy.wrangler.loaders</code></td>
+<td>Loads a dataset of cases saved by <code>Cases.save</code>, or a table of one.</td>
+</tr>
+<tr>
+<td>cleaner</td>
+<td><code>drop_text_columns</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Removes columns that models cannot use, such as text and lists.</td>
+</tr>
+<tr>
+<td>describer</td>
+<td><code>compare_with_idb</code></td>
+<td><code>courtpy.references.fjc_idb</code></td>
+<td>Compares a dataset with the Integrated Database's records of appeals.</td>
+</tr>
+<tr>
+<td>evaluator</td>
+<td><code>audit_coverage</code></td>
+<td><code>courtpy.critic.audits</code></td>
+<td>Compares the cases of each court in each year with the database's.</td>
+</tr>
+<tr>
+<td>evaluator</td>
+<td><code>audit_parsing</code></td>
+<td><code>courtpy.critic.audits</code></td>
+<td>Counts the cases that lack what the rules should find.</td>
+</tr>
+<tr>
+<td>evaluator</td>
+<td><code>audit_random_assignment</code></td>
+<td><code>courtpy.critic.audits</code></td>
+<td>Checks that the traits of cases are balanced across their panels.</td>
+</tr>
+<tr>
+<td>evaluator</td>
+<td><code>validate_coding</code></td>
+<td><code>courtpy.critic.audits</code></td>
+<td>Measures how often courtpy's coding agrees with another source's.</td>
+</tr>
+<tr>
+<td>inferer</td>
+<td><code>panel_effects</code></td>
+<td><code>courtpy.critic.inferers</code></td>
+<td>Estimates the effect of a judge's colleagues on the judge's vote.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_biography</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Adds what a roster says about each judge that each row names.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_circuit</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Adds the ideology of the active judges of each case's circuit.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_court_scores</code></td>
+<td><code>courtpy.references.scores</code></td>
+<td>Adds scores of each case's court from a table of them.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_executive</code></td>
+<td><code>courtpy.references.politics</code></td>
+<td>Adds the executive in power when each case was decided.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_high_court</code></td>
+<td><code>courtpy.references.politics</code></td>
+<td>Adds the ideology of the Supreme Court when each case was decided.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_idb</code></td>
+<td><code>courtpy.references.fjc_idb</code></td>
+<td>Adds the Integrated Database's record of each appeal by its docket.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_jcs</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Adds the Judicial Common Space score of each judge that each row names.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_judge_scores</code></td>
+<td><code>courtpy.references.scores</code></td>
+<td>Adds scores of each judge of each row from a table of them.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_legislature</code></td>
+<td><code>courtpy.references.politics</code></td>
+<td>Adds the ideology of Congress when each case was decided.</td>
+</tr>
+<tr>
+<td>merger</td>
+<td><code>add_scdb</code></td>
+<td><code>courtpy.references.scdb</code></td>
+<td>Adds the Supreme Court Database's columns to each case.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>code_case_type</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Decides whether each case is criminal or civil, and its other types.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>code_outcome</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Decides whether each decision reversed the court below, and who won.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>code_panels</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Adds the judges and the composition of each case's panel.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>code_parties</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Completes the roles of the parties and finds who brought the appeal.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>split_values</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Turns text with several values in each cell into lists or columns.</td>
+</tr>
+<tr>
+<td>munger</td>
+<td><code>tidy_cases</code></td>
+<td><code>courtpy.wrangler.coders</code></td>
+<td>Gives columns of booleans or whole numbers with missing values a type.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_agencies</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "federal/agencies.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_all</code></td>
+<td><code>courtpy.wrangler.parsers</code></td>
+<td>Finds information in text with rules, or parses cases again.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_citations</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "general/citations.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_civil</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "general/civil.csv", "federal/civil.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_constitutional</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "general/constitutional.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_courtlistener_header</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Finds the parties, their roles, and the judges in a CourtListener case.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_criminal</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "general/criminal.csv", "federal/criminal.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_federal</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rulebooks of every topic, in order: general, citations, civil, constitutional, criminal, review, agencies.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_general</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "general/general.csv".</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_header</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Finds the parties, their roles, and the judges in the header of a case from a source with no header rules of its own.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_lexis_nexis</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Finds the sections of a Lexis-Nexis case of a federal court of appeals.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_lexis_nexis_header</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Finds the court, the parties, their roles, and the judges in the header of a Lexis-Nexis case.</td>
+</tr>
+<tr>
+<td>parser</td>
+<td><code>parse_review</code></td>
+<td><code>courtpy.wrangler.rules</code></td>
+<td>Applies the rules of "federal/review.csv".</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>cases_over_time</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the number of cases of each court in each year.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>court_rates</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the rate of a column in each court, as bars.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>idb_confusion_matrices</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots how the data agrees with the Integrated Database, by variable.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>idb_missing_differences</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots how the appeals that the data lacks differ, by group.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>issues_over_time</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the number of cases with each issue in each court in each year.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>judge_network</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the judges as a network of who sat with, or dissented from, whom.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>lower_court_rates</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the rate of a column for each court below, by reviewing court.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>panel_composition</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the rate of a column for each composition of the panel.</td>
+</tr>
+<tr>
+<td>plot</td>
+<td><code>trends_by_administration</code></td>
+<td><code>courtpy.artist.plots</code></td>
+<td>Plots the yearly rate of a column in each court, with presidents.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>download_biographies</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Downloads the Federal Judicial Center's files and loads their roster.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>download_idb</code></td>
+<td><code>courtpy.references.fjc_idb</code></td>
+<td>Downloads the Integrated Database's files and loads its appeals.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>download_jcs</code></td>
+<td><code>courtpy.references.jcs</code></td>
+<td>Downloads the published files of Judicial Common Space scores.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>download_politics</code></td>
+<td><code>courtpy.references.politics</code></td>
+<td>Downloads the sources of the political context and loads its table.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>download_scdb</code></td>
+<td><code>courtpy.references.scdb</code></td>
+<td>Downloads the Supreme Court Database and loads its cases or votes.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>load_idb</code></td>
+<td><code>courtpy.references.fjc_idb</code></td>
+<td>Loads the Integrated Database's table of appeals for a range of years.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>load_politics</code></td>
+<td><code>courtpy.references.politics</code></td>
+<td>Loads a table of the political context of each year.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>load_roster</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Loads the table of a roster of judges.</td>
+</tr>
+<tr>
+<td>reference_loader</td>
+<td><code>load_scdb</code></td>
+<td><code>courtpy.references.scdb</code></td>
+<td>Loads the Supreme Court Database's table of cases or of votes.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_case_types</code></td>
+<td><code>courtpy.wrangler.shapers</code></td>
+<td>Makes a table with one row for each case type.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_courts</code></td>
+<td><code>courtpy.wrangler.shapers</code></td>
+<td>Makes a table with one row for each court.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_dockets</code></td>
+<td><code>courtpy.wrangler.shapers</code></td>
+<td>Makes a table with one row for each docket number of each case.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_judges</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Makes a table with one row for each judge (<code>Judges</code>).</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_party_types</code></td>
+<td><code>courtpy.wrangler.shapers</code></td>
+<td>Makes a table with one row for each party type.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>cases_to_votes</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Makes a table with one row for each judge on each case (<code>Votes</code>).</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>dockets_to_cases</code></td>
+<td><code>courtpy.wrangler.shapers</code></td>
+<td>Makes a table of dockets a table of cases again.</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>dockets_to_votes</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Makes a table with one row for each judge on each docket (<code>Votes</code>).</td>
+</tr>
+<tr>
+<td>shaper</td>
+<td><code>votes_to_cases</code></td>
+<td><code>courtpy.references.judges</code></td>
+<td>Makes a table of votes a table of cases again (<code>Cases</code>).</td>
+</tr>
+<tr>
+<td>source_loader</td>
+<td><code>download_courtlistener</code></td>
+<td><code>courtpy.wrangler.loaders</code></td>
+<td>Downloads cases from CourtListener, and parses and codes them.</td>
+</tr>
+<tr>
+<td>source_loader</td>
+<td><code>load_courtlistener</code></td>
+<td><code>courtpy.wrangler.loaders</code></td>
+<td>Parses and codes cases saved from CourtListener.</td>
+</tr>
+<tr>
+<td>source_loader</td>
+<td><code>load_lexis_nexis</code></td>
+<td><code>courtpy.wrangler.loaders</code></td>
+<td>Divides, parses, and codes cases downloaded from Lexis-Nexis.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
+<p><code>courtpy parse --source</code> (and a loader that subclasses <code>SourceLoader</code>) can
+name any source. A study can add its own (see
+<a href="../studies/#sources-of-your-own">Building a Study</a>). <code>download_courtlistener</code>
+and <code>courtpy download</code> save cases of the <code>courtlistener</code> source, from the
+bulk data (<code>method = bulk</code>, the default) or the API (<code>method = api</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Files</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>courtlistener</code></td>
+<td><code>*.json</code></td>
+<td>Reads cases saved by <code>CourtListener</code>, from the bulk data or the API.</td>
+</tr>
+<tr>
+<td><code>lexis_nexis</code></td>
+<td><code>*.txt</code></td>
+<td>Reads Lexis-Nexis cases saved one to a text file (see <code>split</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="rulebooks-and-their-columns">Rulebooks and their columns<a class="headerlink" href="#rulebooks-and-their-columns" title="Permanent link">&para;</a></h2>
+<p>Each rulebook below can be named in the "rulebooks" of a loader or of
+<code>courtpy.parse</code>. "header" and "general" are applied to every case. The
+columns of a rulebook are those that its rules make, in the order of the
+rules; see the <a href="../rules/">rules guide</a> for what each kind of rule makes.</p>
+<p><h3 id="exec-3--general">general<a class="headerlink" href="#exec-3--general" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "general/general.csv".</p>
+<p>27 columns: <code>opinion_affirm</code>, <code>opinion_deny</code>, <code>opinion_reverse</code>, <code>opinion_vacate</code>, <code>opinion_remand</code>, <code>opinion_dismiss</code>, <code>opinion_enforce</code>, <code>decision</code>, <code>decision_affirm</code>, <code>decision_reverse</code>, <code>decision_vacate</code>, <code>decision_remand</code>, <code>decision_dismiss</code>, <code>procedure_pro_se</code>, <code>procedure_indigent</code>, <code>procedure_mandamus</code>, <code>procedure_mootness</code>, <code>procedure_interloc</code>, <code>procedure_jury_trial</code>, <code>standard_de_novo</code>, <code>standard_clear_error</code>, <code>standard_abuse_disc</code>, <code>standard_arb_cap</code>, <code>standard_mixed_question</code>, <code>standard_substantial_evidence</code>, <code>standard_plain_error</code>, <code>standard_named</code></p>
+<h3 id="exec-3--citations">citations<a class="headerlink" href="#exec-3--citations" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "general/citations.csv".</p>
+<p>6 columns: <code>citations_admin</code>, <code>citations_case</code>, <code>citations_statute</code>, <code>citations_legislature</code>, <code>citations_constitution</code>, <code>citations_other</code></p>
+<h3 id="exec-3--civil">civil<a class="headerlink" href="#exec-3--civil" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "general/civil.csv", "federal/civil.csv".</p>
+<p>143 columns: <code>civil_bad_faith</code>, <code>civil_good_faith</code>, <code>civil_fiduciary</code>, <code>civil_bankruptcy</code>, <code>civil_forfeiture</code>, <code>civil_foreclosure</code>, <code>civil_veil_piercing</code>, <code>civil_antitrust</code>, <code>civil_qual_imm</code>, <code>civil_abs_imm</code>, <code>civil_workers_compensation</code>, <code>civil_declaratory_judgment</code>, <code>civil_admin_subp</code>, <code>civil_min_wage</code>, <code>civil_bjr</code>, <code>tort_iied</code>, <code>tort_negligence</code>, <code>tort_assault</code>, <code>tort_strict_liability</code>, <code>tort_interference</code>, <code>tort_false_imprisonment</code>, <code>tort_convesion</code>, <code>tort_express_warranty</code>, <code>tort_implied_warranty</code>, <code>tort_anticipatory_repudiation</code>, <code>tort_unjust_enrichment</code>, <code>tort_quantum_meruit</code>, <code>tort_hazardous_substance</code>, <code>tort_asbestos</code>, <code>tort_med_mal</code>, <code>tort_defamation</code>, <code>tort_product_liability</code>, <code>tort_class_action</code>, <code>tort_wrongful_discharge</code>, <code>tort_excessive_force</code>, <code>tort_deceptive_marketing</code>, <code>tort_fraud</code>, <code>ip_patent</code>, <code>ip_copyright</code>, <code>ip_trademark</code>, <code>ip_trade_secret</code>, <code>contract_promissory_estoppel</code>, <code>tort_invasion_privacy</code>, <code>tort_public_disclosure</code>, <code>tort_flase_light</code>, <code>tort_unpaid_wages</code>, <code>tort_civil_rights</code>, <code>writ_habeas</code>, <code>contract_breach</code>, <code>civil_lanham_act</code>, <code>civil_medicaid</code>, <code>civil_medicare</code>, <code>civil_hous_discrim</code>, <code>civil_plra</code>, <code>civil_vra</code>, <code>civil_twombly</code>, <code>civil_iqbal</code>, <code>civil_habeas</code>, <code>civil_asylum</code>, <code>civil_titlevii</code>, <code>civil_titleix</code>, <code>civil_ada</code>, <code>civil_adea</code>, <code>civil_patent</code>, <code>civil_copyright</code>, <code>civil_trademark</code>, <code>civil_cercla</code>, <code>civil_caa</code>, <code>civil_cwa</code>, <code>civil_tax</code>, <code>civil_labor</code>, <code>civil_social_security</code>, <code>civil_sec1983</code>, <code>civil_div_juris</code>, <code>civil_fed_quest</code>, <code>civil_foia</code>, <code>civil_civ_serv_act</code>, <code>civil_fed_employ_pay</code>, <code>civil_fed_labor_rel</code>, <code>civil_commodity_acts</code>, <code>civil_food_sec</code>, <code>civil_false_claims</code>, <code>civil_animal_welf</code>, <code>civil_agric_fair</code>, <code>civil_ina</code>, <code>civil_arb_act</code>, <code>civil_mortgage_act</code>, <code>civil_fdic</code>, <code>civil_bank_holding</code>, <code>civil_respra</code>, <code>civil_clayton_act</code>, <code>civil_trade_comm_act</code>, <code>civil_coppa</code>, <code>civil_sec_act</code>, <code>civil_invest_comp</code>, <code>civil_small_bus_act</code>, <code>civil_haz_subst</code>, <code>civil_truth_lend</code>, <code>civil_fair_credit_bill</code>, <code>civil_fair_credit_report</code>, <code>civil_fair_debt_collect</code>, <code>civil_product_safe</code>, <code>civil_asbestos</code>, <code>civil_national_historic_preservat</code>, <code>civil_migratory_bird</code>, <code>civil_esa</code>, <code>civil_lacey_act</code>, <code>civil_dmca</code>, <code>civil_terrorism_civil</code>, <code>civil_ferpa</code>, <code>civil_idea</code>, <code>civil_fda_act</code>, <code>civil_med_mal</code>, <code>civil_icwa</code>, <code>civil_indian_gaming</code>, <code>civil_admiralty</code>, <code>civil_atca</code>, <code>civil_erisa</code>, <code>civil_fmla</code>, <code>civil_foreign_sov_imm</code>, <code>civil_food_stamp</code>, <code>civil_defame</code>, <code>civil_sec_fraud</code>, <code>civil_prod_liab</code>, <code>civil_class_act</code>, <code>civil_aedpa</code>, <code>civil_all_writs</code>, <code>civil_rulemaking</code>, <code>civil_fed_tort_act</code>, <code>civil_osha</code>, <code>civil_mine_safety</code>, <code>civil_sdwa</code>, <code>civil_hhs</code>, <code>civil_voter_regis_act</code>, <code>civil_civ_rt_act</code>, <code>civil_rfra</code>, <code>civil_legal_serv</code>, <code>civil_solid_waste_act</code>, <code>civil_vawa</code>, <code>civil_rail_labor</code>, <code>civil_wrong_discharge</code>, <code>civil_fed_comm_act</code>, <code>civil_phone_consum_act</code></p>
+<h3 id="exec-3--constitutional">constitutional<a class="headerlink" href="#exec-3--constitutional" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "general/constitutional.csv".</p>
+<p>31 columns: <code>constitutional_amend1_religion</code>, <code>constitutional_amend1_speech</code>, <code>constitutional_amend1_general</code>, <code>constitutional_amend2</code>, <code>constitutional_amend3</code>, <code>constitutional_amend4</code>, <code>constitutional_amend5_miranda</code>, <code>constitutional_amend5_general</code>, <code>constitutional_amend6</code>, <code>constitutional_amend7</code>, <code>constitutional_amend8</code>, <code>constitutional_amend9</code>, <code>constitutional_amend10</code>, <code>constitutional_amend11</code>, <code>constitutional_amend12</code>, <code>constitutional_amend13</code>, <code>constitutional_amend14</code>, <code>constitutional_amend15</code>, <code>constitutional_articlei</code>, <code>constitutional_articleii</code>, <code>constitutional_articleiii</code>, <code>constitutional_articleiv</code>, <code>constitutional_expostfacto</code>, <code>constitutional_rule_law</code>, <code>constitutional_indian_commerce</code>, <code>constitutional_standing</code>, <code>constitutional_ripeness</code>, <code>constitutional_commerce_clause</code>, <code>constitutional_strict_scrutiny</code>, <code>constitutional_intermediate_scrutiny</code>, <code>constitutional_rational_basis</code></p>
+<h3 id="exec-3--criminal">criminal<a class="headerlink" href="#exec-3--criminal" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "general/criminal.csv", "federal/criminal.csv".</p>
+<p>65 columns: <code>criminal_death_penalty</code>, <code>criminal_lenity</code>, <code>criminal_child_porn</code>, <code>criminal_conspiracy</code>, <code>criminal_drugs</code>, <code>criminal_wire_fraud</code>, <code>criminal_kidnapping</code>, <code>criminal_tax_evasion</code>, <code>criminal_bank_robbery</code>, <code>criminal_robbery</code>, <code>criminal_assault</code>, <code>criminal_bank_fraud</code>, <code>criminal_arson</code>, <code>criminal_bribery</code>, <code>criminal_child_support</code>, <code>criminal_color_of_law</code>, <code>criminal_counterfeit</code>, <code>criminal_crim_contempt</code>, <code>criminal_forgery</code>, <code>criminal_voter_intim</code>, <code>criminal_campaign</code>, <code>criminal_gangs</code>, <code>criminal_embezzlement</code>, <code>criminal_money_launder</code>, <code>criminal_escape</code>, <code>criminal_harboring</code>, <code>criminal_chem_bio</code>, <code>criminal_nuclear</code>, <code>criminal_extortion</code>, <code>criminal_kickbacks</code>, <code>criminal_firearm</code>, <code>criminal_false_statements</code>, <code>criminal_perjury</code>, <code>criminal_murder</code>, <code>criminal_manslaughter</code>, <code>criminal_gambling</code>, <code>criminal_obscenity</code>, <code>criminal_obstruction</code>, <code>criminal_slavery</code>, <code>criminal_rico</code>, <code>criminal_riots</code>, <code>criminal_sabotage</code>, <code>criminal_child_sexual</code>, <code>criminal_destruct_ev</code>, <code>criminal_stalking</code>, <code>criminal_rape</code>, <code>criminal_terrorism</code>, <code>criminal_torture</code>, <code>criminal_treason</code>, <code>criminal_alcohol</code>, <code>criminal_harmless_error</code>, <code>criminal_guilty_plea</code>, <code>criminal_plea_bargain</code>, <code>criminal_sentencing</code>, <code>criminal_illegal_entry</code>, <code>criminal_acca</code>, <code>criminal_sorna</code>, <code>criminal_mann_act</code>, <code>criminal_fraud_us</code>, <code>criminal_classified</code>, <code>criminal_hacking</code>, <code>criminal_indian_country</code>, <code>criminal_president_threats</code>, <code>criminal_pub_land</code>, <code>criminal_anders</code></p>
+<h3 id="exec-3--review">review<a class="headerlink" href="#exec-3--review" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "federal/review.csv".</p>
+<p>5 columns: <code>review_district</code>, <code>review_agency</code>, <code>review_immigration</code>, <code>district_text</code>, <code>district_judges</code></p>
+<h3 id="exec-3--agencies">agencies<a class="headerlink" href="#exec-3--agencies" title="Permanent link">&para;</a></h3>
+<p>Applies the rules of "federal/agencies.csv".</p>
+<p>1 columns: <code>agencies</code></p>
+<h3 id="exec-3--federal">federal<a class="headerlink" href="#exec-3--federal" title="Permanent link">&para;</a></h3>
+<p>Applies the rulebooks of every topic, in order: general, citations, civil, constitutional, criminal, review, agencies.</p>
+<p>Every column of the rulebooks above.</p>
+<h3 id="exec-3--header">header<a class="headerlink" href="#exec-3--header" title="Permanent link">&para;</a></h3>
+<p>Finds the parties, their roles, and the judges in the header of a case from a source with no header rules of its own.</p>
+<p>53 columns: <code>party1</code>, <code>party2</code>, <code>opening_lines</code>, <code>cite_federal_reporter</code>, <code>cite_fed_appx</code>, <code>cite_westlaw</code>, <code>counsel_us_attorney</code>, <code>counsel_public_defender</code>, <code>disposition_affirm</code>, <code>disposition_reverse</code>, <code>disposition_vacate</code>, <code>disposition_remand</code>, <code>disposition_dismiss</code>, <code>disposition_deny</code>, <code>disposition_enforce</code>, <code>docket_numbers</code>, <code>docket_criminal</code>, <code>docket_civil</code>, <code>party1_cross_appellant</code>, <code>party1_cross_appellee</code>, <code>party1_appellant</code>, <code>party1_appellee</code>, <code>party1_plaintiff</code>, <code>party1_defendant</code>, <code>party1_petitioner</code>, <code>party1_respondent</code>, <code>party1_intervenor</code>, <code>party1_united_states</code>, <code>party2_cross_appellant</code>, <code>party2_cross_appellee</code>, <code>party2_appellant</code>, <code>party2_appellee</code>, <code>party2_plaintiff</code>, <code>party2_defendant</code>, <code>party2_petitioner</code>, <code>party2_respondent</code>, <code>party2_intervenor</code>, <code>party2_united_states</code>, <code>panel_text</code>, <code>panel_judges</code>, <code>authors</code>, <code>concurring</code>, <code>dissenting</code>, <code>opening_united_states</code>, <code>opening_defendant_appellant</code>, <code>opening_defendant_appellee</code>, <code>opening_government_appeals</code>, <code>opening_party_appeals</code>, <code>party1_agencies</code>, <code>party2_agencies</code>, <code>history_agencies</code>, <code>lower_court_num</code>, <code>lower_court_name</code></p>
+<h3 id="exec-3--courtlistener_header">courtlistener_header<a class="headerlink" href="#exec-3--courtlistener_header" title="Permanent link">&para;</a></h3>
+<p>Finds the parties, their roles, and the judges in a CourtListener case.</p>
+<p>56 columns: <code>party1</code>, <code>party2</code>, <code>opening_lines</code>, <code>cite_federal_reporter</code>, <code>cite_fed_appx</code>, <code>cite_westlaw</code>, <code>counsel_us_attorney</code>, <code>counsel_public_defender</code>, <code>disposition_affirm</code>, <code>disposition_reverse</code>, <code>disposition_vacate</code>, <code>disposition_remand</code>, <code>disposition_dismiss</code>, <code>disposition_deny</code>, <code>disposition_enforce</code>, <code>docket_numbers</code>, <code>docket_criminal</code>, <code>docket_civil</code>, <code>party1_cross_appellant</code>, <code>party1_cross_appellee</code>, <code>party1_appellant</code>, <code>party1_appellee</code>, <code>party1_plaintiff</code>, <code>party1_defendant</code>, <code>party1_petitioner</code>, <code>party1_respondent</code>, <code>party1_intervenor</code>, <code>party1_united_states</code>, <code>party2_cross_appellant</code>, <code>party2_cross_appellee</code>, <code>party2_appellant</code>, <code>party2_appellee</code>, <code>party2_plaintiff</code>, <code>party2_defendant</code>, <code>party2_petitioner</code>, <code>party2_respondent</code>, <code>party2_intervenor</code>, <code>party2_united_states</code>, <code>panel_text</code>, <code>panel_judges</code>, <code>authors</code>, <code>concurring</code>, <code>dissenting</code>, <code>opening_united_states</code>, <code>opening_defendant_appellant</code>, <code>opening_defendant_appellee</code>, <code>opening_government_appeals</code>, <code>opening_party_appeals</code>, <code>party1_agencies</code>, <code>party2_agencies</code>, <code>history_agencies</code>, <code>lower_court_num</code>, <code>lower_court_name</code>, <code>caption</code>, <code>caption1</code>, <code>caption2</code></p>
+<h3 id="exec-3--lexis_nexis_header">lexis_nexis_header<a class="headerlink" href="#exec-3--lexis_nexis_header" title="Permanent link">&para;</a></h3>
+<p>Finds the court, the parties, their roles, and the judges in the header of a Lexis-Nexis case.</p>
+<p>62 columns: <code>party1</code>, <code>party2</code>, <code>opening_lines</code>, <code>cite_federal_reporter</code>, <code>cite_fed_appx</code>, <code>cite_westlaw</code>, <code>counsel_us_attorney</code>, <code>counsel_public_defender</code>, <code>disposition_affirm</code>, <code>disposition_reverse</code>, <code>disposition_vacate</code>, <code>disposition_remand</code>, <code>disposition_dismiss</code>, <code>disposition_deny</code>, <code>disposition_enforce</code>, <code>docket_numbers</code>, <code>docket_criminal</code>, <code>docket_civil</code>, <code>party1_cross_appellant</code>, <code>party1_cross_appellee</code>, <code>party1_appellant</code>, <code>party1_appellee</code>, <code>party1_plaintiff</code>, <code>party1_defendant</code>, <code>party1_petitioner</code>, <code>party1_respondent</code>, <code>party1_intervenor</code>, <code>party1_united_states</code>, <code>party2_cross_appellant</code>, <code>party2_cross_appellee</code>, <code>party2_appellant</code>, <code>party2_appellee</code>, <code>party2_plaintiff</code>, <code>party2_defendant</code>, <code>party2_petitioner</code>, <code>party2_respondent</code>, <code>party2_intervenor</code>, <code>party2_united_states</code>, <code>panel_text</code>, <code>panel_judges</code>, <code>authors</code>, <code>concurring</code>, <code>dissenting</code>, <code>opening_united_states</code>, <code>opening_defendant_appellant</code>, <code>opening_defendant_appellee</code>, <code>opening_government_appeals</code>, <code>opening_party_appeals</code>, <code>party1_agencies</code>, <code>party2_agencies</code>, <code>history_agencies</code>, <code>lower_court_num</code>, <code>lower_court_name</code>, <code>cite_lexis</code>, <code>future_cert_petition</code>, <code>future_en_banc</code>, <code>future_grant</code>, <code>future_deny</code>, <code>future_remand</code>, <code>notice_unpublished</code>, <code>court_num</code>, <code>court_name</code></p>
+<h3 id="exec-3--lexis_nexis">lexis_nexis<a class="headerlink" href="#exec-3--lexis_nexis" title="Permanent link">&para;</a></h3>
+<p>Finds the sections of a Lexis-Nexis case of a federal court of appeals.</p>
+<p>16 columns: <code>header</code>, <code>opinion</code>, <code>party</code>, <code>court</code>, <code>docket_number</code>, <code>history</code>, <code>future</code>, <code>counsel</code>, <code>notice</code>, <code>dates</code>, <code>disposition</code>, <code>citation</code>, <code>judges</code>, <code>opinion_by</code>, <code>concurring_lines</code>, <code>dissenting_lines</code></p>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../studies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Building a Study">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Building a Study
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../recipes/" class="md-footer__link md-footer__link--next" aria-label="Next: Recipes">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Recipes
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright, 2026 Corey Rayburn Yung
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/WithPrecedent" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/courtpy/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>
