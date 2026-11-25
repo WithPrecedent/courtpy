@@ -51,7 +51,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.4.0
 
     # The "analysis" extra (amos[all]) has the packages that courtpy's plots
     # need (such as matplotlib and networkx), so their tests run instead of
@@ -78,7 +78,7 @@ jobs:
       uses: actions/checkout@v7
 
     - name: install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.4.0
 
     # With the "analysis" extra, mypy checks against the same packages (and
     # pandas-stubs) as a development environment.
@@ -104,7 +104,7 @@ jobs:
       uses: actions/checkout@v7
 
     - name: install uv
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.4.0
 
     - name: install dependencies
       run: uv sync --extra analysis
